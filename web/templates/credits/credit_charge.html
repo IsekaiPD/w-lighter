@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>크레딧 충전 | w.LiGHTER</title>
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/common.css' %}">
+  <link rel="stylesheet" href="{% static 'css/credit_charge.css' %}">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">w<span>.</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-icon" href="#" title="메뉴">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </a>
+      <a class="nav-icon" href="#" title="내 서재">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </a>
+      <a class="nav-icon" href="#" title="회차">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      </a>
+      <a class="nav-icon" href="#" title="현지화">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="app-main">
+    <div class="page-container">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">크레딧 충전</h1>
+          <p class="page-desc">크레딧을 충전하고 w.LiGHTER의 모든 기능을 자유롭게 써보세요.</p>
+        </div>
+        <div class="header-utils">
+          <span class="credit-chip" id="topCredit">18,000 C</span>
+          <div class="profile-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current credits -->
+      <section class="credits-box">
+        <div class="credit-emoji">C</div>
+        <div class="labels">
+          <div class="small">현재 잔여 크레딧</div>
+          <div class="amount" id="remainCredit">18,000 C</div>
+        </div>
+        <a class="credits-link" href="#" id="historyLink">
+          크레딧 내역 보러가기
+          <svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,2 7,5.5 2,9"/></svg>
+        </a>
+      </section>
+
+      <!-- Plans -->
+      <section class="plans" id="plans">
+
+        <article class="plan-card" data-plan="basic" data-price="9900">
+          <div class="plan-name">Basic 충전</div>
+          <div class="plan-price">9,900원</div>
+          <div class="plan-credits">10,000 C <span class="sub">(1C당 0.99원)</span></div>
+          <p class="plan-desc">가끔 번역을 맡기는 작가분들께 추천해요.<br>부담 없이 시작해보세요.</p>
+          <button class="select-btn">선택</button>
+          <div class="plan-pay">카드, 간편결제 지원</div>
+        </article>
+
+        <article class="plan-card" data-plan="plus" data-price="29900">
+          <div class="plan-name">Plus 충전</div>
+          <div class="plan-price">29,900원</div>
+          <div class="plan-credits">35,000 C <span class="sub">(<span class="discount"><b>14%</b> 할인</span>, 1C당 0.85원)</span></div>
+          <p class="plan-desc">꾸준히 연재 중인 작가라면 Plus 충전을 강력 추천해요!</p>
+          <button class="select-btn">선택</button>
+          <div class="plan-pay">카드, 간편결제 지원</div>
+        </article>
+
+        <article class="plan-card" data-plan="max" data-price="49900">
+          <div class="plan-name">Max 충전</div>
+          <div class="plan-price">49,900원</div>
+          <div class="plan-credits">75,000 C <span class="sub">(<span class="discount"><b>33%</b> 할인</span>, 1C당 0.67원)</span></div>
+          <p class="plan-desc">장기 연재나 완결을 준비 중인 작가라면 최대 33%의 할인 혜택을 누려보세요.</p>
+          <button class="select-btn">선택</button>
+          <div class="plan-pay">카드, 간편결제 지원</div>
+        </article>
+
+      </section>
+
+    </div><!-- /page-container -->
+
+    <!-- Bottom info — page-container 밖, 화면 끝까지 꽉 채움 -->
+    <section class="info-box">
+      <div class="info-inner">
+        <div>
+          <h2>크레딧 이용안내</h2>
+          <ul>
+            <li>크레딧은 무료 크레딧부터 먼저 사용됩니다.</li>
+          </ul>
+        </div>
+        <div>
+          <h2>크레딧 결제 취소·환불 안내</h2>
+          <ul>
+            <li>결제 취소는 결제일로부터 7일 이내, 유료 크레딧을 사용하지 않은 경우에만 가능합니다.</li>
+            <li>유료 크레딧을 일부라도 사용했거나 7일이 지나면 취소할 수 없습니다.</li>
+            <li>취소가 승인되면 충전 크레딧은 회수되고, 최초 결제 수단으로 환불됩니다.</li>
+            <li>환불은 승인일로부터 3영업일 이내 처리되며, 카드사 정책에 따라 실제 환불 완료까지 3~7영업일이 더 걸릴 수 있습니다.</li>
+            <li>무료로 지급된 크레딧은 구매 취소 및 환불 대상이 아닙니다. 따라서 충전 내역과 취소 내역의 크레딧 수량이 다를 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="{% static 'js/common.js' %}"></script>
+  <script src="{% static 'js/credit_charge.js' %}"></script>
+</body>
+</html>

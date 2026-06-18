@@ -1,3 +1,7 @@
 from django.shortcuts import render
 
-# Create your views here.
+def credit_charge(request):
+    return render(request, 'credits/credit_charge.html')
+
+def credit_history(request):
+    return render(request, 'credits/credit_history.html')
