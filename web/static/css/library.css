@@ -415,10 +415,6 @@
 }
 .sort-caret-icon {
   flex-shrink: 0;
-  transition: transform .2s;
-}
-.sort-dropdown.open .sort-caret-icon {
-  transform: rotate(180deg);
 }
 
 .sort-panel {
@@ -439,9 +435,8 @@
 .sort-opt {
   display: flex;
   align-items: center;
-  gap: 2px;
   width: 100%;
-  padding: 7px 20px;
+  padding: 7px 20px 7px 46px;
   font-size: 16px;
   font-weight: 600;
   color: rgba(110, 99, 140, 0.5);
@@ -451,11 +446,7 @@
 .sort-opt:hover { color: var(--color-text-muted); }
 .sort-opt.active { color: var(--color-primary); }
 .sort-opt-caret {
-  flex-shrink: 0;
-  visibility: hidden;
-}
-.sort-opt.active .sort-opt-caret {
-  visibility: visible;
+  display: none;
 }
 
 /* ---------- Works Grid ---------- */

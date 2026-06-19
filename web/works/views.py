@@ -12,5 +12,8 @@ def episode_detail(request, work_pk, episode_pk):
 def episode_translate(request, work_pk, episode_pk):
     return render(request, 'works/episode_translate.html')
 
+def episode_edit(request, work_pk, episode_pk):
+    return render(request, 'works/episode_edit.html')
+
 def episode_register(request, work_pk):
     return render(request, 'works/episode_register.html')

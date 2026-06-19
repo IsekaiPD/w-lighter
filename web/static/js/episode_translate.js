@@ -31,13 +31,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const label = document.getElementById(labelId);
     if (!wrap || !trigger || !panel) return;
 
+    const caretPath = trigger.querySelector('svg path');
+    function updateCaret() {
+      if (!caretPath) return;
+      caretPath.setAttribute('d', wrap.classList.contains('open') ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+    }
+
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
       // 다른 드롭다운 닫기
       document.querySelectorAll('.tr-version-dropdown.open').forEach(d => {
-        if (d !== wrap) d.classList.remove('open');
+        if (d !== wrap) {
+          d.classList.remove('open');
+          d.querySelector('.tr-version-trigger svg path')?.setAttribute('d', 'M7 10l5 5 5-5z');
+        }
       });
       wrap.classList.toggle('open');
+      updateCaret();
     });
 
     panel.addEventListener('click', (e) => e.stopPropagation());
@@ -49,6 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const name = opt.querySelector('.tr-ver-name')?.textContent.trim() ?? '';
         if (label) label.textContent = name;
         wrap.classList.remove('open');
+        updateCaret();
       });
     });
   }
@@ -58,7 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initVersionDropdown('versionDropdown3', 'versionTrigger3', 'versionPanel3', 'versionLabel3');
 
   document.addEventListener('click', () => {
-    document.querySelectorAll('.tr-version-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.tr-version-dropdown.open').forEach(d => {
+      d.classList.remove('open');
+      d.querySelector('.tr-version-trigger svg path')?.setAttribute('d', 'M7 10l5 5 5-5z');
+    });
   });
 
   /* ===== 채팅 입력 ===== */

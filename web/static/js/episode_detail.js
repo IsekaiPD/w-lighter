@@ -18,11 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (group) group.classList.add('active');
   }
 
+  const caretPath = trigger.querySelector('svg path');
+  function updateCaret() {
+    if (!caretPath) return;
+    caretPath.setAttribute('d', wrap.classList.contains('open') ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+  }
+
   // 트리거 클릭: 열기/닫기, 열릴 때 active 언어 버전 표시
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     const opening = !wrap.classList.contains('open');
     wrap.classList.toggle('open');
+    updateCaret();
     if (opening) {
       const activeLang = panel.querySelector('.ep-lang-opt.active');
       if (activeLang) showVersionGroup(activeLang.dataset.lang);
@@ -51,10 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
       label.textContent = `${activeLang} ${versionName}`.trim();
 
       wrap.classList.remove('open');
+      updateCaret();
     });
   });
 
   // 외부 클릭 시 닫기
-  document.addEventListener('click', () => wrap.classList.remove('open'));
+  document.addEventListener('click', () => {
+    wrap.classList.remove('open');
+    updateCaret();
+  });
 
 });

@@ -61,7 +61,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color .15s;
 }
+.breadcrumb-work:hover { color: var(--color-primary); }
 .ep-breadcrumb svg { flex-shrink: 0; }
 
 /* ---------- 메인 레이아웃 ---------- */

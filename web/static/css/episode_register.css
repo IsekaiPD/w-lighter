@@ -289,6 +289,12 @@
 .ep-reg-number-input {
   width: 120px;
 }
+.ep-reg-number-input[readonly] {
+  background: #eeeeee;
+  color: var(--color-text-muted);
+  cursor: default;
+  border-color: var(--color-border);
+}
 .ep-reg-number-suffix {
   font-size: 14px;
   font-weight: 600;
