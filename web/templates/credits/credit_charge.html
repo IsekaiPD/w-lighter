@@ -17,7 +17,7 @@
     </div>
     <div class="header-utils">
       <span class="credit-chip" id="topCredit">18,000 C</span>
-      <div class="profile-icon">
+      <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
     </div>
@@ -30,7 +30,7 @@
       <div class="small">현재 잔여 크레딧</div>
       <div class="amount" id="remainCredit">18,000 C</div>
     </div>
-    <a class="credits-link" href="#" id="historyLink">
+    <a class="credits-link" href="{% url 'credits:credit_history' %}" id="historyLink">
       크레딧 내역 보러가기
       <svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,2 7,5.5 2,9"/></svg>
     </a>
