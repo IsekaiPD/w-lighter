@@ -4,6 +4,7 @@
 {% block title %}작품 상세 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/library.css' %}">
 <link rel="stylesheet" href="{% static 'css/work_detail.css' %}">
 {% endblock %}
 
@@ -20,7 +21,7 @@
       <p class="page-desc">회차를 등록하고 번역해 보세요.</p>
     </div>
     <div class="header-utils">
-      <span class="credit-chip">18,000 C</span>
+      <a href="/credits/charge" class="credit-chip">18,000 C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -152,7 +153,7 @@
             </svg>
           </button>
           <div class="ep-menu-dropdown" id="epMenu1">
-            <button class="ep-menu-item">회차 수정</button>
+            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=1 %}" class="ep-menu-item">회차 수정</a>
             <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
           </div>
         </div>
@@ -189,7 +190,7 @@
             </svg>
           </button>
           <div class="ep-menu-dropdown" id="epMenu2">
-            <button class="ep-menu-item">회차 수정</button>
+            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=2 %}" class="ep-menu-item">회차 수정</a>
             <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
           </div>
         </div>
@@ -227,12 +228,85 @@
             </svg>
           </button>
           <div class="ep-menu-dropdown" id="epMenu3">
-            <button class="ep-menu-item">회차 수정</button>
+            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=3 %}" class="ep-menu-item">회차 수정</a>
             <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
           </div>
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- 작품 정보 수정 모달 -->
+  <div class="modal-backdrop" id="detailEditBackdrop"></div>
+  <div class="modal" id="detailEditModal" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">작품 정보 수정</h2>
+        <p class="modal-desc">제목, 필명, 장르는 필수 입력값입니다.</p>
+      </div>
+      <button class="modal-close" id="detailEditClose" aria-label="닫기">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-fields">
+      <!-- 제목 -->
+      <div class="field-group">
+        <label class="field-label">제목 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <input type="text" class="field-input" id="detailEditTitle" placeholder="공백 포함 최대 50자" maxlength="50">
+          <span class="input-counter"><span id="detailEditTitleLen">0</span>/50</span>
+        </div>
+      </div>
+      <!-- 필명 -->
+      <div class="field-group">
+        <label class="field-label">필명 <span class="required">*</span></label>
+        <div class="input-wrap">
+          <input type="text" class="field-input" id="detailEditAuthor" placeholder="킹왕짱웹소설작가" maxlength="10">
+          <span class="input-counter"><span id="detailEditAuthorLen">0</span>/10</span>
+        </div>
+        <p class="field-hint field-error" id="detailEditAuthorError" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          공백 없이 한글, 영어, 숫자만 가능해요
+        </p>
+      </div>
+      <!-- 장르 -->
+      <div class="field-group">
+        <label class="field-label">장르 <span class="required">*</span></label>
+        <div class="custom-select" id="detailEditGenreSelect">
+          <button type="button" class="custom-select-trigger" id="detailEditGenreTrigger">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            <span class="custom-select-value" id="detailEditGenreValue">선택하기</span>
+          </button>
+          <div class="custom-select-dropdown" id="detailEditGenreDropdown">
+            <ul class="custom-select-list">
+              <li class="custom-select-option" data-value="romance">로맨스</li>
+              <li class="custom-select-option" data-value="romance_fantasy">로맨스 판타지</li>
+              <li class="custom-select-option" data-value="fantasy">판타지</li>
+              <li class="custom-select-option" data-value="modern_fantasy">현대 판타지</li>
+              <li class="custom-select-option" data-value="murim">무협</li>
+              <li class="custom-select-option" data-value="sf">SF</li>
+              <li class="custom-select-option" data-value="etc">기타</li>
+            </ul>
+          </div>
+          <input type="hidden" id="detailEditGenreHidden" name="genre">
+        </div>
+      </div>
+    </div>
+
+    <!-- 시놉시스 -->
+    <div class="field-group synopsis-group">
+      <label class="field-label">시놉시스</label>
+      <div class="synopsis-wrap">
+        <textarea class="synopsis-input" id="detailEditSynopsis" maxlength="10000"
+          placeholder="공백 포함 최대 10,000자까지 작성 가능&#10;&#10;* 다양한 기능이 시놉시스를 기반으로 제공됩니다.&#10;   최소 2천 자 이상 입력을 권장합니다."></textarea>
+        <span class="synopsis-count"><span id="detailEditSynopsisLen">0</span>/10,000</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="submit-btn" id="detailEditSubmit">작품 수정</button>
     </div>
   </div>
 

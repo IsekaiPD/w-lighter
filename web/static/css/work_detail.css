@@ -435,10 +435,12 @@
 }
 .ep-menu-dropdown.open { display: flex; }
 .ep-menu-item {
+  display: block;
   font-size: 14px;
   color: var(--color-text);
   text-align: left;
   white-space: nowrap;
+  text-decoration: none;
   transition: color .15s;
 }
 .ep-menu-item:hover { color: var(--color-primary); }

@@ -349,9 +349,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const sortLabel    = document.getElementById('sortLabel');
   const sortOpts     = document.querySelectorAll('.sort-opt');
 
+  const sortCaretPath = sortTrigger?.querySelector('svg path');
+  function updateSortCaret() {
+    if (!sortCaretPath) return;
+    const isOpen = sortDropdown.classList.contains('open');
+    sortCaretPath.setAttribute('d', isOpen ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+  }
+
   sortTrigger?.addEventListener('click', (e) => {
     e.stopPropagation();
     sortDropdown.classList.toggle('open');
+    updateSortCaret();
   });
 
   sortOpts.forEach(opt => {
@@ -360,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
       opt.classList.add('active');
       sortLabel.textContent = opt.textContent.trim();
       sortDropdown.classList.remove('open');
+      updateSortCaret();
       // TODO: 실제 정렬 로직 연결
     });
   });
@@ -367,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
     if (!sortDropdown?.contains(e.target)) {
       sortDropdown?.classList.remove('open');
+      updateSortCaret();
     }
   });
 
