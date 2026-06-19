@@ -21,12 +21,6 @@
   line-height:21px;
   color:var(--color-text-muted);
 }
-.header-utils{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding-top:4px;
-}
 .credit-chip{
   display:inline-flex;
   align-items:center;
