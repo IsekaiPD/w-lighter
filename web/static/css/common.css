@@ -1,1 +1,141 @@
-/* 공통 css */
+/* =============================================
+   common.css — 공통 스타일
+   ============================================= */
+
+:root {
+  --color-bg-start:       #fff9f7;
+  --color-bg-end:         #f6f1eb;
+  --color-surface:        #ffffff;
+  --color-primary:        #6e5bb8;
+  --color-primary-soft:   #f3eeff;
+  --color-primary-badge:  #e9e1ff;
+  --color-primary-border: #cfc3fb;
+  --color-text:           #2d2440;
+  --color-text-muted:     #6e638c;
+  --color-border:         #b7a9e6;
+  --color-border-soft:    #e9e1ff;
+  --shadow-glow-soft:     0 0 20px rgba(207,195,251,0.35);
+  --shadow-card:          0 4px 24px rgba(110,91,184,0.08);
+  --radius-sm:   10px;
+  --radius-lg:   24px;
+  --radius-xl:   30px;
+  --radius-pill: 999px;
+  --sidebar-w:   75px;
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--color-bg-start) 0%, var(--color-bg-end) 100%);
+  scrollbar-gutter: stable;
+}
+body {
+  font-family: 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--color-text);
+  background: transparent;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+ul, ol { list-style: none; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  position: fixed;
+  left: 0; top: 0;
+  width: var(--sidebar-w);
+  height: 100vh;
+  background: var(--color-bg-start);
+  border-right: 1px solid rgba(207,195,251,0.45);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 24px;
+  z-index: 20;
+}
+.sidebar .logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1;
+  background: linear-gradient(135deg, #f2c6ff 0%, #b8a7f4 55%, #9a84e6 77%, #7b61d8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -1.2px;
+  user-select: none;
+  margin-bottom: 28px;
+}
+.sidebar .logo span { font-size: 28px; }
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.nav-icon {
+  width: 45px; height: 45px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  border-radius: 50px;
+  transition: color .15s, background .15s;
+}
+.nav-icon:hover,
+.nav-icon.active {
+  color: var(--color-text);
+  background: rgba(246, 241, 235, 0.5);
+}
+
+/* ---------- Profile Dropdown ---------- */
+.profile-dropdown {
+  position: fixed;
+  z-index: 100;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 10px rgba(207, 195, 251, 0.35);
+  padding: 14px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 102px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity .15s, transform .15s;
+}
+.profile-dropdown.open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.profile-dropdown-item {
+  font-size: 14px;
+  line-height: 21px;
+  color: var(--color-text);
+  white-space: nowrap;
+  transition: color .15s;
+}
+.profile-dropdown-item:hover { color: var(--color-primary); }
+
+/* ---------- App Shell ---------- */
+.app-main {
+  margin-left: var(--sidebar-w);
+  min-height: 100vh;
+}
+.page-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px;
+}
+.header-utils {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: -22px;
+  flex-shrink: 0;
+}
