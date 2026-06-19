@@ -12,9 +12,3 @@ cards.forEach(card => {
   });
 });
 
-// 크레딧 내역 링크
-document.getElementById('historyLink').addEventListener('click', (e) => {
-  e.preventDefault();
-  console.log('크레딧 내역 페이지로 이동');
-  // window.location.href = '/credits/history/';
-});
