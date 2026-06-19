@@ -23,7 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('works.urls')),                        # 메인
     path('accounts/', include('accounts.urls')),
-    path('characters/', include('characters.urls')),
+    path('', include('characters.urls')),
     path('relationships/', include('relationships.urls')),
     path('covers/', include('covers.urls')),
     path('credits/', include('credits.urls')),
