@@ -1,5 +1,6 @@
 (function () {
   const modal = document.querySelector('[data-login-modal]');
+  const backdrop = document.querySelector('[data-login-backdrop]');
   const openButtons = document.querySelectorAll('[data-open-login]');
   const closeButtons = document.querySelectorAll('[data-close-login]');
   let lastFocusedElement = null;
@@ -7,23 +8,31 @@
   function openModal() {
     if (!modal) return;
     lastFocusedElement = document.activeElement;
+    if (backdrop) {
+      backdrop.hidden = false;
+      backdrop.classList.add('open');
+    }
     modal.hidden = false;
+    modal.classList.add('open');
     document.body.classList.add('is-modal-open');
     modal.querySelector('.modal-close')?.focus();
   }
 
   function closeModal() {
     if (!modal) return;
+    if (backdrop) {
+      backdrop.hidden = true;
+      backdrop.classList.remove('open');
+    }
     modal.hidden = true;
+    modal.classList.remove('open');
     document.body.classList.remove('is-modal-open');
     lastFocusedElement?.focus?.();
   }
 
   openButtons.forEach((button) => button.addEventListener('click', openModal));
   closeButtons.forEach((button) => button.addEventListener('click', closeModal));
-  modal?.addEventListener('click', (event) => {
-    if (event.target === modal) closeModal();
-  });
+  backdrop?.addEventListener('click', closeModal);
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && modal && !modal.hidden) closeModal();
@@ -172,7 +181,12 @@
   function syncFeaturedStory(featuredIndex = 1) {
     if (!storyTrack) return;
     Array.from(storyTrack.children).forEach((card, index) => {
-      card.classList.toggle('is-featured', index === featuredIndex);
+      const isFeatured = index === featuredIndex;
+      const quoteIcon = card.querySelector('.quote-icon');
+      card.classList.toggle('is-featured', isFeatured);
+      if (quoteIcon?.dataset.quoteFeatured && quoteIcon?.dataset.quoteDefault) {
+        quoteIcon.src = isFeatured ? quoteIcon.dataset.quoteFeatured : quoteIcon.dataset.quoteDefault;
+      }
     });
   }
 
