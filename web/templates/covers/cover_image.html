@@ -1,0 +1,200 @@
+{% extends 'layouts/base_app.html' %}
+{% load static %}
+
+{% block title %}표지 이미지 | w.LiGHTER{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/cover_image.css' %}">
+{% endblock %}
+
+{% block content %}
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-title-group">
+      <h1 class="page-title">표지 이미지</h1>
+      <p class="page-desc">내 작품의 첫인상을 만들어보세요.</p>
+    </div>
+    <div class="header-utils">
+      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">18,000 C</a>
+      <div class="profile-icon" id="profileBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="cover-workspace">
+
+    <!-- ===== 좌측 패널 ===== -->
+    <div class="cover-panel-left">
+
+      <!-- 작품 선택 -->
+      <div class="cover-field-group">
+        <label class="cover-label">작품 선택</label>
+        <div class="cover-select-wrap" id="workSelectWrap">
+          <button class="cover-select-trigger" id="workSelectTrigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="cover-select-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <path d="M8 3v18M8 7h4M8 11h3"/>
+              </svg>
+            </span>
+            <span class="cover-select-text" id="workSelectText">작품을 선택하세요</span>
+            <span class="cover-select-chevron" id="workSelectChevron">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+
+          <!-- 드롭다운 목록 -->
+          <div class="cover-dropdown" id="workDropdown" role="listbox" aria-label="작품 목록">
+            <!-- JS로 동적 렌더링 또는 아래처럼 정적 샘플 -->
+            <div class="cover-dropdown-item" role="option" data-id="1"
+                 data-title="안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는..." data-genre="판타지"
+                 data-img="">
+              <div class="cover-di-thumb">
+                <img src="" alt="" class="cover-di-img" onerror="this.style.display='none'">
+                <div class="cover-di-placeholder"></div>
+              </div>
+              <div class="cover-di-info">
+                <p class="cover-di-title">안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는...</p>
+                <p class="cover-di-genre">판타지</p>
+              </div>
+            </div>
+
+            <div class="cover-dropdown-item" role="option" data-id="2"
+                 data-title="별빛 아래 잊힌 왕국" data-genre="판타지" data-img="">
+              <div class="cover-di-thumb">
+                <div class="cover-di-placeholder"></div>
+              </div>
+              <div class="cover-di-info">
+                <p class="cover-di-title">별빛 아래 잊힌 왕국</p>
+                <p class="cover-di-genre">판타지</p>
+              </div>
+            </div>
+
+            <div class="cover-dropdown-item" role="option" data-id="3"
+                 data-title="악녀는 장미를 숨기지 않는다" data-genre="로맨스 판타지" data-img="">
+              <div class="cover-di-thumb">
+                <div class="cover-di-placeholder"></div>
+              </div>
+              <div class="cover-di-info">
+                <p class="cover-di-title">악녀는 장미를 숨기지 않는다</p>
+                <p class="cover-di-genre">로맨스 판타지</p>
+              </div>
+            </div>
+
+            <div class="cover-dropdown-item" role="option" data-id="4"
+                 data-title="오늘도, 너와 퇴근" data-genre="로맨스" data-img="">
+              <div class="cover-di-thumb">
+                <div class="cover-di-placeholder"></div>
+              </div>
+              <div class="cover-di-info">
+                <p class="cover-di-title">오늘도, 너와 퇴근</p>
+                <p class="cover-di-genre">로맨스</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 국가 선택 -->
+      <div class="cover-field-group">
+        <label class="cover-label">국가 선택</label>
+        <div class="cover-country-chips" role="group" aria-label="국가 선택">
+          <button class="cover-country-chip active" type="button" data-country="KR">KR</button>
+          <button class="cover-country-chip" type="button" data-country="EN">EN</button>
+          <button class="cover-country-chip" type="button" data-country="CN">CN</button>
+          <button class="cover-country-chip" type="button" data-country="JP">JP</button>
+          <button class="cover-country-chip" type="button" data-country="TH">TH</button>
+        </div>
+      </div>
+
+      <!-- 추가 요청 문구 -->
+      <div class="cover-field-group cover-field-grow">
+        <div class="cover-label-row">
+          <label class="cover-label" for="coverPrompt">추가 요청 문구</label>
+          <span class="cover-counter" id="coverCounter">0 / 500</span>
+        </div>
+        <textarea
+          class="cover-textarea"
+          id="coverPrompt"
+          maxlength="500"
+          placeholder="원하는 배경·인물·분위기를 자유롭게 적어주세요."
+        ></textarea>
+      </div>
+
+      <!-- 생성 버튼 -->
+      <button class="cover-generate-btn" id="coverGenerateBtn" type="button">
+        표지 이미지 생성하기 · 800C
+      </button>
+
+    </div>
+
+    <!-- ===== 우측 패널 ===== -->
+    <div class="cover-panel-right">
+      <div class="cover-result-header">
+        <h2 class="cover-result-title">생성된 표지 이미지</h2>
+        <span class="cover-result-count" id="coverResultCount">0 / 5 장</span>
+      </div>
+      <p class="cover-result-notice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
+        AI로 생성된 이미지입니다. 의도하지 않은 요소가 있을 수 있으니 게시 전 확인해 주세요.
+      </p>
+
+      <!-- Empty State -->
+      <div class="cover-empty-state" id="coverEmptyState">
+        <div class="cover-empty-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+        </div>
+        <p class="cover-empty-title">아직 생성된 표지가 없어요</p>
+        <p class="cover-empty-desc">국가와 회차를 선택하고 '표지 생성하기'를 눌러보세요.</p>
+      </div>
+
+      <!-- 이미지 그리드 (생성 후 표시) -->
+      <div class="cover-image-grid" id="coverImageGrid" style="display:none">
+        <!-- JS로 동적 렌더링 -->
+      </div>
+    </div>
+
+  </div>
+
+{% endblock %}
+
+{% block full_content %}
+
+<!-- 확대 모달 -->
+<div class="cover-preview-backdrop" id="coverPreviewBackdrop"></div>
+<div class="cover-preview-modal" id="coverPreviewModal">
+  <div class="cover-preview-header">
+    <button class="cover-preview-close" id="coverPreviewClose" aria-label="닫기">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="cover-preview-img-wrap" id="coverPreviewImgWrap"></div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="cover-delete-backdrop" id="coverDeleteBackdrop"></div>
+<div class="cover-delete-modal" id="coverDeleteModal">
+  <h3 class="cover-delete-title">이 표지 이미지를 삭제할까요?</h3>
+  <p class="cover-delete-desc">선택한 표지 이미지가 삭제되며 복구할 수 없습니다. 재생성 시 크레딧이 소모됩니다.</p>
+  <div class="cover-delete-actions">
+    <button class="cover-delete-btn cancel" id="coverDeleteCancel">취소하기</button>
+    <button class="cover-delete-btn confirm" id="coverDeleteConfirm">삭제하기</button>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="cover-toast" id="coverToast"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/cover_image.js' %}"></script>
+{% endblock %}

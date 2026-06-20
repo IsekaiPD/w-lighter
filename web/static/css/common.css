@@ -12,10 +12,8 @@
   --color-primary-border: #cfc3fb;
   --color-text:           #2d2440; 
   --color-text-muted:     #6e638c;
-  --color-text-soft:      #A89BD4;
   --color-border:         #b7a9e6;
-  --color-border-soft:    #e9e1ff;
-  --color-danger:         #ff2d55;
+  --color-border-soft:    #e9e1ff; 
   --shadow-glow-soft:     0 0 20px rgba(207,195,251,0.35);
   --shadow-card:          0 4px 24px rgba(110,91,184,0.08);
   --radius-sm:   10px;
@@ -378,7 +376,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   transition: border-color .15s;
 }
 .ui-nickname-input:focus { border-color: var(--color-primary); }
-.ui-nickname-input.error { border-color: var(--color-danger); }
+.ui-nickname-input.error { border-color: #ff2d55; }
 
 .ui-input-error {
   display: flex;
@@ -386,7 +384,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   gap: 5px;
   margin-top: 5px;
   font-size: 12px;
-  color: var(--color-danger);
+  color: #ff2d55;
   white-space: nowrap;
 }
 
