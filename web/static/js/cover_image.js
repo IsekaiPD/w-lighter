@@ -11,10 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let selectedWorkId = null;
 
+  const chevron = document.getElementById('workSelectChevron');
+  const SVG_DOWN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+  const SVG_UP   = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+
   selectTrigger?.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = selectWrap.classList.toggle('open');
     selectTrigger.setAttribute('aria-expanded', isOpen);
+    if (chevron) chevron.innerHTML = isOpen ? SVG_UP : SVG_DOWN;
   });
 
   dropdownItems?.forEach(item => {
@@ -31,11 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
       selectText.textContent = title;
       selectText.classList.add('selected');
 
-      // 아이콘 영역: 썸네일이 있으면 이미지, 없으면 기본 아이콘
+      // 아이콘 영역: 썸네일이 있으면 2:3 이미지, 없으면 기본 아이콘 유지
       const iconWrap = selectTrigger.querySelector('.cover-select-icon');
-      const imgSrc = item.dataset.img;
+      const thumbEl = item.querySelector('.cover-di-img');
+      const imgSrc = thumbEl?.src || item.dataset.img;
       if (imgSrc) {
         iconWrap.innerHTML = `<img src="${imgSrc}" alt="${title}">`;
+      } else {
+        // 이미지 없으면 기본 아이콘 유지 (변경 없음)
       }
 
       // 닫기
@@ -49,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!selectWrap?.contains(e.target)) {
       selectWrap?.classList.remove('open');
       selectTrigger?.setAttribute('aria-expanded', 'false');
+      if (chevron) chevron.innerHTML = SVG_DOWN;
     }
   });
 
