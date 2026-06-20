@@ -1,4 +1,4 @@
-{% extends 'layouts/base_landing.html' %}
+﻿{% extends 'layouts/base_landing.html' %}
 {% load static %}
 
 {% block title %}w.LiGHTER | 당신의 도우미, 라이터{% endblock %}
@@ -203,25 +203,25 @@
       <div class="story-slider" aria-label="작가 목소리 카드 슬라이드">
         <div class="story-track" data-story-track>
           <article class="story-card">
-            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left.svg' %}" alt="" aria-hidden="true">
+            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left-colored.svg' %}" data-quote-featured="{% static 'images/landing/icons/quotes-left.svg' %}" data-quote-default="{% static 'images/landing/icons/quotes-left-colored.svg' %}" alt="" aria-hidden="true">
             <p>댓글로, DM으로 해외 독자들의 번역 요청을 수없이 받아왔습니다. 하지만 전문 번역을 맡기기엔 수백 화 분량의 장편을 감당할 수 없었습니다.</p>
             <strong>@writer</strong>
             <small>현대 로맨스 연재 작가</small>
           </article>
           <article class="story-card is-featured">
-            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left.svg' %}" alt="" aria-hidden="true">
+            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left.svg' %}" data-quote-featured="{% static 'images/landing/icons/quotes-left.svg' %}" data-quote-default="{% static 'images/landing/icons/quotes-left-colored.svg' %}" alt="" aria-hidden="true">
             <p>AI 번역기를 써봐도 매번 캐릭터 이름이 달라지고 세계관 설정이 어긋났어요. 원작의 톤을 지키면서 현지화할 방법이 필요했습니다.</p>
             <strong>@writer</strong>
             <small>판타지 장편 작가</small>
           </article>
           <article class="story-card">
-            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left.svg' %}" alt="" aria-hidden="true">
+            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left-colored.svg' %}" data-quote-featured="{% static 'images/landing/icons/quotes-left.svg' %}" data-quote-default="{% static 'images/landing/icons/quotes-left-colored.svg' %}" alt="" aria-hidden="true">
             <p>표지, 번역, 국가별 표현 검수까지 각각 따로 준비하다 보니 해외 진출의 시작점부터 막막했습니다.</p>
             <strong>@writer</strong>
             <small>웹소설 신인 작가</small>
           </article>
           <article class="story-card">
-            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left.svg' %}" alt="" aria-hidden="true">
+            <img class="quote-icon" src="{% static 'images/landing/icons/quotes-left-colored.svg' %}" data-quote-featured="{% static 'images/landing/icons/quotes-left.svg' %}" data-quote-default="{% static 'images/landing/icons/quotes-left-colored.svg' %}" alt="" aria-hidden="true">
             <p>작품별 세계관과 인물 관계를 한 번에 관리하면서 번역까지 이어지는 도구가 있으면 좋겠다고 생각했습니다.</p>
             <strong>@writer</strong>
             <small>무협 로맨스 작가</small>
@@ -275,7 +275,7 @@
               <span class="faq-arrow" aria-hidden="true"></span>
             </button>
             <div class="faq-answer">
-              <p>작가님이 라이터에 올린 원문(원저작물)의 저작권은 전적으로 작가님께 있습니다. 라이터는 번역과 현지화를 돕는 도구일 뿐, 작가님의 권리를 가져가지 않습니다. 번역 결과물 또한 작가님이 자유롭게 출판하고 활용하실 수 있습니다. 저작권 귀속과 이용 범위에 관한 자세한 사항은 [서비스 이용약관]에서 확인하실 수 있습니다.</p>
+              <p>작가님이 라이터에 올린 원문(원저작물)의 저작권은 전적으로 작가님께 있습니다. 라이터는 번역과 현지화를 돕는 도구일 뿐, 작가님의 권리를 가져가지 않습니다. 번역 결과물 또한 작가님이 자유롭게 출판하고 활용하실 수 있습니다. 저작권 귀속과 이용 범위에 관한 자세한 사항은 <a href="{% url 'pages:terms' %}">[서비스 이용약관]</a>에서 확인하실 수 있습니다.</p>
             </div>
           </article>
         </div>
@@ -297,8 +297,8 @@
       </div>
       <div class="footer-column">
         <strong>약관</strong>
-        <a href="#" aria-label="서비스 이용약관 새 탭 준비중">서비스 이용약관</a>
-        <a href="#" aria-label="개인정보 처리방침 새 탭 준비중">개인정보 처리방침</a>
+        <a href="{% url 'pages:terms' %}">서비스 이용약관</a>
+        <a href="{% url 'pages:privacy' %}">개인정보 처리방침</a>
       </div>
       <div class="footer-column">
         <strong>문의하기</strong>
@@ -309,25 +309,27 @@
   </footer>
 </div>
 
-<div class="login-modal-backdrop" data-login-modal hidden>
-  <section class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title">
+<div class="ui-backdrop login-modal-backdrop" data-login-backdrop hidden></div>
+<section class="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-modal-title" data-login-modal hidden>
     <button class="modal-close" type="button" data-close-login aria-label="로그인 모달 닫기">
       <img src="{% static 'images/landing/icons/modal_close.svg' %}" alt="" aria-hidden="true">
     </button>
     <h2 id="login-modal-title">소셜 계정으로 3초만에 시작하세요.</h2>
     <div class="social-login-list">
-      <a class="social-button social-google" href="#" aria-label="Google 계정으로 계속">
-        Google 계정으로 계속
+      <a class="social-button social-google" href="{% url 'accounts:signup_terms' %}" aria-label="Google 계정으로 계속">
+        <img src="{% static 'images/landing/social/google.svg' %}" alt="" aria-hidden="true">
+        <span>Google 계정으로 계속</span>
       </a>
-      <a class="social-button social-kakao" href="#" aria-label="Kakao 계정으로 계속">
-        Kakao 계정으로 계속
+      <a class="social-button social-kakao" href="{% url 'accounts:signup_terms' %}" aria-label="Kakao 계정으로 계속">
+        <img src="{% static 'images/landing/social/kakao.svg' %}" alt="" aria-hidden="true">
+        <span>Kakao 계정으로 계속</span>
       </a>
-      <a class="social-button social-naver" href="#" aria-label="Naver 계정으로 계속">
-        Naver 계정으로 계속
+      <a class="social-button social-naver" href="{% url 'accounts:signup_terms' %}" aria-label="Naver 계정으로 계속">
+        <img src="{% static 'images/landing/social/naver.svg' %}" alt="" aria-hidden="true">
+        <span>Naver 계정으로 계속</span>
       </a>
     </div>
-  </section>
-</div>
+</section>
 {% endblock %}
 
 {% block extra_js %}
