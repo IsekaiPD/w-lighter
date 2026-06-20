@@ -254,7 +254,7 @@
 .delete-btn:hover { color: #e5484d; background: #fdecec; }
 
 /* ===== 인라인 수정 ===== */
-tr.editing { background: var(--color-primary-soft); }
+tr.editing { background: #f8f8fa; }
 .cell-input {
   width: 100%;
   min-width: 56px;
@@ -273,8 +273,10 @@ tr.editing { background: var(--color-primary-soft); }
   padding: 5px 11px; border-radius: 8px;
   font-size: 12px; font-weight: 600;
 }
-.mini-btn.cancel-btn { background: var(--color-primary-soft); color: var(--color-primary); }
+.mini-btn.cancel-btn { background: #fff; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.mini-btn.cancel-btn:hover { background: #f1f1f4; }
 .mini-btn.save-btn   { background: var(--color-primary); color: #fff; }
+.mini-btn.save-btn:hover { opacity: .9; }
 
 /* ===== 삭제 모달 ===== */
 .char-modal-backdrop {
@@ -297,8 +299,10 @@ tr.editing { background: var(--color-primary-soft); }
   flex: 1; height: 42px; border: none; border-radius: var(--radius-pill);
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.char-modal-btn.cancel  { background: var(--color-primary-soft); color: var(--color-primary); }
+.char-modal-btn.cancel  { background: #fff; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.char-modal-btn.cancel:hover  { background: #f1f1f4; }
 .char-modal-btn.confirm { background: var(--color-primary); color: #fff; }
+.char-modal-btn.confirm:hover { opacity: .9; }
 
 /* ===== 토스트 ===== */
 .toast-wrap {
