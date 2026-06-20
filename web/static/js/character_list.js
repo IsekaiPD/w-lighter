@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const dropdown      = document.getElementById('workSelectDropdown');
   const options       = dropdown.querySelectorAll('.work-option');
   const extractBtn    = document.getElementById('extractBtn');
+  const genreEl = document.getElementById('workSelectGenre');
+  const thumbEl = document.getElementById('workSelectThumb');
   const charEmpty     = document.getElementById('charEmpty');
   const charTableWrap = document.getElementById('charTableWrap');
   const tableBody     = charTableWrap.querySelector('tbody');
@@ -60,6 +62,8 @@ document.addEventListener('DOMContentLoaded', function () {
       opt.classList.add('selected');
       valueEl.textContent = opt.querySelector('.work-option-title').textContent;
       valueEl.style.color = 'var(--color-text)';
+      genreEl.textContent = opt.querySelector('.work-option-genre').textContent;
+      thumbEl.classList.add('has-work');
       selectedWorkId = opt.dataset.workId;
       workSelect.classList.remove('open');
     });

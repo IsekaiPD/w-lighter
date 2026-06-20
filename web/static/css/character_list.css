@@ -62,19 +62,44 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  height: 48px;
-  padding: 0 14px;
+  min-height: 56px;
+  padding: 8px 14px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 12px);
-  color: var(--color-text-muted);
   cursor: pointer;
 }
-.work-select-value {
-  flex: 1; min-width: 0;
+.work-select-thumb {
+  width: 34px; height: 46px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.work-select-thumb.has-work {
+  background: linear-gradient(135deg, #e9e3fb, #cfc3f7);
+  color: transparent;   /* 표지 들어오면 책 아이콘 숨김 */
+}
+.work-select-text {
+  flex: 1;
+  min-width: 0;          /* ← 이게 있어야 말줄임 처리됨 (제목 밀림 방지) */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   text-align: left;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.work-select-value {
   font-size: 14px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;   /* 긴 제목 → ... 처리 */
+}
+.work-select-genre {
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 .work-select-caret { flex-shrink: 0; transition: transform .15s; }
 .work-select.open .work-select-caret { transform: rotate(180deg); }
