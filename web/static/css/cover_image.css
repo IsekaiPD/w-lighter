@@ -421,21 +421,71 @@
 /* ---------- 이미지 그리드 ---------- */
 .cover-image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  align-items: start;
 }
 
+/* 빈 슬롯 */
+.cover-slot-empty {
+  aspect-ratio: 2 / 3;
+  border: 1.5px dashed #B7A9E6;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+}
+.cover-slot-empty svg {
+  color: #B7A9E6;
+}
+.cover-slot-empty span {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* 생성 중 슬롯 */
+.cover-slot-loading {
+  aspect-ratio: 2 / 3;
+  border: 1.5px dashed #B7A9E6;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #F3EEFF;
+}
+.cover-slot-loading span {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.cover-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e9e1ff;
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: cover-spin 0.8s linear infinite;
+}
+@keyframes cover-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 이미지 카드 */
 .cover-img-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .cover-img-wrap {
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 2 / 3;
-  background: var(--color-primary-soft);
+  background: #F3EEFF;
   cursor: pointer;
 }
 .cover-img-wrap img {
@@ -451,43 +501,183 @@
 .cover-img-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(45, 36, 64, 0.35);
+  background: rgba(45, 36, 64, 0.4);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
+  padding-bottom: 14px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.18s;
 }
 .cover-img-wrap:hover .cover-img-overlay {
   opacity: 1;
 }
-.cover-img-overlay svg {
-  color: #fff;
-}
+
+/* 호버 아이콘 버튼 3개 */
 .cover-img-actions {
   display: flex;
   gap: 8px;
 }
-.cover-img-btn {
-  flex: 1;
+.cover-img-icon-btn {
+  width: 32px;
   height: 32px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-weight: 600;
-  border: 1.5px solid #B7A9E6;
+  border-radius: 50%;
+  background: #A89BD4;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.15s, transform 0.1s;
+}
+.cover-img-icon-btn:hover {
+  background: #9488c2;
+  transform: scale(1.08);
+}
+
+/* ---------- 확대 모달 ---------- */
+.cover-preview-backdrop,
+.cover-delete-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 31, 41, 0.5);
+  z-index: 200;
+}
+.cover-preview-backdrop.open,
+.cover-delete-backdrop.open {
+  display: block;
+}
+
+.cover-preview-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
   background: var(--color-surface);
-  color: var(--color-primary);
+  border-radius: 20px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 20px 60px rgba(45, 36, 64, 0.22), var(--shadow-glow-soft);
+  width: 400px;
+}
+.cover-preview-modal.open {
+  display: block;
+}
+
+/* X 버튼이 있는 헤더 행 — 이미지와 분리 */
+.cover-preview-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.cover-preview-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  line-height: 0;
+  color: var(--color-text);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cover-preview-close:hover {
+  color: #000;
+}
+.cover-preview-img-wrap {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #F3EEFF;
+}
+.cover-preview-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- 삭제 확인 모달 ---------- */
+.cover-delete-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 201;
+  background: var(--color-surface);
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  box-shadow: 0 20px 60px rgba(45, 36, 64, 0.22), var(--shadow-glow-soft);
+  width: 420px;
+}
+.cover-delete-modal.open {
+  display: block;
+}
+.cover-delete-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+.cover-delete-desc {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+.cover-delete-actions {
+  display: flex;
+  gap: 12px;
+}
+.cover-delete-btn {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
+  border: none;
 }
-.cover-img-btn:hover {
+.cover-delete-btn.cancel {
   background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
-.cover-img-btn.primary {
+.cover-delete-btn.cancel:hover {
+  background: #e9e1ff;
+}
+.cover-delete-btn.confirm {
   background: var(--color-primary);
-  border-color: var(--color-primary);
   color: #fff;
 }
-.cover-img-btn.primary:hover {
+.cover-delete-btn.confirm:hover {
   background: #5f4aa6;
+}
+
+/* ---------- 토스트 ---------- */
+.cover-toast {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: calc(var(--sidebar-w) + (100vw - var(--sidebar-w)) / 2);
+  transform: translateX(-50%);
+  z-index: 300;
+  height: 48px;
+  padding: 0 28px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(242, 198, 255, 0.78);
+  background: #f9e9fa;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-glow-soft);
+}
+.cover-toast.show {
+  display: flex;
 }

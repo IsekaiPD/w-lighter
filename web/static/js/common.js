@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 서브 아이템 → href 기반으로 active 처리 (href="#" 인 더미는 제외)
   // 실제 URL이 생기면 자동으로 활성화됨
   const subNavMap = {
-    '/character-settings/': 0,
-    '/cover-image/':        1,
-    '/character-relations/': 2,
+    '/characters/': 0,
+    '/covers/':     1,
+    '/relationships/': 2,
   };
   const subItems  = document.querySelectorAll('.sidebar-sub-item');
   const popupItems = document.querySelectorAll('.sidebar-popup-item');
@@ -59,14 +59,21 @@ document.addEventListener('DOMContentLoaded', () => {
       popup.classList.add('visible');
     }
 
-    function hidePopup(e) {
+    let hideTimer = null;
+
+    function scheduleHide(e) {
       if (popup.contains(e?.relatedTarget) || settingsGroup.contains(e?.relatedTarget)) return;
-      popup.classList.remove('visible');
+      hideTimer = setTimeout(() => popup.classList.remove('visible'), 80);
+    }
+
+    function cancelHide() {
+      clearTimeout(hideTimer);
     }
 
     settingsGroup.addEventListener('mouseenter', showPopup);
-    settingsGroup.addEventListener('mouseleave', hidePopup);
-    popup.addEventListener('mouseleave', hidePopup);
+    settingsGroup.addEventListener('mouseleave', scheduleHide);
+    popup.addEventListener('mouseenter', cancelHide);
+    popup.addEventListener('mouseleave', scheduleHide);
   }
 
   // ---------- Profile Dropdown ----------
