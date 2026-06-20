@@ -275,7 +275,7 @@
               <span class="faq-arrow" aria-hidden="true"></span>
             </button>
             <div class="faq-answer">
-              <p>작가님이 라이터에 올린 원문(원저작물)의 저작권은 전적으로 작가님께 있습니다. 라이터는 번역과 현지화를 돕는 도구일 뿐, 작가님의 권리를 가져가지 않습니다. 번역 결과물 또한 작가님이 자유롭게 출판하고 활용하실 수 있습니다. 저작권 귀속과 이용 범위에 관한 자세한 사항은 [서비스 이용약관]에서 확인하실 수 있습니다.</p>
+              <p>작가님이 라이터에 올린 원문(원저작물)의 저작권은 전적으로 작가님께 있습니다. 라이터는 번역과 현지화를 돕는 도구일 뿐, 작가님의 권리를 가져가지 않습니다. 번역 결과물 또한 작가님이 자유롭게 출판하고 활용하실 수 있습니다. 저작권 귀속과 이용 범위에 관한 자세한 사항은 <a href="{% url 'pages:terms' %}">[서비스 이용약관]</a>에서 확인하실 수 있습니다.</p>
             </div>
           </article>
         </div>
@@ -297,8 +297,8 @@
       </div>
       <div class="footer-column">
         <strong>약관</strong>
-        <a href="#" aria-label="서비스 이용약관 새 탭 준비중">서비스 이용약관</a>
-        <a href="#" aria-label="개인정보 처리방침 새 탭 준비중">개인정보 처리방침</a>
+        <a href="{% url 'pages:terms' %}">서비스 이용약관</a>
+        <a href="{% url 'pages:privacy' %}">개인정보 처리방침</a>
       </div>
       <div class="footer-column">
         <strong>문의하기</strong>
