@@ -180,4 +180,74 @@ document.addEventListener('DOMContentLoaded', () => {
       directContentCounter.textContent = `${len.toLocaleString('ko-KR')}/8,000`;
     });
   }
+
+  /* ===== 회차 등록 버튼 ===== */
+  const submitBtn = document.getElementById('epRegSubmitBtn');
+
+  submitBtn?.addEventListener('click', async () => {
+    // 현재 활성 탭 확인
+    const activePane = document.querySelector('.ep-reg-pane.active');
+    const isDirectTab = activePane?.id === 'tab-direct';
+
+    if (!isDirectTab) {
+      // 파일 업로드 탭: 대기열 항목을 순서대로 등록
+      if (queueItems.length === 0) {
+        alert('등록 대기열이 비어있습니다. 파일을 먼저 추가해주세요.');
+        return;
+      }
+      alert('파일 업로드 탭 등록은 준비 중입니다. 직접 입력 탭을 이용해주세요.');
+      return;
+    }
+
+    // 직접 입력 탭
+    const title   = directTitle?.value.trim() ?? '';
+    const content = directContent?.value.trim() ?? '';
+
+    if (!title) {
+      directTitle.style.borderColor = '#ff2d55';
+      directTitle.focus();
+      return;
+    }
+    if (!content) {
+      directContent.style.borderColor = '#ff2d55';
+      directContent.focus();
+      return;
+    }
+
+    const workPk = submitBtn.dataset.workPk;
+    submitBtn.disabled = true;
+    submitBtn.textContent = '등록 중…';
+
+    try {
+      const fd = new FormData();
+      fd.append('title', title);
+      fd.append('content', content);
+      fd.append('csrfmiddlewaretoken', getCsrfToken());
+
+      const res  = await fetch(`/works/${workPk}/episodes/new/`, { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.ok) {
+        // 상세 페이지로 이동
+        window.location.href = `/works/${workPk}/`;
+      } else {
+        if (data.errors?.title)   directTitle.style.borderColor   = '#ff2d55';
+        if (data.errors?.content) directContent.style.borderColor = '#ff2d55';
+      }
+    } catch (e) {
+      console.error('회차 등록 오류:', e);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '회차 등록';
+    }
+  });
+
+  function getCsrfToken() {
+    let val = null;
+    document.cookie.split(';').forEach(c => {
+      const t = c.trim();
+      if (t.startsWith('csrftoken=')) val = decodeURIComponent(t.slice('csrftoken='.length));
+    });
+    return val;
+  }
 });

@@ -74,42 +74,42 @@
 
   <!-- Library Panel -->
   <div class="library-panel">
-    <div class="library-count">총 1권</div>
+    <div class="library-count">총 {{ works|length }}권</div>
 
-    <!-- Works Grid (더미 데이터) -->
+    {% if works %}
     <div class="works-grid">
-
-      <!-- 더미 카드 1: 표지 없음 -->
-      <div class="work-card" data-work-id="1">
-        <a href="/works/1/" class="work-cover work-cover-empty" aria-label="작품 상세"></a>
+      {% for work in works %}
+      <div class="work-card" data-work-id="{{ work.work_id }}">
+        <a href="/works/{{ work.work_id }}/" class="work-cover work-cover-empty" aria-label="작품 상세"></a>
         <div class="work-info">
           <div class="work-card-header">
-            <a href="/works/1/"><h3 class="work-title">별빛 아래 잊힌 왕국</h3></a>
+            <a href="/works/{{ work.work_id }}/"><h3 class="work-title">{{ work.title }}</h3></a>
             <div class="work-menu-wrap">
-              <button class="work-kebab-btn" data-menu="workMenu1" aria-label="메뉴">
+              <button class="work-kebab-btn" data-menu="workMenu{{ work.work_id }}" aria-label="메뉴">
                 <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
                   <circle cx="2" cy="2" r="2"/>
                   <circle cx="2" cy="9" r="2"/>
                   <circle cx="2" cy="16" r="2"/>
                 </svg>
               </button>
-              <div class="work-menu-dropdown" id="workMenu1">
+              <div class="work-menu-dropdown" id="workMenu{{ work.work_id }}">
                 <button class="work-menu-item">작품 정보 수정</button>
                 <button class="work-menu-item work-menu-delete">작품 삭제</button>
               </div>
             </div>
           </div>
-          <p class="work-meta">필명: 킹왕짱웹소설작가&nbsp;&nbsp;|&nbsp;&nbsp;장르: 판타지</p>
-          <p class="work-episodes"><strong>총 3화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 3화&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 1시간 전</p>
-          <div class="work-langs">
-            <span class="lang-tag">EN</span>
-            <span class="lang-tag">JP</span>
-            <span class="lang-tag">TH</span>
-          </div>
+          <p class="work-meta">필명: {{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;장르: {{ work.genre }}</p>
+          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 0화</p>
+          <div class="work-langs"></div>
         </div>
       </div>
-
+      {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+      <p>아직 등록된 작품이 없어요.</p>
+    </div>
+    {% endif %}
 
   </div>
 
@@ -263,4 +263,26 @@
 
 {% block extra_js %}
 <script src="{% static 'js/library.js' %}"></script>
+<script>
+(function() {
+  const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
+
+  // ===== 작품 삭제 =====
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.work-menu-delete');
+    if (!btn) return;
+    const card   = btn.closest('.work-card');
+    const workId = card?.dataset.workId;
+    if (!workId) return;
+    if (!confirm('이 작품을 삭제하시겠습니까?\n회차 데이터도 모두 삭제됩니다.')) return;
+    const res  = await fetch(`/works/${workId}/delete/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await res.json();
+    if (data.ok) location.reload();
+    else alert('삭제에 실패했습니다.');
+  });
+})();
+</script>
 {% endblock %}

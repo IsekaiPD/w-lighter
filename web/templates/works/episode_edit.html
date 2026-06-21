@@ -12,8 +12,12 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="page-title-group">
-      <h1 class="page-title">회차 수정</h1>
-      <p class="page-desc">입력한 회차를 수정해 보세요. 버전은 최대 3개까지 저장됩니다.</p>
+      <h1 class="page-title ep-breadcrumb">
+        <a href="{% url 'works:work_detail' pk=work.work_id %}" class="breadcrumb-work">{{ work.title }}</a>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(-90deg);flex-shrink:0;color:var(--color-text)"><path d="M6 9l6 6 6-6"/></svg>
+        <span>회차 수정</span>
+      </h1>
+      <p class="page-desc">입력한 회차를 수정해 보세요.</p>
     </div>
     <div class="header-utils">
       <a href="/credits/charge" class="credit-chip">18,000 C</a>
@@ -34,19 +38,21 @@
     <!-- 직접 입력 -->
     <div class="ep-reg-pane active" id="tab-direct">
 
-      <!-- 회차 제목 + 회차 번호 (한 행) -->
+      <!-- 회차 제목 + 회차 번호 -->
       <div class="ep-reg-direct-top-row">
         <div class="ep-reg-direct-title-group">
           <label class="ep-reg-label">회차 제목</label>
           <div class="ep-reg-input-counter-wrap">
-            <input class="ep-reg-input ep-reg-title-input-d" type="text" maxlength="30" id="directTitle" value="우리 엄마 최고야">
-            <span class="ep-reg-inner-counter" id="directTitleCounter">9/30</span>
+            <input class="ep-reg-input ep-reg-title-input-d" type="text" maxlength="30" id="directTitle"
+              value="{{ episode.title }}">
+            <span class="ep-reg-inner-counter" id="directTitleCounter">{{ episode.title|length }}/30</span>
           </div>
         </div>
         <div class="ep-reg-direct-number-group">
           <label class="ep-reg-label">회차 번호</label>
           <div class="ep-reg-number-wrap">
-            <input class="ep-reg-input ep-reg-number-input" type="number" min="1" id="directNumber" value="2" readonly>
+            <input class="ep-reg-input ep-reg-number-input" type="number" min="1" id="directNumber"
+              value="{{ ep_num }}" readonly>
             <span class="ep-reg-number-suffix">화</span>
           </div>
         </div>
@@ -56,11 +62,9 @@
       <div class="ep-reg-content-section">
         <h3 class="ep-reg-col-title">원문</h3>
         <div class="ep-reg-textarea-wrap">
-          <textarea class="ep-reg-input ep-reg-content-input" maxlength="8000" id="directContent">학벌, 어학 성적, 자격증까지 영혼을 갈아 넣었지만 돌아오는 건 '귀하의 뛰어난 역량에도 불구하고…'로 시작하는 탈락 문자뿐인 평범한 취준생 강민우. 편의점 아르바이트를 마치고 쓰러지듯 잠든 그는, 눈을 떠보니 난생처음 보는 판타지 세계의 거리에 서 있었다.
-
-서브컬처로 단련된 민우는 직감했다. '드디어 나에게도 기연이 찾아왔구나!' 그러나 기대와 달리 눈앞에 홀로그램 상태창이 떠오르는 일도, 드래곤을 때려잡을 사기급 치트 능력이 부여되는 일도 없었다. 마력은 제로, 칼 한 번 쥐어본 적 없는 민우가 가진 것이라곤 오직 현대에서 밤새며 온갖 공모전과 대외 활동, 팀 프로젝트로 뼈를 깎으며 체득한 '눈물겨운 오피스 실무 능력'과 '보고서 작성 및 커뮤니케이션 스킬'뿐이었다.</textarea>
+          <textarea class="ep-reg-input ep-reg-content-input" maxlength="8000" id="directContent">{{ episode.original_text }}</textarea>
           <div class="ep-reg-counter-bar">
-            <span class="ep-reg-content-counter" id="directContentCounter">0/8,000</span>
+            <span class="ep-reg-content-counter" id="directContentCounter">{{ episode.original_text|length|stringformat:"s" }}/8,000</span>
           </div>
         </div>
       </div>
@@ -69,7 +73,9 @@
 
     <!-- 하단 수정 버튼 -->
     <div class="ep-reg-footer">
-      <button class="ep-reg-submit-btn">회차 수정</button>
+      <button class="ep-reg-submit-btn" id="epEditSubmitBtn"
+        data-work-pk="{{ work.work_id }}"
+        data-episode-pk="{{ episode.episode_id }}">회차 수정</button>
     </div>
 
   </div>
