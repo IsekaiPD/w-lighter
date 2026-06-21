@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>야구소설 테스트 - 인물 관계도</title>
+<style>
+:root {
+  --bg: #f7f3ec;
+  --panel: #fffaf2;
+  --ink: #2c241d;
+  --muted: #796b5c;
+  --line: #b99b72;
+  --line-soft: rgba(185, 155, 114, .42);
+  --main: #47321f;
+  --card: #fffdf8;
+  --shadow: 0 14px 36px rgba(56, 39, 20, .13);
+  --radius: 22px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at top left, #fff8ec 0, var(--bg) 42%, #efe4d4 100%);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.kicker { color: var(--muted); font-size: 13px; letter-spacing: .08em; font-weight: 800; }
+h1 { margin: 6px 0 8px; font-size: 34px; line-height: 1.15; }
+.summary { margin: 0; color: var(--muted); font-size: 15px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 250, 242, .82);
+  border: 1px solid rgba(94, 72, 45, .12);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.graph-card {
+  position: relative;
+  width: 100%;
+  min-height: 760px;
+  background: rgba(255, 250, 242, .78);
+  border: 1px solid rgba(94, 72, 45, .14);
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.graph-inner {
+  position: relative;
+  width: 1180px;
+  height: 760px;
+  transform-origin: top left;
+}
+.lines { position: absolute; inset: 0; width: 1180px; height: 760px; z-index: 1; }
+.node {
+  position: absolute;
+  width: 178px;
+  min-height: 112px;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  background: linear-gradient(180deg, var(--card), #fff6e8);
+  border: 1px solid rgba(88, 61, 30, .16);
+  border-radius: var(--radius);
+  padding: 14px 14px 12px;
+  box-shadow: 0 12px 28px rgba(47, 33, 17, .12);
+}
+.node.main {
+  width: 206px;
+  min-height: 128px;
+  background: linear-gradient(180deg, #fff8ec, #ead4b5);
+  border-color: rgba(92, 58, 25, .25);
+}
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  background: #e7d3b8;
+  color: var(--main);
+  margin-bottom: 9px;
+}
+.node.main .avatar { width: 48px; height: 48px; background: #61452a; color: white; }
+.node img.avatar-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 9px;
+  border: 2px solid rgba(97, 69, 42, .18);
+}
+.name { font-size: 18px; font-weight: 900; line-height: 1.15; }
+.role { margin-top: 5px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.desc { margin-top: 8px; font-size: 12px; color: #5f5144; line-height: 1.45; }
+.edge-label-bg { fill: rgba(255, 250, 242, .92); stroke: rgba(151, 111, 66, .24); }
+.edge-label { font-size: 13px; font-weight: 900; fill: #5a3d22; text-anchor: middle; dominant-baseline: central; }
+.edge-line { stroke: var(--line); stroke-width: 2.8; fill: none; stroke-linecap: round; }
+.edge-line.conflict { stroke: #a45b42; }
+.edge-line.ally, .edge-line.partnership, .edge-line.protection { stroke: #6c8a62; }
+.edge-line.romance { stroke: #b56b82; }
+.edge-line.hierarchy, .edge-line.mentorship { stroke: #7562a0; }
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+.panel {
+  background: rgba(255, 250, 242, .82);
+  border: 1px solid rgba(94, 72, 45, .13);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 10px 26px rgba(47, 33, 17, .08);
+}
+.panel h2 { margin: 0 0 12px; font-size: 18px; }
+.item { padding: 12px 0; border-top: 1px solid rgba(94, 72, 45, .1); }
+.item:first-of-type { border-top: 0; }
+.item-title { font-weight: 900; }
+.item-meta { margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+.group-chip { display: inline-block; margin: 4px 6px 0 0; padding: 5px 8px; border-radius: 999px; background: #efe0cb; font-size: 12px; font-weight: 800; color: #5e472e; }
+details { margin-top: 18px; }
+summary { cursor: pointer; color: var(--muted); font-weight: 800; }
+pre { overflow-x: auto; background: #2d2720; color: #fff8ec; border-radius: 18px; padding: 16px; font-size: 12px; }
+.notice { margin-top: 14px; color: var(--muted); font-size: 12px; }
+.warning { background: #fff3d9; border: 1px solid rgba(164, 91, 66, .18); color: #7e3f27; padding: 10px 12px; border-radius: 14px; margin-top: 8px; font-size: 13px; }
+@media (max-width: 900px) {
+  .header { flex-direction: column; }
+  .content-grid { grid-template-columns: 1fr; }
+  .graph-card { overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="kicker">HTML RELATION MAP</div>
+      <h1>야구소설 테스트</h1>
+      <p class="summary">부상을 딛고 대구 킹즈로 트레이드된 베테랑 투수 강현우를 중심으로, 옛 연인 한연주, 친정팀 네오 타이탄즈와의 갈등, 킹즈 내 코치·포수들과 얽힌 갈등과 재기 서사가 전개된다.</p>
+    </div>
+    <div class="badge">중심 인물 <strong>강현우</strong></div>
+  </div>
+
+  <section class="graph-card">
+    <div class="graph-inner">
+      <svg class="lines" viewBox="0 0 1180 760" aria-hidden="true">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b99b72" /></marker></defs>
+<path class="edge-line romance" d="M 590.0 380.0 L 276.3 233.1"></path>
+<rect class="edge-label-bg" x="404.2" y="290.6" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="433.2" y="306.6">연인</text>
+<path class="edge-line hierarchy" d="M 590.0 380.0 L 764.1 592.3" marker-end="url(#arrow)"></path>
+<rect class="edge-label-bg" x="648.0" y="470.1" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="677.0" y="486.1">상사</text>
+<path class="edge-line partnership" d="M 590.0 380.0 L 590.0 144.4"></path>
+<rect class="edge-label-bg" x="561.0" y="246.2" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="590.0" y="262.2">동료</text>
+<path class="edge-line ally" d="M 590.0 380.0 L 198.9 432.4"></path>
+<rect class="edge-label-bg" x="365.4" y="390.2" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="394.4" y="406.2">동료</text>
+<path class="edge-line mentorship" d="M 590.0 380.0 L 981.1 432.4" marker-end="url(#arrow)"></path>
+<rect class="edge-label-bg" x="756.6" y="390.2" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="785.6" y="406.2">스승</text>
+<path class="edge-line protection" d="M 590.0 380.0 L 903.7 233.1"></path>
+<rect class="edge-label-bg" x="716.8" y="290.6" width="60" height="32" rx="15"></rect>
+<text class="edge-label" x="746.8" y="306.6">조력자</text>
+<path class="edge-line partnership" d="M 276.3 233.1 L 415.9 592.3"></path>
+<rect class="edge-label-bg" x="316.1" y="396.7" width="60" height="32" rx="15"></rect>
+<text class="edge-label" x="346.1" y="412.7">파트너</text>
+<path class="edge-line hierarchy" d="M 764.1 592.3 L 415.9 592.3"></path>
+<rect class="edge-label-bg" x="561.0" y="576.3" width="58" height="32" rx="15"></rect>
+<text class="edge-label" x="590.0" y="592.3">협력</text>
+</svg>
+      <article class="node main" style="left:590.0px; top:380.0px;">
+  <div class="avatar">강</div>
+  <div class="name">강현우</div>
+  <div class="role">투수(마무리)</div>
+  <div class="desc">구속 하락과 어깨 부상 이후 트레이드된 31세 베테랑 마무리, 전성기 복원을 향한 인물.</div>
+</article>
+<article class="node" style="left:590.0px; top:144.4px;">
+  <div class="avatar">강</div>
+  <div class="name">강민호</div>
+  <div class="role">포수·주장</div>
+  <div class="desc">대구 제우스 킹즈의 베테랑 포수 겸 주장, 현우의 새 배터리 파트너.</div>
+</article>
+<article class="node" style="left:903.7px; top:233.1px;">
+  <div class="avatar">김</div>
+  <div class="name">김 박사</div>
+  <div class="role">재활의사</div>
+  <div class="desc">현우의 오랜 재활을 담당한 의료진, 어깨 상태를 진단·관리한다 (이름은 작품에 &#x27;김 박사&#x27;로 표기됨).</div>
+</article>
+<article class="node" style="left:981.1px; top:432.4px;">
+  <div class="avatar">김</div>
+  <div class="name">김태형</div>
+  <div class="role">투수코치</div>
+  <div class="desc">대구 킹즈의 투수코치, 현우의 훈련과 등판을 관리하는 코칭 스태프.</div>
+</article>
+<article class="node" style="left:764.1px; top:592.3px;">
+  <div class="avatar">송</div>
+  <div class="name">송영진</div>
+  <div class="role">단장</div>
+  <div class="desc">서울 네오 타이탄즈 단장, 구단의 트레이드 결정을 내린 인물.</div>
+</article>
+<article class="node" style="left:415.9px; top:592.3px;">
+  <div class="avatar">이</div>
+  <div class="name">이종학</div>
+  <div class="role">구단 대주주</div>
+  <div class="desc">대구 제우스 킹즈의 대주주(가전 계열사 부사장), 연주와 구단 연계 협업을 논의한다.</div>
+</article>
+<article class="node" style="left:198.9px; top:432.4px;">
+  <div class="avatar">주</div>
+  <div class="name">주형</div>
+  <div class="role">포수(후배)</div>
+  <div class="desc">네오 타이탄즈의 포수이자 현우의 친한 후배, 평소 연락을 주고받는 관계.</div>
+</article>
+<article class="node" style="left:276.3px; top:233.1px;">
+  <div class="avatar">한</div>
+  <div class="name">한연주</div>
+  <div class="role">스타트업 CEO</div>
+  <div class="desc">넥스트랩 대표이자 현우의 7년 연인, 사업적 영향력으로 현우 곁을 지키려 한다.</div>
+</article>
+    </div>
+  </section>
+
+  <div class="content-grid">
+    <section class="panel">
+      <h2>관계 목록</h2>
+      <div class="item"><div class="item-title">강현우 ↔ 한연주 · 연인</div><div class="item-meta">7년간의 연인 관계였으나 현재는 성격 차이·자존심 문제로 잠정적 이별 상태.</div></div>
+<div class="item"><div class="item-title">강현우 → 송영진 · 상사</div><div class="item-meta">송영진 단장의 트레이드 결정으로 네오에서 킹즈로 이적하게 됨.</div></div>
+<div class="item"><div class="item-title">강현우 ↔ 강민호 · 동료</div><div class="item-meta">킹즈의 주전 포수이자 새 배터리 파트너로 경기에서 호흡을 맞춘다.</div></div>
+<div class="item"><div class="item-title">강현우 ↔ 주형 · 동료</div><div class="item-meta">네오 시절 친한 후배 포수, 평소 연락을 주고받는 사이.</div></div>
+<div class="item"><div class="item-title">강현우 → 김태형 · 스승</div><div class="item-meta">킹즈의 투수코치가 현우의 등판·전력 운용을 지도한다.</div></div>
+<div class="item"><div class="item-title">강현우 ↔ 김 박사 · 조력자</div><div class="item-meta">오랜 재활 의사로 어깨 상태를 진단·관리해 온 의료진.</div></div>
+<div class="item"><div class="item-title">한연주 ↔ 이종학 · 파트너</div><div class="item-meta">연주는 넥스트랩으로 대구 킹즈(대주주 이종학)와 협업을 논의하며 사업적 관계를 맺는다.</div></div>
+<div class="item"><div class="item-title">송영진 ↔ 이종학 · 협력</div><div class="item-meta">단장(송영진)과 구단 대주주(이종학)는 구단 운영·의사결정에서 상호 연관이 있다(서술상 비즈니스 관계).</div></div>
+    </section>
+    <section class="panel">
+      <h2>그룹/소속</h2>
+      <div class="item"><div class="item-title">넥스트랩 <span class="item-meta">(company)</span></div><div><span class="group-chip">한연주</span></div><div class="item-meta">한연주가 이끄는 에듀테크 스타트업, 구단과 지역 협업을 추진한다.</div></div>
+<div class="item"><div class="item-title">대구 제우스 킹즈 <span class="item-meta">(team)</span></div><div><span class="group-chip">강현우</span><span class="group-chip">강민호</span><span class="group-chip">김태형</span><span class="group-chip">이종학</span></div><div class="item-meta">우승권 상위팀으로 현우를 영입해 불펜을 강화한 구단(포수·코치·대주주 포함).</div></div>
+<div class="item"><div class="item-title">서울 네오 타이탄즈 <span class="item-meta">(team)</span></div><div><span class="group-chip">송영진</span><span class="group-chip">주형</span></div><div class="item-meta">현우의 원 소속팀이자 그를 트레이드한 구단(단장·후배 포수 등 포함).</div></div>
+      <div class="warning">이야기 내에 등장하는 &#x27;전광판의 시스템&#x27;이나 익명 발신자의 제안 등은 초현실적·미지의 요소로 인물 관계로 확정하기 어렵습니다; 관련 인물(익명 발신자)은 식별 불가하여 관계도에 포함하지 않았습니다.</div><div class="warning">한연주와 강현우의 관계는 본편에서 감정의 균열(헤어짐)과 복합적 애정 표현이 공존하므로 상태가 불확실합니다(향후 화해 가능성 있음).</div><div class="warning">김 박사는 작품에서 &#x27;김 박사&#x27;로만 표기되어 전체 이름이 불명확합니다.</div><div class="warning">송영진의 트레이드 결정에는 구단 내 운영진·재정적 판단이 작용한 것으로 보이나 내부 의사결정의 구체적 동기(단독 결정 여부)는 텍스트만으로 완전히 단정하기 어렵습니다.</div>
+      <p class="notice">AI가 추출한 관계 후보입니다. 최종 반영 전 사용자가 검토해야 합니다.</p>
+    </section>
+  </div>
+
+  <details>
+    <summary>원본 JSON 보기</summary>
+    <pre>{
+  &quot;work_title&quot;: &quot;야구소설 테스트&quot;,
+  &quot;main_character&quot;: &quot;강현우&quot;,
+  &quot;summary&quot;: &quot;부상을 딛고 대구 킹즈로 트레이드된 베테랑 투수 강현우를 중심으로, 옛 연인 한연주, 친정팀 네오 타이탄즈와의 갈등, 킹즈 내 코치·포수들과 얽힌 갈등과 재기 서사가 전개된다.&quot;,
+  &quot;characters&quot;: [
+    {
+      &quot;id&quot;: &quot;char_001&quot;,
+      &quot;name&quot;: &quot;강현우&quot;,
+      &quot;role&quot;: &quot;투수(마무리)&quot;,
+      &quot;description&quot;: &quot;구속 하락과 어깨 부상 이후 트레이드된 31세 베테랑 마무리, 전성기 복원을 향한 인물.&quot;,
+      &quot;is_main&quot;: true,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_004&quot;,
+      &quot;name&quot;: &quot;강민호&quot;,
+      &quot;role&quot;: &quot;포수·주장&quot;,
+      &quot;description&quot;: &quot;대구 제우스 킹즈의 베테랑 포수 겸 주장, 현우의 새 배터리 파트너.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_007&quot;,
+      &quot;name&quot;: &quot;김 박사&quot;,
+      &quot;role&quot;: &quot;재활의사&quot;,
+      &quot;description&quot;: &quot;현우의 오랜 재활을 담당한 의료진, 어깨 상태를 진단·관리한다 (이름은 작품에 &#x27;김 박사&#x27;로 표기됨).&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_006&quot;,
+      &quot;name&quot;: &quot;김태형&quot;,
+      &quot;role&quot;: &quot;투수코치&quot;,
+      &quot;description&quot;: &quot;대구 킹즈의 투수코치, 현우의 훈련과 등판을 관리하는 코칭 스태프.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_003&quot;,
+      &quot;name&quot;: &quot;송영진&quot;,
+      &quot;role&quot;: &quot;단장&quot;,
+      &quot;description&quot;: &quot;서울 네오 타이탄즈 단장, 구단의 트레이드 결정을 내린 인물.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_008&quot;,
+      &quot;name&quot;: &quot;이종학&quot;,
+      &quot;role&quot;: &quot;구단 대주주&quot;,
+      &quot;description&quot;: &quot;대구 제우스 킹즈의 대주주(가전 계열사 부사장), 연주와 구단 연계 협업을 논의한다.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_005&quot;,
+      &quot;name&quot;: &quot;주형&quot;,
+      &quot;role&quot;: &quot;포수(후배)&quot;,
+      &quot;description&quot;: &quot;네오 타이탄즈의 포수이자 현우의 친한 후배, 평소 연락을 주고받는 관계.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;char_002&quot;,
+      &quot;name&quot;: &quot;한연주&quot;,
+      &quot;role&quot;: &quot;스타트업 CEO&quot;,
+      &quot;description&quot;: &quot;넥스트랩 대표이자 현우의 7년 연인, 사업적 영향력으로 현우 곁을 지키려 한다.&quot;,
+      &quot;is_main&quot;: false,
+      &quot;importance&quot;: 1,
+      &quot;image_path&quot;: &quot;&quot;
+    }
+  ],
+  &quot;groups&quot;: [
+    {
+      &quot;id&quot;: &quot;group_003&quot;,
+      &quot;name&quot;: &quot;넥스트랩&quot;,
+      &quot;group_type&quot;: &quot;company&quot;,
+      &quot;members&quot;: [
+        &quot;char_002&quot;
+      ],
+      &quot;description&quot;: &quot;한연주가 이끄는 에듀테크 스타트업, 구단과 지역 협업을 추진한다.&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;id&quot;: &quot;group_002&quot;,
+      &quot;name&quot;: &quot;대구 제우스 킹즈&quot;,
+      &quot;group_type&quot;: &quot;team&quot;,
+      &quot;members&quot;: [
+        &quot;char_001&quot;,
+        &quot;char_004&quot;,
+        &quot;char_006&quot;,
+        &quot;char_008&quot;
+      ],
+      &quot;description&quot;: &quot;우승권 상위팀으로 현우를 영입해 불펜을 강화한 구단(포수·코치·대주주 포함).&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;id&quot;: &quot;group_001&quot;,
+      &quot;name&quot;: &quot;서울 네오 타이탄즈&quot;,
+      &quot;group_type&quot;: &quot;team&quot;,
+      &quot;members&quot;: [
+        &quot;char_003&quot;,
+        &quot;char_005&quot;
+      ],
+      &quot;description&quot;: &quot;현우의 원 소속팀이자 그를 트레이드한 구단(단장·후배 포수 등 포함).&quot;,
+      &quot;importance&quot;: 1
+    }
+  ],
+  &quot;relations&quot;: [
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_002&quot;,
+      &quot;relation&quot;: &quot;연인&quot;,
+      &quot;description&quot;: &quot;7년간의 연인 관계였으나 현재는 성격 차이·자존심 문제로 잠정적 이별 상태.&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;romance&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_003&quot;,
+      &quot;relation&quot;: &quot;상사&quot;,
+      &quot;description&quot;: &quot;송영진 단장의 트레이드 결정으로 네오에서 킹즈로 이적하게 됨.&quot;,
+      &quot;direction&quot;: &quot;one_way&quot;,
+      &quot;style&quot;: &quot;hierarchy&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_004&quot;,
+      &quot;relation&quot;: &quot;동료&quot;,
+      &quot;description&quot;: &quot;킹즈의 주전 포수이자 새 배터리 파트너로 경기에서 호흡을 맞춘다.&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;partnership&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_005&quot;,
+      &quot;relation&quot;: &quot;동료&quot;,
+      &quot;description&quot;: &quot;네오 시절 친한 후배 포수, 평소 연락을 주고받는 사이.&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;ally&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_006&quot;,
+      &quot;relation&quot;: &quot;스승&quot;,
+      &quot;description&quot;: &quot;킹즈의 투수코치가 현우의 등판·전력 운용을 지도한다.&quot;,
+      &quot;direction&quot;: &quot;one_way&quot;,
+      &quot;style&quot;: &quot;mentorship&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_001&quot;,
+      &quot;target&quot;: &quot;char_007&quot;,
+      &quot;relation&quot;: &quot;조력자&quot;,
+      &quot;description&quot;: &quot;오랜 재활 의사로 어깨 상태를 진단·관리해 온 의료진.&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;protection&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_002&quot;,
+      &quot;target&quot;: &quot;char_008&quot;,
+      &quot;relation&quot;: &quot;파트너&quot;,
+      &quot;description&quot;: &quot;연주는 넥스트랩으로 대구 킹즈(대주주 이종학)와 협업을 논의하며 사업적 관계를 맺는다.&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;partnership&quot;,
+      &quot;importance&quot;: 1
+    },
+    {
+      &quot;source&quot;: &quot;char_003&quot;,
+      &quot;target&quot;: &quot;char_008&quot;,
+      &quot;relation&quot;: &quot;협력&quot;,
+      &quot;description&quot;: &quot;단장(송영진)과 구단 대주주(이종학)는 구단 운영·의사결정에서 상호 연관이 있다(서술상 비즈니스 관계).&quot;,
+      &quot;direction&quot;: &quot;both&quot;,
+      &quot;style&quot;: &quot;hierarchy&quot;,
+      &quot;importance&quot;: 1
+    }
+  ],
+  &quot;warnings&quot;: [
+    &quot;이야기 내에 등장하는 &#x27;전광판의 시스템&#x27;이나 익명 발신자의 제안 등은 초현실적·미지의 요소로 인물 관계로 확정하기 어렵습니다; 관련 인물(익명 발신자)은 식별 불가하여 관계도에 포함하지 않았습니다.&quot;,
+    &quot;한연주와 강현우의 관계는 본편에서 감정의 균열(헤어짐)과 복합적 애정 표현이 공존하므로 상태가 불확실합니다(향후 화해 가능성 있음).&quot;,
+    &quot;김 박사는 작품에서 &#x27;김 박사&#x27;로만 표기되어 전체 이름이 불명확합니다.&quot;,
+    &quot;송영진의 트레이드 결정에는 구단 내 운영진·재정적 판단이 작용한 것으로 보이나 내부 의사결정의 구체적 동기(단독 결정 여부)는 텍스트만으로 완전히 단정하기 어렵습니다.&quot;
+  ]
+}</pre>
+  </details>
+</div>
+</body>
+</html>

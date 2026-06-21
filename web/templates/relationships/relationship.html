@@ -158,11 +158,38 @@
   </div>
 </div>
 
+<!-- 관계도 상세 조회 모달 -->
+<div class="rel-detail-backdrop" id="relDetailBackdrop"></div>
+<div class="rel-detail-modal" id="relDetailModal">
+  <div class="rel-detail-header">
+    <div class="rel-detail-header-left">
+      <h2 class="rel-detail-title" id="relDetailTitle">관계도 ver.1</h2>
+      <p class="rel-detail-date" id="relDetailDate">생성일시 —</p>
+    </div>
+    <div class="rel-detail-header-right">
+      <button class="rel-detail-pdf-btn" id="relDetailPdfBtn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        PDF 다운로드
+      </button>
+      <button class="rel-detail-delete-btn" id="relDetailDeleteBtn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        관계도 삭제
+      </button>
+      <button class="rel-detail-close" id="relDetailClose" type="button" aria-label="닫기">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="rel-detail-body">
+    <iframe class="rel-detail-frame" id="relDetailFrame" src="" title="관계도 미리보기"></iframe>
+  </div>
+</div>
+
 <!-- 삭제 확인 모달 -->
 <div class="rel-delete-backdrop" id="relDeleteBackdrop"></div>
 <div class="rel-delete-modal" id="relDeleteModal">
   <h3 class="rel-delete-title">이 관계도를 삭제할까요?</h3>
-  <p class="rel-delete-desc">선택한 관계도가 삭제되며 복구할 수 없습니다. 재추출 시 시간이 소요됩니다.</p>
+  <p class="rel-delete-desc">선택한 관계도가 삭제되며 복구할 수 없습니다. 재생성 시 크레딧이 소모됩니다.</p>
   <div class="rel-delete-actions">
     <button class="rel-delete-btn cancel" id="relDeleteCancel">취소하기</button>
     <button class="rel-delete-btn confirm" id="relDeleteConfirm">삭제하기</button>

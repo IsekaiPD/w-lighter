@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nav = el.dataset.nav;
     const isActive =
       (nav === 'library'      && (path.startsWith('/works') || path === '/')) ||
-      (nav === 'localization' && path.startsWith('/localization')) ||
+      (nav === 'localization' && path.startsWith('/guides')) ||
       (nav === 'work-settings' && subActive);
     if (isActive && !(nav === 'work-settings' && subActive)) {
       el.classList.add('active');

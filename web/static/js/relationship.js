@@ -13,14 +13,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_DIAGRAMS = 3;
   const MAX_CHARS    = 10;
 
+  // 예시 HTML 파일 URL (Django static)
+  const EXAMPLE_HTML_URL = '/static/examples/rel_example_001.html';
+
   // 작품별 관계도 목록 (최신순)
   const mockDiagrams = {
     '1': [
-      { id: 'r1', version: 2, createdAt: '2026.06.10 12:12' },
-      { id: 'r2', version: 1, createdAt: '2026.06.09 16:30' },
+      { id: 'r1', version: 2, createdAt: '2026.06.10 12:12', htmlUrl: EXAMPLE_HTML_URL },
+      { id: 'r2', version: 1, createdAt: '2026.06.09 16:30', htmlUrl: EXAMPLE_HTML_URL },
     ],
     '2': [],
-    '3': [{ id: 'r3', version: 1, createdAt: '2026.06.18 09:00' }],
+    '3': [{ id: 'r3', version: 1, createdAt: '2026.06.18 09:00', htmlUrl: EXAMPLE_HTML_URL }],
     '4': [],
   };
 
@@ -198,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const workId  = selectedWorkId; // 클로저 스냅샷 (드롭다운 변경 영향 방지)
     const existing = mockDiagrams[workId] || [];
     if (existing.length >= MAX_DIAGRAMS) {
-      showToast('※ 최대 3개까지 저장 가능합니다. 기존 항목을 삭제 후 다시 시도해주세요.');
+      showToast('※ 캐릭터 관계도는 최대 3개까지 생성 가능합니다.');
       return;
     }
 
@@ -219,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const now     = new Date();
       const pad = n => String(n).padStart(2, '0');
       const dateStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      mockDiagrams[workId] = [{ id: `mock_${Date.now()}`, version: maxVer + 1, createdAt: dateStr }, ...existing];
+      mockDiagrams[workId] = [{ id: `mock_${Date.now()}`, version: maxVer + 1, createdAt: dateStr, htmlUrl: EXAMPLE_HTML_URL }, ...existing];
       renderList(workId);
       generateBtn.disabled = false;
     }, 3000);
@@ -296,12 +299,71 @@ document.addEventListener('DOMContentLoaded', () => {
     statPersons.textContent = `${selectedCharIds.size}명`;
   });
 
-  // ---------- 관계도 행 클릭 ----------
+  // ---------- 관계도 상세 조회 모달 ----------
+  const detailBackdrop   = document.getElementById('relDetailBackdrop');
+  const detailModal      = document.getElementById('relDetailModal');
+  const detailTitle      = document.getElementById('relDetailTitle');
+  const detailDate       = document.getElementById('relDetailDate');
+  const detailFrame      = document.getElementById('relDetailFrame');
+  const detailClose      = document.getElementById('relDetailClose');
+  const detailDeleteBtn  = document.getElementById('relDetailDeleteBtn');
+  const detailPdfBtn     = document.getElementById('relDetailPdfBtn');
+  let   detailTargetId   = null;
+
+  function openDetailModal(diag) {
+    detailTargetId          = diag.id;
+    detailTitle.textContent = `관계도 ver.${diag.version}`;
+    detailDate.textContent  = `생성일시  ${diag.createdAt}`;
+    detailFrame.src         = '';
+  // 잠깐 후 src 설정해야 load 이벤트가 확실히 발화
+  setTimeout(() => { detailFrame.src = diag.htmlUrl || ''; }, 0);
+    detailBackdrop.classList.add('open');
+    detailModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDetailModal() {
+    detailBackdrop.classList.remove('open');
+    detailModal.classList.remove('open');
+    document.body.style.overflow = '';
+    detailFrame.src  = '';
+    detailTargetId   = null;
+  }
+
   diagList?.addEventListener('click', (e) => {
     const row = e.target.closest('.rel-diagram-row');
     if (!row) return;
-    // TODO: 관계도 상세 페이지
-    console.log('관계도 상세:', row.dataset.id);
+    const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === row.dataset.id);
+    if (diag) openDetailModal(diag);
+  });
+
+  // iframe 로드 후 축소 적용 (same-origin이므로 가능)
+  detailFrame?.addEventListener('load', () => {
+    try {
+      const doc = detailFrame.contentDocument || detailFrame.contentWindow?.document;
+      if (!doc || !doc.head) return;
+      // 기존 주입 스타일 제거 후 재추가
+      doc.getElementById('__rel-zoom')?.remove();
+      const style = doc.createElement('style');
+      style.id = '__rel-zoom';
+      style.textContent = 'html { zoom: 0.7; } body { overflow-x: hidden !important; }';
+      doc.head.appendChild(style);
+    } catch (e) { /* cross-origin 등 예외 무시 */ }
+  });
+
+  detailClose?.addEventListener('click', closeDetailModal);
+  detailBackdrop?.addEventListener('click', closeDetailModal);
+
+  detailPdfBtn?.addEventListener('click', () => {
+    // TODO: PDF 다운로드
+    showToast('※ PDF 다운로드 기능은 준비 중입니다.');
+  });
+
+  // 상세 모달 내 삭제 버튼 → 삭제 확인 모달 열기
+  detailDeleteBtn?.addEventListener('click', () => {
+    deleteTargetId = detailTargetId;
+    deleteBackdrop.classList.add('open');
+    deleteModal.classList.add('open');
   });
 
   // ---------- 삭제 모달 ----------
@@ -315,7 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function closeDeleteModal() {
     deleteBackdrop.classList.remove('open');
     deleteModal.classList.remove('open');
-    document.body.style.overflow = '';
     deleteTargetId = null;
   }
 
@@ -332,13 +393,15 @@ document.addEventListener('DOMContentLoaded', () => {
       mockDiagrams[selectedWorkId] = mockDiagrams[selectedWorkId].filter(d => d.id !== deleteTargetId);
     }
     closeDeleteModal();
+    closeDetailModal();
     renderList(selectedWorkId);
-    showToast('※ 선택하신 관계도가 삭제되었습니다.');
+    showToast('※ 캐릭터 관계도가 삭제되었습니다.');
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDeleteModal();
+      closeDetailModal();
       closeCharModal();
     }
   });
