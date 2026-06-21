@@ -20,17 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 서브 아이템 → href 기반으로 active 처리 (href="#" 인 더미는 제외)
   // 실제 URL이 생기면 자동으로 활성화됨
-  const subNavMap = {
-    '/characters/': 0,
-    '/covers/':     1,
-    '/relationships/': 2,
-  };
+  const subNavRules = [
+    { idx: 0, isMatch: (currentPath) => currentPath.startsWith('/characters/') },
+    { idx: 1, isMatch: (currentPath) => currentPath.startsWith('/covers/') },
+    { idx: 2, isMatch: (currentPath) => currentPath.startsWith('/relationships/') },
+  ];
   const subItems  = document.querySelectorAll('.sidebar-sub-item');
   const popupItems = document.querySelectorAll('.sidebar-popup-item');
   let subActive = false;
 
-  Object.entries(subNavMap).forEach(([url, idx]) => {
-    if (path.startsWith(url)) {
+  subNavRules.forEach(({ idx, isMatch }) => {
+    if (isMatch(path)) {
       subItems[idx]?.classList.add('active');
       popupItems[idx]?.classList.add('active');
       subActive = true;
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-nav]').forEach(el => {
     const nav = el.dataset.nav;
     const isActive =
-      (nav === 'library'      && (path.startsWith('/works') || path === '/')) ||
+      (nav === 'library'      && !subActive && (path.startsWith('/works') || path === '/')) ||
       (nav === 'localization' && path.startsWith('/guides')) ||
       (nav === 'work-settings' && subActive);
     if (isActive && !(nav === 'work-settings' && subActive)) {
