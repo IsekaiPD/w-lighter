@@ -3,13 +3,14 @@
 <aside class="sidebar" id="sidebar">
 
   <!-- 닫힌 상태 로고 -->
-  <div class="sidebar-logo-short">w<span>.</span></div>
+  <a class="sidebar-logo-short" href="/works/" aria-label="w.LiGHTER 홈">
+    <img src="{% static 'images/sidebar/logo_short.svg' %}" alt="w.LiGHTER">
+  </a>
 
   <!-- 열린 상태 로고 -->
-  <div class="sidebar-logo-full">
-    <div class="sidebar-logo-text">w.LiGHTER</div>
-    <p class="sidebar-logo-tagline">Write, Light, Lighter</p>
-  </div>
+  <a class="sidebar-logo-full" href="/works/" aria-label="w.LiGHTER 홈">
+    <img src="{% static 'images/sidebar/logo_sidebar.svg' %}" alt="w.LiGHTER">
+  </a>
 
   <nav class="sidebar-nav">
 
@@ -49,7 +50,7 @@
       </div>
       <!-- 열린 상태 서브 아이템 -->
       <div class="sidebar-sub-list">
-        <a class="sidebar-sub-item" href="{% url 'characters:list' work_pk=1 %}">
+        <a class="sidebar-sub-item" href="{% url 'characters:list' %}">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           캐릭터 설정집
         </a>
@@ -81,7 +82,7 @@
 
 <!-- 닫힌 사이드바에서 작품 설정 호버 팝업 -->
 <div class="sidebar-popup" id="workSettingsPopup">
-  <a class="sidebar-popup-item" href="{% url 'characters:list' work_pk=1 %}">
+  <a class="sidebar-popup-item" href="{% url 'characters:list' %}">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     캐릭터 설정집
   </a>

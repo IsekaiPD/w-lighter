@@ -1,4 +1,4 @@
-/* =============================================
+﻿/* =============================================
    character_list.css — 캐릭터 설정집
    ============================================= */
 
@@ -51,101 +51,172 @@
   gap: 20px;
   margin-bottom: 24px;
   align-items: stretch;
+  min-width: 0;
 }
-.select-panel { flex: 0 0 340px; display: flex; flex-direction: column; }
+.select-panel {
+  flex: 0 0 340px;
+  width: 340px;
+  min-width: 340px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+}
 .summary-panel { flex: 1; min-width: 0; }
 
 /* 작품 선택 드롭다운 */
-.work-select { position: relative; }
-.work-select-trigger {
+.char-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.char-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.char-select-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+.char-select-trigger {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  padding: 8px 14px;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 14px 10px 12px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md, 12px);
+  border: 1.5px solid #B7A9E6;
+  border-radius: 14px;
   cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s;
 }
-.work-select-thumb {
-  width: 34px; height: 46px;
+.char-select-trigger:hover { border-color: var(--color-primary); }
+.char-select-wrap.open .char-select-trigger {
+  border-color: var(--color-primary);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.char-select-icon {
   flex-shrink: 0;
+  width: 36px;
+  height: 54px;
   border-radius: 6px;
-  background: var(--color-primary-soft);
+  background: #F3EEFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-primary);
-  display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
-.work-select-thumb.has-work {
-  background: linear-gradient(135deg, #e9e3fb, #cfc3f7);
-  color: transparent;   /* 표지 들어오면 책 아이콘 숨김 */
+.char-select-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
 }
-.work-select-text {
+.char-select-text {
   flex: 1;
-  min-width: 0;          /* ← 이게 있어야 말줄임 처리됨 (제목 밀림 방지) */
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-align: left;
-}
-.work-select-value {
+  min-width: 0;
   font-size: 14px;
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;   /* 긴 제목 → ... 처리 */
+  text-overflow: ellipsis;
 }
-.work-select-genre {
+.char-select-text.selected {
+  color: var(--color-text);
+  font-weight: 500;
+}
+.char-select-chevron {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+.char-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-primary);
+  border-top: none;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  overflow-y: auto;
+  max-height: 344px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(110, 91, 184, 0.12);
+  scrollbar-width: thin;
+  scrollbar-color: #c4b5f4 #f8f5ff;
+}
+.char-dropdown::-webkit-scrollbar { width: 6px; }
+.char-dropdown::-webkit-scrollbar-thumb { background: #c4b5f4; border-radius: 999px; }
+.char-select-wrap.open .char-dropdown { display: block; }
+.char-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.char-dropdown-item:hover,
+.char-dropdown-item.selected { background: #F3EEFF; }
+.char-dropdown-item:last-child {
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.char-di-thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 66px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #F3EEFF;
+  position: relative;
+}
+.char-di-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+.char-di-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.char-di-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.char-di-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.char-di-genre {
   font-size: 12px;
   color: var(--color-text-muted);
 }
-.work-select-caret { flex-shrink: 0; transition: transform .15s; }
-.work-select.open .work-select-caret { transform: rotate(180deg); }
-
-.work-select-dropdown {
-  display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0; right: 0;
-  max-height: 280px;
-  overflow-y: auto;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md, 12px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  z-index: 20;
-  padding: 6px;
-}
-.work-select.open .work-select-dropdown { display: block; }
-
-.work-option {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border: none;
-  background: none;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: left;
-}
-.work-option:hover, .work-option.selected { background: var(--color-primary-soft); }
-.work-option-cover {
-  width: 36px; height: 48px;
-  flex-shrink: 0;
-  border-radius: 6px;
-  background: linear-gradient(135deg, #e9e3fb, #cfc3f7);
-}
-.work-option-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.work-option-title {
-  font-size: 13px; font-weight: 600; color: var(--color-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.work-option-genre { font-size: 12px; color: var(--color-text-muted); }
-
+.work-select-genre { display: none; }
 /* 추출 버튼 */
 .extract-btn {
   margin-top: auto;
@@ -358,3 +429,4 @@ tr.editing { background: #f8f8fa; }
   cursor: pointer;
 }
 .cell-select:focus { outline: none; border-color: var(--color-primary); }
+
