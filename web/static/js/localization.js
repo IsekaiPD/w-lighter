@@ -150,9 +150,9 @@ document.addEventListener('DOMContentLoaded', () => {
       selectText.classList.add('selected');
 
       const iconWrap = selectTrigger.querySelector('.lc-select-icon');
-      const thumbEl  = item.querySelector('.lc-di-placeholder');
-      if (thumbEl) {
-        iconWrap.innerHTML = `<div class="lc-di-placeholder" style="background:#D8CDFF;border-radius:8px;width:100%;height:100%;"></div>`;
+      const thumbEl  = item.querySelector('.lc-di-img');
+      if (thumbEl?.src && !thumbEl.src.endsWith('/')) {
+        iconWrap.innerHTML = `<img src="${thumbEl.src}" alt="${title}">`;
       }
 
       selectWrap.classList.remove('open');

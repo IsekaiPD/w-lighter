@@ -54,7 +54,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding-top: 24px;
+  padding-top: 40px;
   z-index: 20;
   overflow: hidden;
   transition: width .25s ease;
@@ -65,58 +65,55 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 
 /* 공통 로고 스타일 */
 .sidebar-logo-short,
-.sidebar-logo-text {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-weight: 700;
-  font-size: 32px;
-  line-height: 1;
-  background: linear-gradient(135deg, #f2c6ff 0%, #b8a7f4 55%, #9a84e6 77%, #7b61d8 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  letter-spacing: -1.2px;
-  user-select: none;
+.sidebar-logo-full {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
 }
-.sidebar-logo-short span { font-size: 28px; }
 
 /* 닫힌 로고 */
 .sidebar-logo-short {
-  margin-bottom: 20px;
-  padding-left: 17px;
-  flex-shrink: 0;
-  white-space: nowrap;
+  width: 38px;
+  height: 23px;
+  margin: 15px 0 19px 15px;
   opacity: 1;
   transition: opacity .15s;
+}
+.sidebar-logo-short img {
+  display: block;
+  width: 33px;
+  height: 20px;
+  object-fit: contain;
 }
 .sidebar.open .sidebar-logo-short {
   opacity: 0;
   height: 0;
   margin: 0;
   overflow: hidden;
-  padding: 0;
+  pointer-events: none;
 }
 
 /* 열린 로고 */
 .sidebar-logo-full {
-  padding-left: 17px;
-  margin-bottom: 20px;
-  flex-shrink: 0;
+  width: 190px;
+  max-height: 0;
+  margin: 0 0 20px 17px;
   opacity: 0;
-  height: 0;
   overflow: hidden;
-  transition: opacity .2s .1s;
   white-space: nowrap;
+  pointer-events: none;
+}
+.sidebar-logo-full img {
+  display: block;
+  width: 190px;
+  height: auto;
+  object-fit: contain;
 }
 .sidebar.open .sidebar-logo-full {
   opacity: 1;
-  height: auto;
-}
-.sidebar-logo-tagline {
-  font-size: 11px;
-  letter-spacing: 0.15em;
-  color: var(--color-text);
-  margin-top: 4px;
+  max-height: 64px;
+  pointer-events: auto;
 }
 
 /* 내비 공통 */
