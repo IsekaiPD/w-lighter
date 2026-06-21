@@ -1,3 +1,81 @@
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
-# Create your models here.
+
+class UserManager(BaseUserManager):
+    def create_user(self, email, nickname, oauth_provider, provider_user_id, **extra_fields):
+        if not email:
+            raise ValueError('이메일은 필수입니다')
+        email = self.normalize_email(email)
+        user = self.model(
+            email=email,
+            nickname=nickname,
+            oauth_provider=oauth_provider,
+            provider_user_id=provider_user_id,
+            **extra_fields,
+        )
+        user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, nickname, password=None, **extra_fields):
+        """Django admin 접속용 (OAuth 아닌 계정)."""
+        user = self.model(
+            email=self.normalize_email(email),
+            nickname=nickname,
+            oauth_provider='ADMIN',
+            provider_user_id='admin',
+            is_active=True,
+            credit=0,
+            **extra_fields,
+        )
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+
+class User(AbstractBaseUser):
+    """
+    ERD USERS 테이블.
+    OAuth 전용이므로 password는 unusable로 설정.
+    is_active / last_login은 AbstractBaseUser 필수 →
+    ERD에 없지만 migrate 시 ALTER TABLE로 컬럼 추가됨 (데이터 영향 없음).
+    """
+
+    OAUTH_CHOICES = [
+        ('NAVER', 'NAVER'),
+        ('KAKAO', 'KAKAO'),
+        ('GOOGLE', 'GOOGLE'),
+        ('ADMIN', 'ADMIN'),
+    ]
+
+    user_id = models.AutoField(primary_key=True)
+    email = models.EmailField(max_length=255, unique=True)
+    nickname = models.CharField(max_length=10)
+    oauth_provider = models.CharField(max_length=10, choices=OAUTH_CHOICES)
+    provider_user_id = models.CharField(max_length=255)
+    credit = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+
+    # AbstractBaseUser 필수 (ERD에 없음 → migrate로 컬럼 추가됨)
+    is_active = models.BooleanField(default=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['nickname']
+
+    objects = UserManager()
+
+    class Meta:
+        db_table = 'users'
+
+    def __str__(self):
+        return f'{self.nickname} ({self.email})'
+
+    @property
+    def is_withdrawn(self):
+        return self.withdrawn_at is not None

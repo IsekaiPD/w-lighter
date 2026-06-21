@@ -192,6 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
     grid.appendChild(card);
 
+    // 카드 클릭 → 상세 페이지 이동 (kebab 메뉴 클릭은 제외)
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.work-menu-wrap')) return;
+      window.location.href = `/works/${work.id}/`;
+    });
+
     // 점 세 개 메뉴 이벤트 연결
     card.querySelector('.work-kebab-btn').addEventListener('click', (e) => {
       e.stopPropagation();

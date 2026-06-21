@@ -15,9 +15,9 @@
   <div class="page-header">
     <div class="page-title-group">
       <h1 class="page-title ep-breadcrumb">
-        <a href="{% url 'works:work_detail' pk=1 %}" class="breadcrumb-work">별빛 아래 잊힌 왕국</a>
+        <a href="{% url 'works:work_detail' pk=work.work_id %}" class="breadcrumb-work">{{ work.title }}</a>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(-90deg);flex-shrink:0;color:var(--color-text)"><path d="M6 9l6 6 6-6"/></svg>
-        <span>2화</span>
+        <span>{{ ep_num }}화</span>
       </h1>
       <p class="page-desc">회차를 번역하고 검수 챗봇과 수정해 보세요.</p>
     </div>
@@ -75,7 +75,7 @@
           <div class="tr-content-header">
             <div class="tr-episode-title-row">
               <span class="tr-field-label">회차 제목</span>
-              <input class="tr-title-input" type="text" value="우리 엄마 최고야" readonly>
+              <input class="tr-title-input" type="text" value="{{ episode.title }}" readonly>
             </div>
             <div class="tr-version-dropdown" id="versionDropdown">
               <button class="tr-version-trigger" id="versionTrigger">
@@ -100,9 +100,7 @@
           </div>
           <div class="tr-textbox">
             <div class="tr-textbox-inner tr-source-text">
-              <p>　학벌, 어학 성적, 자격증까지 영혼을 갈아 넣었지만 돌아오는 건 '귀하의 뛰어난 역량에도 불구하고…'로 시작하는 탈락 문자뿐인 평범한 취준생 강민우. 편의점 아르바이트를 마치고 쓰러지듯 잠든 그는, 눈을 떠보니 난생처음 보는 판타지 세계의 거리에 서 있었다.</p>
-              <p>　서브컬처로 단련된 민우는 직감했다. '드디어 나에게도 기연이 찾아왔구나!' 그러나 기대와 달리 눈앞에 홀로그램 상태창이 떠오르는 일도, 드래곤을 때려잡을 사기급 치트 능력이 부여되는 일도 없었다. 마력은 제로, 칼 한 번 쥐어본 적 없는 민우가 가진 것이라곤 오직 현대에서 밤새며 온갖 공모전과 대외 활동, 팀 프로젝트로 뼈를 깎으며 체득한 '눈물겨운 오피스 실무 능력'과 '보고서 작성 및 커뮤니케이션 스킬'뿐이었다.</p>
-              <p>　당장 굶어 죽을 위기에 처한 민우는 우연히 모험가 길드에 방문했다가 경악을 금치 못한다. 퀘스트 공고는 벽보에 대충 손으로 휘갈겨 써져 있고, 보상 정산과 영수증 처리는 종이더미 속에 파묻혀 엉망진창인 상태! 수수료 계산조차 손가락을 접어가며 하는 미개한 행정 시스템을 본 민우는 생존을 위해 길드 마스터에게 다가가 현대식 '엑셀(Excel)형 장부 기록'과 '인포그래픽 공고판'을 제안한다.</p>
+              {{ episode.original_text|linebreaksbr }}
             </div>
           </div>
         </div>
@@ -133,10 +131,9 @@
             </div>
           </div>
           <div class="tr-textbox">
-            <div class="tr-textbox-inner tr-trans-text">
-              <p>Kang Min-woo is a typical job seeker who has poured his blood, sweat, and tears into building the perfect resume—specs, language scores, and certifications—only to be rewarded with a never-ending string of rejection letters. One night, after collapsing into bed after his convenience store part-time shift, he opens his eyes only to find himself standing in the middle of a medieval fantasy world.</p>
-              <p>Well-versed in subculture tropes, Min-woo instantly thinks, 'Finally, my cheat code moment has arrived!' But reality hits hard. There is no glowing holographic status window, nor any broken, god-tier cheat abilities to slay dragons. With zero magical talent and a complete inability to wield a sword, the only thing he possesses is the soul-crushing office proficiency, report-writing skills, and communication tactics he painfully beat into himself while preparing for team projects and case competitions back on Earth.</p>
-              <p>On the verge of starvation, Min-woo walks into a local Adventurers' Guild and is utterly appalled. Quest notices are scribbled haphazardly on a wall, and reward settlements and receipts are buried in chaotic piles of parchment. Seeing a primitive administrative system where staff still count commission fees on their fingers, Min-woo approaches the Guild Master to survive. He proposes a modern "Excel-style ledger system" and "infographic notice boards."</p>
+            <div class="tr-textbox-inner tr-trans-text" style="color:var(--color-text-muted);padding:24px;">
+              {# TODO: FastAPI translation_results 연동 후 번역 텍스트 표시 #}
+              <p>번역 결과가 없습니다. 번역하기 버튼을 눌러 번역을 시작해 보세요.</p>
             </div>
           </div>
           <div class="tr-trans-footer">

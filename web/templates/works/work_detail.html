@@ -39,18 +39,23 @@
 
       <!-- 정보 -->
       <div class="work-detail-info">
-        <h2 class="work-detail-title">별빛 아래 잊힌 왕국</h2>
-        <p class="work-detail-meta">킹왕짱웹소설작가&nbsp;&nbsp;|&nbsp;&nbsp;판타지&nbsp;&nbsp;|&nbsp;&nbsp;총 3화</p>
-        <p class="work-detail-synopsis">학벌, 어학 성적, 자격증까지 영혼을 갈아 넣었지만 돌아오는 건 '귀하의 뛰어난 역량에도 불구하고…'로 시작하는 탈락 문자뿐인 평범한 취준생 강민우. 편의점 아르바이트를 마치고 쓰…</p>
-        <div class="work-langs detail-langs">
-          <span class="lang-tag">EN</span>
-          <span class="lang-tag">JP</span>
-          <span class="lang-tag">TH</span>
-        </div>
-        <!-- 하단 행: 날짜 + 버튼 (미번역 카드 하단에 맞춤) -->
+        <h2 class="work-detail-title">{{ work.title }}</h2>
+        <p class="work-detail-meta">{{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ work.genre }}&nbsp;&nbsp;|&nbsp;&nbsp;총 {{ episode_count }}화</p>
+        {% if work.synopsis %}
+        <p class="work-detail-synopsis">{{ work.synopsis|truncatechars:120 }}</p>
+        {% else %}
+        <p class="work-detail-synopsis" style="color:var(--color-text-muted)">시놉시스가 없습니다.</p>
+        {% endif %}
+        <div class="work-langs detail-langs"></div>
+        <!-- 하단 행: 날짜 + 버튼 -->
         <div class="work-detail-footer">
-          <p class="work-detail-date"><strong>작품 등록일</strong>&nbsp;&nbsp;&nbsp;2026.05.31</p>
-          <button class="edit-work-btn" id="detailEditBtn">작품 정보 수정</button>
+          <p class="work-detail-date"><strong>작품 등록일</strong>&nbsp;&nbsp;&nbsp;{{ work.created_at|date:"Y.m.d" }}</p>
+          <button class="edit-work-btn" id="detailEditBtn"
+            data-work-id="{{ work.work_id }}"
+            data-title="{{ work.title }}"
+            data-author="{{ work.pen_name }}"
+            data-genre="{{ work.genre }}"
+            data-synopsis="{{ work.synopsis|default:'' }}">작품 정보 수정</button>
         </div>
       </div>
 
@@ -59,16 +64,16 @@
         <div class="work-stats-row">
           <div class="stat-card">
             <p class="stat-label">작품 회차</p>
-            <p class="stat-value">3</p>
+            <p class="stat-value">{{ episode_count }}</p>
           </div>
           <div class="stat-card">
             <p class="stat-label">번역 완료</p>
-            <p class="stat-value">3</p>
+            <p class="stat-value">0</p>
           </div>
         </div>
         <div class="stat-card stat-card-accent">
           <p class="stat-label">미번역</p>
-          <p class="stat-value">0</p>
+          <p class="stat-value">{{ episode_count }}</p>
         </div>
       </div>
 
@@ -109,7 +114,7 @@
           </div>
         </div>
 
-        <a href="{% url 'works:episode_register' work_pk=1 %}" class="new-ep-btn">
+        <a href="{% url 'works:episode_register' work_pk=work.work_id %}" class="new-ep-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
           새 회차 등록
         </a>
@@ -120,24 +125,21 @@
     <!-- 회차 목록 -->
     <div class="episode-list">
 
-      <!-- 1화 -->
+      {% for episode in episodes %}
       <div class="episode-row">
-        <div class="ep-badge">1화</div>
-        <span class="ep-title">안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는</span>
+        <div class="ep-badge">{{ forloop.counter }}화</div>
+        <span class="ep-title">{{ episode.title }}</span>
         <div class="ep-langs">
-          <span class="lang-tag">EN</span>
-          <span class="lang-tag">CN</span>
-          <span class="lang-tag">JP</span>
-          <span class="lang-tag">TH</span>
+          {# TODO: 번역 완료 언어 표시 (FastAPI translation_results 연동 후) #}
         </div>
-        <a href="{% url 'works:episode_detail' work_pk=1 episode_pk=1 %}" class="translate-view-btn">
+        <a href="{% url 'works:episode_detail' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-view-btn">
           <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
             <rect x="0.5" y="0.5" width="12" height="16" rx="1.5" stroke="#6e5bb8" stroke-width="1.2"/>
             <rect x="7.5" y="3.5" width="12" height="14" rx="1.5" fill="#f9e9fa" stroke="#6e5bb8" stroke-width="1.2"/>
           </svg>
           번역 보기
         </a>
-        <a href="{% url 'works:episode_translate' work_pk=1 episode_pk=1 %}" class="translate-btn">
+        <a href="{% url 'works:episode_translate' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-btn">
           <svg width="20" height="18" viewBox="0 0 22 20" fill="none">
             <path d="M3 5h10M8 3v2M5 8c0 2.5 2 4.5 5 5" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round"/>
             <path d="M12 13l2-5 2 5M13.5 16h3" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -145,94 +147,24 @@
           번역하기
         </a>
         <div class="ep-menu-wrap">
-          <button class="ep-kebab-btn" data-menu="epMenu1" aria-label="메뉴">
+          <button class="ep-kebab-btn" data-menu="epMenu{{ episode.episode_id }}" aria-label="메뉴">
             <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
               <circle cx="2" cy="2" r="2"/>
               <circle cx="2" cy="9" r="2"/>
               <circle cx="2" cy="16" r="2"/>
             </svg>
           </button>
-          <div class="ep-menu-dropdown" id="epMenu1">
-            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=1 %}" class="ep-menu-item">회차 수정</a>
-            <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
+          <div class="ep-menu-dropdown" id="epMenu{{ episode.episode_id }}">
+            <a href="{% url 'works:episode_edit' work_pk=work.work_id episode_pk=episode.episode_id %}" class="ep-menu-item">회차 수정</a>
+            <button class="ep-menu-item ep-menu-delete" data-episode-id="{{ episode.episode_id }}">회차 삭제</button>
           </div>
         </div>
       </div>
-
-      <!-- 2화 -->
-      <div class="episode-row">
-        <div class="ep-badge">2화</div>
-        <span class="ep-title">우리 엄마 최고야</span>
-        <div class="ep-langs">
-          <span class="lang-tag">CN</span>
-          <span class="lang-tag">TH</span>
-        </div>
-        <a href="{% url 'works:episode_detail' work_pk=1 episode_pk=1 %}" class="translate-view-btn">
-          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
-            <rect x="0.5" y="0.5" width="12" height="16" rx="1.5" stroke="#6e5bb8" stroke-width="1.2"/>
-            <rect x="7.5" y="3.5" width="12" height="14" rx="1.5" fill="#f9e9fa" stroke="#6e5bb8" stroke-width="1.2"/>
-          </svg>
-          번역 보기
-        </a>
-        <a href="{% url 'works:episode_translate' work_pk=1 episode_pk=2 %}" class="translate-btn">
-          <svg width="20" height="18" viewBox="0 0 22 20" fill="none">
-            <path d="M3 5h10M8 3v2M5 8c0 2.5 2 4.5 5 5" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M12 13l2-5 2 5M13.5 16h3" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          번역하기
-        </a>
-        <div class="ep-menu-wrap">
-          <button class="ep-kebab-btn" data-menu="epMenu2" aria-label="메뉴">
-            <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
-              <circle cx="2" cy="2" r="2"/>
-              <circle cx="2" cy="9" r="2"/>
-              <circle cx="2" cy="16" r="2"/>
-            </svg>
-          </button>
-          <div class="ep-menu-dropdown" id="epMenu2">
-            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=2 %}" class="ep-menu-item">회차 수정</a>
-            <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
-          </div>
-        </div>
+      {% empty %}
+      <div class="empty-state" style="padding: 48px 0; text-align: center; color: var(--color-text-muted);">
+        <p>등록된 회차가 없습니다.</p>
       </div>
-
-      <!-- 3화 -->
-      <div class="episode-row">
-        <div class="ep-badge">3화</div>
-        <span class="ep-title">우리 아빠 최고야</span>
-        <div class="ep-langs">
-          <span class="lang-tag">CN</span>
-          <span class="lang-tag">JP</span>
-          <span class="lang-tag">TH</span>
-        </div>
-        <a href="{% url 'works:episode_detail' work_pk=1 episode_pk=1 %}" class="translate-view-btn">
-          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
-            <rect x="0.5" y="0.5" width="12" height="16" rx="1.5" stroke="#6e5bb8" stroke-width="1.2"/>
-            <rect x="7.5" y="3.5" width="12" height="14" rx="1.5" fill="#f9e9fa" stroke="#6e5bb8" stroke-width="1.2"/>
-          </svg>
-          번역 보기
-        </a>
-        <a href="{% url 'works:episode_translate' work_pk=1 episode_pk=3 %}" class="translate-btn">
-          <svg width="20" height="18" viewBox="0 0 22 20" fill="none">
-            <path d="M3 5h10M8 3v2M5 8c0 2.5 2 4.5 5 5" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M12 13l2-5 2 5M13.5 16h3" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          번역하기
-        </a>
-        <div class="ep-menu-wrap">
-          <button class="ep-kebab-btn" data-menu="epMenu3" aria-label="메뉴">
-            <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
-              <circle cx="2" cy="2" r="2"/>
-              <circle cx="2" cy="9" r="2"/>
-              <circle cx="2" cy="16" r="2"/>
-            </svg>
-          </button>
-          <div class="ep-menu-dropdown" id="epMenu3">
-            <a href="{% url 'works:episode_edit' work_pk=1 episode_pk=3 %}" class="ep-menu-item">회차 수정</a>
-            <button class="ep-menu-item ep-menu-delete">회차 삭제</button>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
 
     </div>
   </div>
@@ -314,4 +246,25 @@
 
 {% block extra_js %}
 <script src="{% static 'js/work_detail.js' %}"></script>
+<script>
+(function() {
+  const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
+
+  // ===== 회차 삭제 =====
+  document.querySelectorAll('.ep-menu-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const epId  = btn.dataset.episodeId;
+      const workId = {{ work.work_id }};
+      if (!confirm('이 회차를 삭제하시겠습니까?')) return;
+      const res = await fetch(`/works/${workId}/episodes/${epId}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+      });
+      const data = await res.json();
+      if (data.ok) location.reload();
+      else alert('삭제에 실패했습니다.');
+    });
+  });
+})();
+</script>
 {% endblock %}
