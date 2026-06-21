@@ -316,15 +316,15 @@
     </button>
     <h2 id="login-modal-title">소셜 계정으로 3초만에 시작하세요.</h2>
     <div class="social-login-list">
-      <a class="social-button social-google" href="{% url 'accounts:signup_terms' %}" aria-label="Google 계정으로 계속">
+      <a class="social-button social-google" href="{% url 'accounts:oauth_login' 'google' %}" aria-label="Google 계정으로 계속">
         <img src="{% static 'images/landing/social/google.svg' %}" alt="" aria-hidden="true">
         <span>Google 계정으로 계속</span>
       </a>
-      <a class="social-button social-kakao" href="{% url 'accounts:signup_terms' %}" aria-label="Kakao 계정으로 계속">
+      <a class="social-button social-kakao" href="{% url 'accounts:oauth_login' 'kakao' %}" aria-label="Kakao 계정으로 계속">
         <img src="{% static 'images/landing/social/kakao.svg' %}" alt="" aria-hidden="true">
         <span>Kakao 계정으로 계속</span>
       </a>
-      <a class="social-button social-naver" href="{% url 'accounts:signup_terms' %}" aria-label="Naver 계정으로 계속">
+      <a class="social-button social-naver" href="{% url 'accounts:oauth_login' 'naver' %}" aria-label="Naver 계정으로 계속">
         <img src="{% static 'images/landing/social/naver.svg' %}" alt="" aria-hidden="true">
         <span>Naver 계정으로 계속</span>
       </a>

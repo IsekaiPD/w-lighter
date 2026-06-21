@@ -36,7 +36,8 @@
         </li>
       </ol>
 
-      <section class="signup-form-card">
+      <form class="signup-form-card" method="post" action="{% url 'accounts:signup_terms' %}">
+        {% csrf_token %}
         <h1 id="signup-title">서비스 이용약관</h1>
         <p class="signup-description">w.LiGHTER를 원활하게 이용하기 위해 다음 필수 약관에 동의해 주시기 바랍니다.</p>
 
@@ -49,7 +50,7 @@
 
           <div class="agreement-row">
             <label class="agreement-label">
-              <input class="agreement-checkbox" type="checkbox" data-agree-required="terms">
+              <input class="agreement-checkbox" type="checkbox" name="terms_agreed" data-agree-required="terms">
               <span class="checkbox-visual" aria-hidden="true"></span>
               <span>[필수] 이용약관 동의</span>
             </label>
@@ -58,7 +59,7 @@
 
           <div class="agreement-row">
             <label class="agreement-label">
-              <input class="agreement-checkbox" type="checkbox" data-agree-required="privacy">
+              <input class="agreement-checkbox" type="checkbox" name="privacy_agreed" data-agree-required="privacy">
               <span class="checkbox-visual" aria-hidden="true"></span>
               <span>[필수] 개인정보 수집 및 활용 동의</span>
             </label>
@@ -66,8 +67,12 @@
           </div>
         </div>
 
-        <button class="signup-primary-button" type="button" data-next-terms data-next-url="{% url 'accounts:signup_name' %}" disabled>다음으로</button>
-      </section>
+        {% if signup_error %}
+          <p class="signup-error-message">{{ signup_error }}</p>
+        {% endif %}
+
+        <button class="signup-primary-button" type="submit" data-next-terms disabled>다음으로</button>
+      </form>
 
       <p class="signup-copyright">© 2026 w.LiGHTER. All rights reserved.</p>
     </div>

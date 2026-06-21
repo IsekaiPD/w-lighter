@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -5,11 +6,13 @@ from django.views.decorators.http import require_POST
 from .models import Episode, Work
 
 
+@login_required(login_url='pages:landing')
 def library(request):
-    works = Work.objects.filter(user_id=1).order_by('-created_at')
+    works = Work.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'works/library.html', {'works': works})
 
 
+@login_required(login_url='pages:landing')
 @require_POST
 def work_create(request):
     title    = request.POST.get('title', '').strip()
@@ -24,7 +27,7 @@ def work_create(request):
     if errors:
         return JsonResponse({'ok': False, 'errors': errors})
 
-    work = Work.objects.create(user_id=1, title=title, pen_name=pen_name,
+    work = Work.objects.create(user=request.user, title=title, pen_name=pen_name,
                                genre=genre, synopsis=synopsis)
     return JsonResponse({'ok': True, 'work': {
         'id': work.work_id, 'title': work.title,
@@ -32,9 +35,10 @@ def work_create(request):
     }})
 
 
+@login_required(login_url='pages:landing')
 @require_POST
 def work_update(request, pk):
-    work     = get_object_or_404(Work, pk=pk)
+    work     = get_object_or_404(Work, pk=pk, user=request.user)
     title    = request.POST.get('title', '').strip()
     pen_name = request.POST.get('author', '').strip()
     genre    = request.POST.get('genre', '').strip()
@@ -56,15 +60,17 @@ def work_update(request, pk):
     }})
 
 
+@login_required(login_url='pages:landing')
 @require_POST
 def work_delete(request, pk):
-    work = get_object_or_404(Work, pk=pk)
+    work = get_object_or_404(Work, pk=pk, user=request.user)
     work.delete()
     return JsonResponse({'ok': True})
 
 
+@login_required(login_url='pages:landing')
 def work_detail(request, pk):
-    work = get_object_or_404(Work, pk=pk)
+    work = get_object_or_404(Work, pk=pk, user=request.user)
     episodes = work.episodes.all().order_by('episode_id')
     episode_count = episodes.count()
     return render(request, 'works/work_detail.html', {
@@ -77,8 +83,9 @@ def _episode_number(episode):
         work=episode.work, episode_id__lte=episode.episode_id).count()
 
 
+@login_required(login_url='pages:landing')
 def episode_detail(request, work_pk, episode_pk):
-    work    = get_object_or_404(Work, pk=work_pk)
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
     ep_num  = _episode_number(episode)
     return render(request, 'works/episode_detail.html', {
@@ -86,8 +93,9 @@ def episode_detail(request, work_pk, episode_pk):
     })
 
 
+@login_required(login_url='pages:landing')
 def episode_translate(request, work_pk, episode_pk):
-    work    = get_object_or_404(Work, pk=work_pk)
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
     ep_num  = _episode_number(episode)
     return render(request, 'works/episode_translate.html', {
@@ -95,8 +103,9 @@ def episode_translate(request, work_pk, episode_pk):
     })
 
 
+@login_required(login_url='pages:landing')
 def episode_edit(request, work_pk, episode_pk):
-    work    = get_object_or_404(Work, pk=work_pk)
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
 
     if request.method == 'POST':
@@ -117,16 +126,18 @@ def episode_edit(request, work_pk, episode_pk):
     })
 
 
+@login_required(login_url='pages:landing')
 @require_POST
 def episode_delete(request, work_pk, episode_pk):
-    work    = get_object_or_404(Work, pk=work_pk)
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
     episode.delete()
     return JsonResponse({'ok': True})
 
 
+@login_required(login_url='pages:landing')
 def episode_register(request, work_pk):
-    work = get_object_or_404(Work, pk=work_pk)
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
 
     if request.method == 'POST':
         title         = request.POST.get('title', '').strip()

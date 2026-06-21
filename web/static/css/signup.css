@@ -391,6 +391,14 @@
   color: #fff;
 }
 
+.signup-error-message {
+  width: 424px;
+  margin-top: 14px;
+  color: var(--color-danger);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .signup-copyright {
   position: absolute;
   left: 0;
