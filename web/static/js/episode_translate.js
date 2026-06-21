@@ -23,6 +23,103 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  /* ===== 번역 실행 전 크레딧 확인 ===== */
+  const translateBtn = document.querySelector('.tr-translate-btn');
+  const creditBalance = document.getElementById('creditBalance');
+  const sourceText = document.querySelector('.tr-source-text');
+  const creditBackdrop = document.getElementById('translationCreditBackdrop');
+  const spendModal = document.getElementById('translationSpendModal');
+  const limitModal = document.getElementById('translationLimitModal');
+  const requiredCreditText = document.getElementById('translationRequiredCredit');
+  const spendConfirmBtn = document.getElementById('translationSpendConfirm');
+  const creditModalCloseBtns = document.querySelectorAll('[data-credit-modal-close]');
+  let lastCreditCheck = null;
+
+  function parseCreditValue(value) {
+    const normalized = String(value ?? '').replace(/[^\d]/g, '');
+    return Number.parseInt(normalized || '0', 10);
+  }
+
+  function getCurrentCredit() {
+    return parseCreditValue(creditBalance?.dataset.creditBalance || creditBalance?.textContent);
+  }
+
+  function getSourceCharacterCount() {
+    if (!sourceText) return 0;
+    const visibleText = sourceText.textContent.replace(/\s+/g, ' ').trim();
+    return Array.from(visibleText).length;
+  }
+
+  function getRequiredCredit() {
+    return Math.ceil(getSourceCharacterCount() / 5);
+  }
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('ko-KR');
+  }
+
+  function closeCreditModal() {
+    creditBackdrop?.classList.remove('open');
+    spendModal?.classList.remove('active');
+    limitModal?.classList.remove('active');
+    creditBackdrop?.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function openCreditModal(type) {
+    if (!creditBackdrop) return;
+    creditBackdrop.classList.add('open');
+    creditBackdrop.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    spendModal?.classList.toggle('active', type === 'spend');
+    limitModal?.classList.toggle('active', type === 'limit');
+
+    const focusTarget = type === 'spend'
+      ? spendModal?.querySelector('[data-credit-modal-close], button, a')
+      : limitModal?.querySelector('a, button');
+    focusTarget?.focus();
+  }
+
+  function checkTranslationCredit() {
+    const requiredCredit = getRequiredCredit();
+    const currentCredit = getCurrentCredit();
+    lastCreditCheck = {
+      requiredCredit,
+      currentCredit,
+      sourceCharacterCount: getSourceCharacterCount(),
+    };
+
+    if (requiredCreditText) requiredCreditText.textContent = formatNumber(requiredCredit);
+    openCreditModal(currentCredit >= requiredCredit ? 'spend' : 'limit');
+  }
+
+  translateBtn?.addEventListener('click', checkTranslationCredit);
+
+  creditModalCloseBtns.forEach(btn => {
+    btn.addEventListener('click', closeCreditModal);
+  });
+
+  creditBackdrop?.addEventListener('click', (event) => {
+    if (event.target === creditBackdrop) closeCreditModal();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && creditBackdrop?.classList.contains('open')) {
+      closeCreditModal();
+    }
+  });
+
+  spendConfirmBtn?.addEventListener('click', () => {
+    const detail = lastCreditCheck || {
+      requiredCredit: getRequiredCredit(),
+      currentCredit: getCurrentCredit(),
+      sourceCharacterCount: getSourceCharacterCount(),
+    };
+    closeCreditModal();
+    document.dispatchEvent(new CustomEvent('translation:credit-confirmed', { detail }));
+  });
+
   /* ===== 버전 드롭다운 공통 초기화 ===== */
   function initVersionDropdown(dropdownId, triggerId, panelId, labelId) {
     const wrap = document.getElementById(dropdownId);
