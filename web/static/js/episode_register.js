@@ -1,253 +1,281 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ===== 탭 전환 ===== */
-  const tabs = document.querySelectorAll('.ep-reg-tab');
-  const panes = document.querySelectorAll('.ep-reg-pane');
-  tabs.forEach(tab => {
+  document.querySelectorAll('.ep-reg-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panes.forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.ep-reg-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.ep-reg-pane').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       const pane = document.getElementById('tab-' + tab.dataset.tab);
       if (pane) pane.classList.add('active');
     });
   });
 
-  /* ===== 파일 업로드 ===== */
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('fileInput');
-  const fileList  = document.getElementById('fileList');
-  const queueList = document.getElementById('queueList');
-  const addBtn    = document.getElementById('addToQueueBtn');
+  /* ===== 직접 입력 탭 카운터 ===== */
+  const directTitle   = document.getElementById('directTitle');
+  const directContent = document.getElementById('directContent');
+  directTitle?.addEventListener('input', () => {
+    document.getElementById('directTitleCounter').textContent = directTitle.value.length + '/30';
+  });
+  directContent?.addEventListener('input', () => {
+    document.getElementById('directContentCounter').textContent =
+      directContent.value.length.toLocaleString('ko-KR') + '/8,000';
+  });
+
+  /* ===== 공통 ===== */
+  const submitBtn   = document.getElementById('epRegSubmitBtn');
+  const workPk      = submitBtn?.dataset.workPk;
+  const BASE_EP_NUM = parseInt(submitBtn?.dataset.episodeCount ?? '0');
+
+  const directNumberInput = document.getElementById('directNumber');
+  if (directNumberInput) directNumberInput.value = BASE_EP_NUM + 1;
+
+  /* ===== 파일 업로드 탭 ===== */
+  const MAX_FILES   = 5;
+  const dropzone    = document.getElementById('dropzone');
+  const fileInput   = document.getElementById('fileInput');
+  const fileListEl  = document.getElementById('fileList');
+  const queueListEl = document.getElementById('queueList');
+  const addBtn      = document.getElementById('addToQueueBtn');
+  const epNumberEl  = document.getElementById('epNumber');
+  const epTitleEl   = document.getElementById('epTitle');
 
   let attachedFiles = [];
+  let selectedIdx   = -1;
+  let queueItems    = [];
 
-  if (dropzone && fileInput) {
-    // 클릭 → 파일 선택
-    dropzone.addEventListener('click', () => fileInput.click());
-
-    // 드래그 앤 드롭
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      handleFiles(Array.from(e.dataTransfer.files));
-    });
-
-    fileInput.addEventListener('change', () => {
-      handleFiles(Array.from(fileInput.files));
-      fileInput.value = '';
-    });
-  }
+  /* 드래그 앤 드롭 */
+  dropzone?.addEventListener('click', () => fileInput?.click());
+  dropzone?.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone?.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone?.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    handleFiles(Array.from(e.dataTransfer.files));
+  });
+  fileInput?.addEventListener('change', () => {
+    handleFiles(Array.from(fileInput.files));
+    fileInput.value = '';
+  });
 
   function handleFiles(files) {
-    const allowed = ['text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    files.forEach(f => {
-      if (!allowed.includes(f.type) && !f.name.match(/\.(txt|docx)$/i)) return;
-      if (f.size > 1024 * 1024) { alert(`${f.name}: 파일 크기가 1MB를 초과합니다.`); return; }
-      if (attachedFiles.find(x => x.name === f.name)) return;
+    for (const f of files) {
+      if (attachedFiles.length + queueItems.length >= MAX_FILES) {
+        alert('파일은 최대 5개까지 추가할 수 있어요.');
+        break;
+      }
+      if (!f.name.match(/\.(txt|docx)$/i)) { alert(f.name + ': txt, docx 파일만 지원해요.'); continue; }
+      if (f.size > 1024 * 1024) { alert(f.name + ': 1MB를 초과합니다.'); continue; }
+      if (attachedFiles.find(x => x.name === f.name)) continue;
       attachedFiles.push(f);
-    });
+    }
     renderFileList();
   }
 
-  function formatSize(bytes) {
-    if (bytes < 1024) return bytes + 'B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  function fmtSize(b) {
+    return b < 1024 ? b + 'B' : b < 1048576 ? (b/1024).toFixed(1) + 'KB' : (b/1048576).toFixed(1) + 'MB';
+  }
+
+  function selectFile(idx) {
+    selectedIdx = idx;
+    if (epTitleEl) { epTitleEl.value = ''; epTitleEl.focus(); }
+    renderFileList();
   }
 
   function renderFileList() {
-    if (!fileList) return;
-
+    if (!fileListEl) return;
     if (attachedFiles.length === 0) {
-      if (dropzone) dropzone.style.display = 'flex';
-      fileList.style.display = 'none';
-      fileList.innerHTML = '';
+      dropzone && (dropzone.style.display = 'flex');
+      fileListEl.style.display = 'none';
+      fileListEl.innerHTML = '';
+      selectedIdx = -1;
       return;
     }
+    dropzone && (dropzone.style.display = 'none');
+    fileListEl.style.display = 'block';
+    fileListEl.innerHTML = '<div class="ep-reg-file-table-box"><table class="ep-reg-file-table">'
+      + '<thead><tr><th>구분</th><th>파일명</th><th>크기</th><th></th></tr></thead><tbody>'
+      + attachedFiles.map((f, i) => {
+          const sel = i === selectedIdx ? ' class="ep-ftr-selected"' : '';
+          return '<tr' + sel + ' data-idx="' + i + '" style="cursor:pointer">'
+            + '<td class="ep-ft-num">' + (i + 1) + '</td>'
+            + '<td class="ep-ft-name">' + esc(f.name) + '</td>'
+            + '<td class="ep-ft-size">' + fmtSize(f.size) + '</td>'
+            + '<td class="ep-ft-del"><button class="ep-reg-file-remove" data-idx="' + i + '">x</button></td>'
+            + '</tr>';
+        }).join('')
+      + '</tbody></table></div>';
 
-    if (dropzone) dropzone.style.display = 'none';
-    fileList.style.display = 'block';
-
-    fileList.innerHTML = `
-      <div class="ep-reg-file-table-box">
-        <table class="ep-reg-file-table">
-          <thead>
-            <tr>
-              <th>구분</th>
-              <th>파일명</th>
-              <th>파일 크기</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${attachedFiles.map((f, i) => `
-              <tr${i === 0 ? ' class="ep-ftr-selected"' : ''}>
-                <td class="ep-ft-num">${i + 1}</td>
-                <td class="ep-ft-name">${escapeHtml(f.name)}</td>
-                <td class="ep-ft-size">${formatSize(f.size)}</td>
-                <td class="ep-ft-del"><button class="ep-reg-file-remove" data-idx="${i}">×</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-
-    fileList.querySelectorAll('.ep-reg-file-remove').forEach(btn => {
+    fileListEl.querySelectorAll('tbody tr').forEach(row => {
+      row.addEventListener('click', e => {
+        if (e.target.closest('.ep-reg-file-remove')) return;
+        selectFile(Number(row.dataset.idx));
+      });
+    });
+    fileListEl.querySelectorAll('.ep-reg-file-remove').forEach(btn => {
       btn.addEventListener('click', e => {
         e.stopPropagation();
-        attachedFiles.splice(Number(btn.dataset.idx), 1);
+        const idx = Number(btn.dataset.idx);
+        attachedFiles.splice(idx, 1);
+        if (selectedIdx === idx) selectedIdx = -1;
+        else if (selectedIdx > idx) selectedIdx--;
         renderFileList();
       });
     });
+    if (selectedIdx === -1 && attachedFiles.length > 0) selectFile(0);
   }
 
-  /* ===== 대기열에 추가 ===== */
-  let queueItems = [];
+  function isKorean(text) {
+    const total = text.replace(/\s/g, '').length;
+    if (total === 0) return false;
+    const korean = (text.match(/[가-힣ㄱ-ㅎㅏ-ㅣ]/g) || []).length;
+    return (korean / total) >= 0.7;
+  }
 
-  if (addBtn) {
-    addBtn.addEventListener('click', () => {
-      if (attachedFiles.length === 0) return;
-      attachedFiles.forEach(f => {
-        if (!queueItems.find(x => x.name === f.name)) {
-          queueItems.push({ name: f.name });
-        }
+  async function parseFile(file) {
+    if (file.name.match(/\.txt$/i)) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = e => resolve(e.target.result.trim());
+        reader.onerror = () => reject(new Error('파일 읽기 실패'));
+        reader.readAsText(file, 'UTF-8');
       });
-      attachedFiles = [];
-      renderFileList();
-      renderQueue();
-    });
+    }
+    if (file.name.match(/\.docx$/i)) {
+      if (typeof mammoth === 'undefined') throw new Error('docx 파싱 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+      const buf    = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return result.value.trim();
+    }
+    throw new Error('지원하지 않는 파일 형식');
   }
 
-  function parseQueueName(filename) {
-    const base = filename.replace(/\.(txt|docx)$/i, '');
-    const match = base.match(/^(\d+화)[_\s](.+)$/);
-    if (match) return { num: match[1], name: match[2] };
-    return { num: null, name: base };
-  }
-
-  function renderQueue() {
-    if (!queueList) return;
-    if (queueItems.length === 0) {
-      queueList.innerHTML = '';
+  /* 화살표 버튼 → 대기열 추가 */
+  addBtn?.addEventListener('click', async () => {
+    if (selectedIdx < 0 || selectedIdx >= attachedFiles.length) {
+      alert('왼쪽 목록에서 파일을 선택해주세요.');
       return;
     }
-    queueList.innerHTML = queueItems.map((item, i) => {
-      const parsed = parseQueueName(item.name);
-      const numLabel = parsed.num || `${i + 1}화`;
-      return `
-        <div class="ep-reg-queue-item">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span class="ep-queue-num">${escapeHtml(numLabel)}</span>
-          <span class="ep-reg-queue-name">${escapeHtml(parsed.name)}</span>
-          <span class="ep-queue-status">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
-          </span>
-          <button class="ep-reg-queue-remove" data-idx="${i}">×</button>
-        </div>
-      `;
-    }).join('');
-    queueList.querySelectorAll('.ep-reg-queue-remove').forEach(btn => {
+    const title = epTitleEl?.value.trim() ?? '';
+    if (!title) { alert('회차 제목을 입력해주세요.'); epTitleEl?.focus(); return; }
+
+    const epNum = parseInt(epNumberEl?.value ?? '');
+    if (!epNum || epNum < 1) { alert('회차 번호를 입력해주세요.'); epNumberEl?.focus(); return; }
+
+    const file = attachedFiles[selectedIdx];
+    addBtn.disabled = true;
+
+    try {
+      const content = await parseFile(file);
+      if (!content) { alert('파일에서 텍스트를 추출할 수 없습니다.'); return; }
+      if (!isKorean(content)) {
+        alert('한국어 텍스트가 아닌 것 같아요.\n한글 비율이 70% 미만이면 등록할 수 없어요.');
+        return;
+      }
+
+      queueItems.push({ file, title, epNum, content });
+      attachedFiles.splice(selectedIdx, 1);
+      selectedIdx = -1;
+      if (epTitleEl)  epTitleEl.value  = '';
+      if (epNumberEl) epNumberEl.value = '';
+
+      renderFileList();
+      renderQueue();
+    } catch (err) {
+      alert(err.message || '파일 파싱 오류');
+    } finally {
+      addBtn.disabled = false;
+    }
+  });
+
+  function renderQueue() {
+    if (!queueListEl) return;
+    if (queueItems.length === 0) {
+      queueListEl.innerHTML = '<p class="ep-reg-queue-empty">아직 추가된 회차가 없어요.</p>';
+      return;
+    }
+    queueListEl.innerHTML = queueItems.map((item, i) =>
+      '<div class="ep-reg-queue-item">'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+      + '<span class="ep-queue-num">' + item.epNum + '화</span>'
+      + '<span class="ep-reg-queue-name">' + esc(item.title) + '</span>'
+      + '<svg class="ep-queue-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5cb85c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>'
+      + '<button class="ep-reg-queue-remove" data-idx="' + i + '">x</button>'
+      + '</div>'
+    ).join('');
+
+    queueListEl.querySelectorAll('.ep-reg-queue-remove').forEach(btn => {
       btn.addEventListener('click', () => {
-        queueItems.splice(Number(btn.dataset.idx), 1);
+        const idx = Number(btn.dataset.idx);
+        const removed = queueItems.splice(idx, 1)[0];
+        attachedFiles.push(removed.file);
+        renderFileList();
         renderQueue();
       });
     });
   }
 
-  function escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  /* ===== 직접 입력 탭 — 글자 수 카운터 ===== */
-  const directTitle = document.getElementById('directTitle');
-  const directTitleCounter = document.getElementById('directTitleCounter');
-  const directContent = document.getElementById('directContent');
-  const directContentCounter = document.getElementById('directContentCounter');
-
-  if (directTitle && directTitleCounter) {
-    directTitle.addEventListener('input', () => {
-      directTitleCounter.textContent = `${directTitle.value.length}/30`;
-    });
-  }
-
-  if (directContent && directContentCounter) {
-    directContent.addEventListener('input', () => {
-      const len = directContent.value.length;
-      directContentCounter.textContent = `${len.toLocaleString('ko-KR')}/8,000`;
-    });
-  }
-
-  /* ===== 회차 등록 버튼 ===== */
-  const submitBtn = document.getElementById('epRegSubmitBtn');
-
+  /* ===== 최종 등록 ===== */
   submitBtn?.addEventListener('click', async () => {
-    // 현재 활성 탭 확인
-    const activePane = document.querySelector('.ep-reg-pane.active');
-    const isDirectTab = activePane?.id === 'tab-direct';
+    const activePane  = document.querySelector('.ep-reg-pane.active');
+    const isUploadTab = activePane?.id === 'tab-upload';
 
-    if (!isDirectTab) {
-      // 파일 업로드 탭: 대기열 항목을 순서대로 등록
-      if (queueItems.length === 0) {
-        alert('등록 대기열이 비어있습니다. 파일을 먼저 추가해주세요.');
-        return;
+    if (isUploadTab) {
+      if (queueItems.length === 0) { alert('대기열에 회차를 추가해주세요.'); return; }
+      submitBtn.disabled = true;
+      submitBtn.textContent = '등록 중...';
+      const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
+      let successCount = 0;
+      for (const item of queueItems) {
+        try {
+          const fd = new FormData();
+          fd.append('title', item.title);
+          fd.append('content', item.content);
+          fd.append('csrfmiddlewaretoken', csrf);
+          const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.ok) successCount++;
+        } catch (e) {
+          console.error('등록 오류:', item.title, e);
+        }
       }
-      alert('파일 업로드 탭 등록은 준비 중입니다. 직접 입력 탭을 이용해주세요.');
-      return;
-    }
+      if (successCount > 0) {
+        window.location.href = '/works/' + workPk + '/';
+      } else {
+        alert('등록에 실패했습니다.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '회차 등록';
+      }
 
-    // 직접 입력 탭
-    const title   = directTitle?.value.trim() ?? '';
-    const content = directContent?.value.trim() ?? '';
-
-    if (!title) {
-      directTitle.style.borderColor = '#ff2d55';
-      directTitle.focus();
-      return;
-    }
-    if (!content) {
-      directContent.style.borderColor = '#ff2d55';
-      directContent.focus();
-      return;
-    }
-
-    const workPk = submitBtn.dataset.workPk;
-    submitBtn.disabled = true;
-    submitBtn.textContent = '등록 중…';
-
-    try {
+    } else {
+      const title   = directTitle?.value.trim() ?? '';
+      const content = directContent?.value.trim() ?? '';
+      if (!title)   { directTitle?.focus(); return; }
+      if (!content) { directContent?.focus(); return; }
+      submitBtn.disabled = true;
+      submitBtn.textContent = '등록 중...';
+      const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
       const fd = new FormData();
       fd.append('title', title);
       fd.append('content', content);
-      fd.append('csrfmiddlewaretoken', getCsrfToken());
-
-      const res  = await fetch(`/works/${workPk}/episodes/new/`, { method: 'POST', body: fd });
-      const data = await res.json();
-
-      if (data.ok) {
-        // 상세 페이지로 이동
-        window.location.href = `/works/${workPk}/`;
-      } else {
-        if (data.errors?.title)   directTitle.style.borderColor   = '#ff2d55';
-        if (data.errors?.content) directContent.style.borderColor = '#ff2d55';
+      fd.append('csrfmiddlewaretoken', csrf);
+      try {
+        const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.ok) window.location.href = '/works/' + workPk + '/';
+        else { submitBtn.disabled = false; submitBtn.textContent = '회차 등록'; }
+      } catch (e) {
+        console.error(e);
+        submitBtn.disabled = false;
+        submitBtn.textContent = '회차 등록';
       }
-    } catch (e) {
-      console.error('회차 등록 오류:', e);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = '회차 등록';
     }
   });
 
-  function getCsrfToken() {
-    let val = null;
-    document.cookie.split(';').forEach(c => {
-      const t = c.trim();
-      if (t.startsWith('csrftoken=')) val = decodeURIComponent(t.slice('csrftoken='.length));
-    });
-    return val;
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
   }
+
 });

@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
-      // 다른 드롭다운 닫기
       document.querySelectorAll('.ep-sort-dropdown.open').forEach(d => {
         if (d !== wrap) {
           d.classList.remove('open');
@@ -77,28 +76,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailEditModal    = document.getElementById('detailEditModal');
   const detailEditClose    = document.getElementById('detailEditClose');
 
-  // 더미 데이터 (추후 서버에서 주입)
-  const WORK_DATA = {
-    title:    '별빛 아래 잊힌 왕국',
-    author:   '킹왕짱웹소설작가',
-    genre:    '판타지',
-    genreVal: 'fantasy',
-    synopsis: '학벌, 어학 성적, 자격증까지 영혼을 갈아 넣었지만 돌아오는 건 \'귀하의 뛰어난 역량에도 불구하고…\'로 시작하는 탈락 문자뿐인 평범한 취준생 강민우. 편의점 아르바이트를 마치고 쓰러지듯 잠든 그는, 눈을 떠보니 난생처음 보는 판타지 세계의 거리에 서 있었다.',
-  };
-
   function openDetailEditModal() {
-    document.getElementById('detailEditTitle').value  = WORK_DATA.title;
-    document.getElementById('detailEditTitleLen').textContent = WORK_DATA.title.length;
-    document.getElementById('detailEditAuthor').value = WORK_DATA.author;
-    document.getElementById('detailEditAuthorLen').textContent = WORK_DATA.author.length;
-    document.getElementById('detailEditGenreValue').textContent = WORK_DATA.genre;
-    document.getElementById('detailEditGenreHidden').value = WORK_DATA.genreVal;
+    const btn      = document.getElementById('detailEditBtn');
+    const title    = btn?.dataset.title    ?? '';
+    const author   = btn?.dataset.author   ?? '';
+    const genre    = btn?.dataset.genre    ?? '';
+    const synopsis = btn?.dataset.synopsis ?? '';
+
+    document.getElementById('detailEditTitle').value  = title;
+    document.getElementById('detailEditTitleLen').textContent = title.length;
+    document.getElementById('detailEditAuthor').value = author;
+    document.getElementById('detailEditAuthorLen').textContent = author.length;
+    document.getElementById('detailEditGenreValue').textContent = genre || '선택하기';
+    document.getElementById('detailEditGenreHidden').value = genre;
     document.querySelectorAll('#detailEditGenreDropdown .custom-select-option').forEach(o => {
-      o.classList.toggle('selected', o.dataset.value === WORK_DATA.genreVal);
+      o.classList.toggle('selected', o.dataset.value === genre);
     });
     const syn = document.getElementById('detailEditSynopsis');
-    syn.value = WORK_DATA.synopsis;
-    document.getElementById('detailEditSynopsisLen').textContent = WORK_DATA.synopsis.length.toLocaleString();
+    syn.value = synopsis;
+    document.getElementById('detailEditSynopsisLen').textContent = synopsis.length.toLocaleString();
+
     detailEditBackdrop.classList.add('open');
     detailEditModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -133,12 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('detailEditSynopsisLen').textContent = this.value.length.toLocaleString();
   });
 
-  // 모달 내 장르 드롭다운
-  const detailGenreSelect  = document.getElementById('detailEditGenreSelect');
-  const detailGenreTrigger = document.getElementById('detailEditGenreTrigger');
+  // 장르 드롭다운
+  const detailGenreSelect   = document.getElementById('detailEditGenreSelect');
+  const detailGenreTrigger  = document.getElementById('detailEditGenreTrigger');
   const detailGenreDropdown = document.getElementById('detailEditGenreDropdown');
-  const detailGenreValue   = document.getElementById('detailEditGenreValue');
-  const detailGenreHidden  = document.getElementById('detailEditGenreHidden');
+  const detailGenreValue    = document.getElementById('detailEditGenreValue');
+  const detailGenreHidden   = document.getElementById('detailEditGenreHidden');
 
   detailGenreTrigger?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -155,6 +152,43 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.addEventListener('click', (e) => {
     if (!detailGenreSelect?.contains(e.target)) detailGenreSelect?.classList.remove('open');
+  });
+
+  // ---------- 작품 수정 저장 ----------
+  const detailEditSubmit = document.getElementById('detailEditSubmit');
+
+  detailEditSubmit?.addEventListener('click', async () => {
+    const title    = document.getElementById('detailEditTitle').value.trim();
+    const author   = document.getElementById('detailEditAuthor').value.trim();
+    const genre    = document.getElementById('detailEditGenreHidden').value;
+    const synopsis = document.getElementById('detailEditSynopsis').value.trim();
+    const workId   = document.getElementById('detailEditBtn').dataset.workId;
+
+    if (!title || !author || !genre) return;
+
+    detailEditSubmit.disabled = true;
+    detailEditSubmit.textContent = '수정 중...';
+
+    try {
+      const fd = new FormData();
+      fd.append('title',    title);
+      fd.append('author',   author);
+      fd.append('genre',    genre);
+      fd.append('synopsis', synopsis);
+      fd.append('csrfmiddlewaretoken', (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '');
+
+      const res  = await fetch('/works/' + workId + '/update/', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.ok) {
+        location.reload();
+      }
+    } catch (e) {
+      console.error('작품 수정 오류:', e);
+    } finally {
+      detailEditSubmit.disabled = false;
+      detailEditSubmit.textContent = '작품 수정';
+    }
   });
 
 });

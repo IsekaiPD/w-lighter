@@ -9,7 +9,6 @@
 
 {% block content %}
 
-  <!-- Page Header -->
   <div class="page-header">
     <div class="page-title-group">
       <h1 class="page-title">회차 등록</h1>
@@ -23,10 +22,8 @@
     </div>
   </div>
 
-  <!-- Main Panel -->
   <div class="ep-reg-panel">
 
-    <!-- 탭 -->
     <div class="ep-reg-tabs">
       <button class="ep-reg-tab active" data-tab="upload"><span>파일 업로드</span></button>
       <button class="ep-reg-tab" data-tab="direct"><span>직접 입력</span></button>
@@ -39,7 +36,6 @@
         대기열에 추가된 상태에서 회차 등록을 누르면 시스템에 반영됩니다.
       </p>
 
-      <!-- 파일 첨부 + 화살표 + 등록 대기 -->
       <div class="ep-reg-upload-row">
 
         <!-- 파일 첨부 -->
@@ -56,8 +52,7 @@
             <p class="ep-reg-drop-sub">txt, docx 파일만 지원</p>
             <p class="ep-reg-drop-sub">파일당 최대 1MB</p>
           </div>
-          <!-- 첨부된 파일 목록 -->
-          <div class="ep-reg-file-list" id="fileList"></div>
+          <div class="ep-reg-file-list" id="fileList" style="display:none;"></div>
         </div>
 
         <!-- 화살표 버튼 -->
@@ -72,7 +67,7 @@
         <div class="ep-reg-col">
           <h3 class="ep-reg-col-title">등록 대기</h3>
           <div class="ep-reg-queue" id="queueList">
-            <!-- 동적으로 추가 -->
+            <p class="ep-reg-queue-empty">아직 추가된 회차가 없어요.</p>
           </div>
         </div>
 
@@ -97,7 +92,6 @@
     <!-- ===== 직접 입력 탭 ===== -->
     <div class="ep-reg-pane" id="tab-direct">
 
-      <!-- 회차 제목 + 회차 번호 (한 행) -->
       <div class="ep-reg-direct-top-row">
         <div class="ep-reg-direct-title-group">
           <label class="ep-reg-label">회차 제목</label>
@@ -109,13 +103,12 @@
         <div class="ep-reg-direct-number-group">
           <label class="ep-reg-label">회차 번호</label>
           <div class="ep-reg-number-wrap">
-            <input class="ep-reg-input ep-reg-number-input" type="number" min="1" id="directNumber">
+            <input class="ep-reg-input ep-reg-number-input" type="number" min="1" id="directNumber" placeholder="숫자 입력">
             <span class="ep-reg-number-suffix">화</span>
           </div>
         </div>
       </div>
 
-      <!-- 원문 textarea -->
       <div class="ep-reg-content-section">
         <h3 class="ep-reg-col-title">원문</h3>
         <div class="ep-reg-textarea-wrap">
@@ -128,9 +121,10 @@
 
     </div>
 
-    <!-- 하단 등록 버튼 -->
     <div class="ep-reg-footer">
-      <button class="ep-reg-submit-btn" id="epRegSubmitBtn" data-work-pk="{{ work.work_id }}">회차 등록</button>
+      <button class="ep-reg-submit-btn" id="epRegSubmitBtn"
+        data-work-pk="{{ work.work_id }}"
+        data-episode-count="{{ episode_count }}">회차 등록</button>
     </div>
 
   </div>
@@ -138,5 +132,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="{% static 'js/episode_register.js' %}"></script>
 {% endblock %}

@@ -157,13 +157,13 @@
           </button>
           <div class="custom-select-dropdown" id="editGenreDropdown">
             <ul class="custom-select-list">
-              <li class="custom-select-option" data-value="romance">로맨스</li>
-              <li class="custom-select-option" data-value="romance_fantasy">로맨스 판타지</li>
-              <li class="custom-select-option" data-value="fantasy">판타지</li>
-              <li class="custom-select-option" data-value="modern_fantasy">현대 판타지</li>
-              <li class="custom-select-option" data-value="murim">무협</li>
-              <li class="custom-select-option" data-value="sf">SF</li>
-              <li class="custom-select-option" data-value="etc">기타</li>
+              <li class="custom-select-option" data-value="로맨스">로맨스</li>
+              <li class="custom-select-option" data-value="로맨스 판타지">로맨스 판타지</li>
+              <li class="custom-select-option" data-value="판타지">판타지</li>
+              <li class="custom-select-option" data-value="현대물">현대물</li>
+              <li class="custom-select-option" data-value="무협">무협</li>
+              <li class="custom-select-option" data-value="SF">SF</li>
+              <li class="custom-select-option" data-value="기타">기타</li>
             </ul>
           </div>
           <input type="hidden" id="editWorkGenre" name="genre">
@@ -230,13 +230,13 @@
           </button>
           <div class="custom-select-dropdown" id="genreDropdown">
             <ul class="custom-select-list">
-              <li class="custom-select-option" data-value="romance">로맨스</li>
-              <li class="custom-select-option" data-value="romance_fantasy">로맨스 판타지</li>
-              <li class="custom-select-option" data-value="fantasy">판타지</li>
-              <li class="custom-select-option" data-value="modern_fantasy">현대 판타지</li>
-              <li class="custom-select-option" data-value="murim">무협</li>
-              <li class="custom-select-option" data-value="sf">SF</li>
-              <li class="custom-select-option" data-value="etc">기타</li>
+              <li class="custom-select-option" data-value="로맨스">로맨스</li>
+              <li class="custom-select-option" data-value="로맨스 판타지">로맨스 판타지</li>
+              <li class="custom-select-option" data-value="판타지">판타지</li>
+              <li class="custom-select-option" data-value="현대물">현대물</li>
+              <li class="custom-select-option" data-value="무협">무협</li>
+              <li class="custom-select-option" data-value="SF">SF</li>
+              <li class="custom-select-option" data-value="기타">기타</li>
             </ul>
           </div>
           <input type="hidden" id="workGenre" name="genre">
@@ -267,7 +267,6 @@
 (function() {
   const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
 
-  // ===== 작품 삭제 =====
   document.addEventListener('click', async (e) => {
     const btn = e.target.closest('.work-menu-delete');
     if (!btn) return;
