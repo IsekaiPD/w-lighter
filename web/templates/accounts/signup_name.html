@@ -36,7 +36,8 @@
         </li>
       </ol>
 
-      <section class="signup-form-card signup-name-card">
+      <form class="signup-form-card signup-name-card" method="post" action="{% url 'accounts:signup_name' %}">
+        {% csrf_token %}
         <h1 id="signup-name-title">닉네임 설정</h1>
         <p class="signup-description">환영합니다, 작가님. w.LiGHTER에서 사용할 닉네임을 입력해 주세요.<br>나중에 설정에서 변경할 수 있어요.</p>
 
@@ -53,8 +54,12 @@
           </p>
         </div>
 
-        <button class="signup-primary-button" type="button" data-start-signup data-start-url="{% url 'works:library' %}" disabled>시작하기</button>
-      </section>
+        {% if signup_error %}
+          <p class="signup-error-message">{{ signup_error }}</p>
+        {% endif %}
+
+        <button class="signup-primary-button" type="submit" data-start-signup disabled>시작하기</button>
+      </form>
 
       <p class="signup-copyright">© 2026 w.LiGHTER. All rights reserved.</p>
     </div>

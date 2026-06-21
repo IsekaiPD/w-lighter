@@ -40,6 +40,7 @@
   if (nextTermsButton) {
     nextTermsButton.addEventListener('click', () => {
       if (nextTermsButton.disabled) return;
+      if (nextTermsButton.form) return;
       window.location.href = nextTermsButton.dataset.nextUrl;
     });
   }
@@ -108,7 +109,10 @@
 
   startButton?.addEventListener('click', () => {
     if (startButton.disabled) return;
-    window.location.href = startButton.dataset.startUrl;
+    if (startButton.form) return;
+    if (startButton.dataset.startUrl) {
+      window.location.href = startButton.dataset.startUrl;
+    }
   });
 
   syncAgreementState();
