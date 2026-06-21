@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+
+def localization(request):
+    return render(request, 'guides/localization.html')

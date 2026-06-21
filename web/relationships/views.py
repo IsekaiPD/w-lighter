@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+
+def relationship(request):
+    return render(request, 'relationships/relationship.html')
