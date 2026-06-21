@@ -1,11 +1,11 @@
 // library.js
 
 document.addEventListener('DOMContentLoaded', () => {
-  const backdrop   = document.getElementById('modalBackdrop');
-  const modal      = document.getElementById('newWorkModal');
-  const openBtn    = document.getElementById('newWorkBtn');
-  const closeBtn   = document.getElementById('modalClose');
-  const synopsis   = document.getElementById('workSynopsis');
+  const backdrop    = document.getElementById('modalBackdrop');
+  const modal       = document.getElementById('newWorkModal');
+  const openBtn     = document.getElementById('newWorkBtn');
+  const closeBtn    = document.getElementById('modalClose');
+  const synopsis    = document.getElementById('workSynopsis');
   const synopsisLen = document.getElementById('synopsisLen');
 
   function openModal() {
@@ -24,12 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
   closeBtn?.addEventListener('click', closeModal);
   backdrop?.addEventListener('click', closeModal);
 
-  // ESC 키로 닫기
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') { closeModal(); closeEditModal(); }
   });
 
-  // 커스텀 장르 셀렉트
+  // 신규 등록 - 장르 드롭다운
   const genreSelect   = document.getElementById('genreSelect');
   const genreTrigger  = document.getElementById('genreTrigger');
   const genreDropdown = document.getElementById('genreDropdown');
@@ -52,19 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('click', (e) => {
-    if (!genreSelect?.contains(e.target)) {
-      genreSelect?.classList.remove('open');
-    }
+    if (!genreSelect?.contains(e.target)) genreSelect?.classList.remove('open');
   });
 
-  // 제목 카운터
+  // 카운터
   const titleInput = document.getElementById('workTitle');
   const titleLen   = document.getElementById('titleLen');
   titleInput?.addEventListener('input', () => {
     titleLen.textContent = titleInput.value.length;
   });
 
-  // 필명 카운터 + 유효성 검사
   const authorInput = document.getElementById('workAuthor');
   const authorLen   = document.getElementById('authorLen');
   const authorError = document.getElementById('authorError');
@@ -80,44 +76,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 시놉시스 글자 수 카운터
   synopsis?.addEventListener('input', () => {
     synopsisLen.textContent = Number(synopsis.value.length).toLocaleString();
   });
 
-  // ---------- 작품 등록 제출 ----------
+  // ---------- 작품 등록 ----------
   const submitBtn = document.getElementById('submitWork');
 
   submitBtn?.addEventListener('click', async () => {
-    const titleInput  = document.getElementById('workTitle');
-    const authorInput = document.getElementById('workAuthor');
-    const genreInput  = document.getElementById('workGenre');
+    const titleEl  = document.getElementById('workTitle');
+    const authorEl = document.getElementById('workAuthor');
+    const genreEl  = document.getElementById('workGenre');
 
-    const title    = titleInput.value.trim();
-    const author   = authorInput.value.trim();
-    const genre    = genreInput.value;
+    const title    = titleEl.value.trim();
+    const author   = authorEl.value.trim();
+    const genre    = genreEl.value;
     const synValue = synopsis?.value.trim() ?? '';
 
-    // 간단 필수값 검사
     let valid = true;
-    [titleInput, authorInput].forEach(el => el.style.borderColor = '');
+    [titleEl, authorEl].forEach(el => el.style.borderColor = '');
 
-    if (!title) { titleInput.style.borderColor = '#ff2d55'; valid = false; }
-    if (!author) { authorInput.style.borderColor = '#ff2d55'; valid = false; }
-    if (!genre) {
-      document.getElementById('genreTrigger').style.borderColor = '#ff2d55';
-      valid = false;
-    }
+    if (!title)  { titleEl.style.borderColor  = '#ff2d55'; valid = false; }
+    if (!author) { authorEl.style.borderColor = '#ff2d55'; valid = false; }
+    if (!genre)  { document.getElementById('genreTrigger').style.borderColor = '#ff2d55'; valid = false; }
     if (!valid) return;
 
     submitBtn.disabled = true;
-    submitBtn.textContent = '등록 중…';
+    submitBtn.textContent = '등록 중...';
 
     try {
       const fd = new FormData();
-      fd.append('title', title);
-      fd.append('author', author);
-      fd.append('genre', genre);
+      fd.append('title',    title);
+      fd.append('author',   author);
+      fd.append('genre',    genre);
       fd.append('synopsis', synValue);
       fd.append('csrfmiddlewaretoken', getCookie('csrftoken'));
 
@@ -129,9 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal();
         resetWorkForm();
       } else {
-        // 서버 검증 에러
-        if (data.errors?.title)  titleInput.style.borderColor  = '#ff2d55';
-        if (data.errors?.author) authorInput.style.borderColor = '#ff2d55';
+        if (data.errors?.title)  titleEl.style.borderColor  = '#ff2d55';
+        if (data.errors?.author) authorEl.style.borderColor = '#ff2d55';
       }
     } catch (e) {
       console.error('작품 등록 오류:', e);
@@ -151,54 +141,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function appendWorkCard(work) {
-    // 빈 상태 제거
     document.querySelector('.empty-state')?.remove();
-
-    // 그리드 없으면 생성
     let grid = document.querySelector('.works-grid');
     if (!grid) {
       grid = document.createElement('div');
       grid.className = 'works-grid';
       document.querySelector('.library-panel').appendChild(grid);
     }
-
     const idx    = grid.querySelectorAll('.work-card').length + 1;
-    const menuId = `workMenu${idx}`;
-
-    const card = document.createElement('div');
+    const menuId = 'workMenu_new' + idx;
+    const card   = document.createElement('div');
     card.className = 'work-card';
     card.dataset.workId = work.id;
-    card.innerHTML = `
-      <div class="work-cover work-cover-empty"></div>
-      <div class="work-info">
-        <div class="work-card-header">
-          <h3 class="work-title">${esc(work.title)}</h3>
-          <div class="work-menu-wrap">
-            <button class="work-kebab-btn" data-menu="${menuId}" aria-label="메뉴">
-              <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
-                <circle cx="2" cy="2" r="2"/>
-                <circle cx="2" cy="9" r="2"/>
-                <circle cx="2" cy="16" r="2"/>
-              </svg>
-            </button>
-            <div class="work-menu-dropdown" id="${menuId}">
-              <button class="work-menu-item">작품 정보 수정</button>
-              <button class="work-menu-item work-menu-delete">작품 삭제</button>
-            </div>
-          </div>
-        </div>
-        <p class="work-meta">필명: ${esc(work.author)}&nbsp;&nbsp;|&nbsp;&nbsp;장르: ${esc(work.genre)}</p>
-        <p class="work-episodes"><strong>총 0화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 0화&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 방금 전</p>
-      </div>`;
+    card.innerHTML = '<a href="/works/' + work.id + '/" class="work-cover work-cover-empty"></a>'
+      + '<div class="work-info">'
+      + '<div class="work-card-header">'
+      + '<a href="/works/' + work.id + '/"><h3 class="work-title">' + esc(work.title) + '</h3></a>'
+      + '<div class="work-menu-wrap">'
+      + '<button class="work-kebab-btn" data-menu="' + menuId + '" aria-label="메뉴">'
+      + '<svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor"><circle cx="2" cy="2" r="2"/><circle cx="2" cy="9" r="2"/><circle cx="2" cy="16" r="2"/></svg>'
+      + '</button>'
+      + '<div class="work-menu-dropdown" id="' + menuId + '">'
+      + '<button class="work-menu-item">작품 정보 수정</button>'
+      + '<button class="work-menu-item work-menu-delete">작품 삭제</button>'
+      + '</div></div></div>'
+      + '<p class="work-meta">필명: ' + esc(work.pen_name) + '&nbsp;&nbsp;|&nbsp;&nbsp;장르: ' + esc(work.genre) + '</p>'
+      + '<p class="work-episodes"><strong>총 0화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 0화</p>'
+      + '</div>';
     grid.appendChild(card);
 
-    // 카드 클릭 → 상세 페이지 이동 (kebab 메뉴 클릭은 제외)
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.work-menu-wrap')) return;
-      window.location.href = `/works/${work.id}/`;
-    });
-
-    // 점 세 개 메뉴 이벤트 연결
     card.querySelector('.work-kebab-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       const mid  = e.currentTarget.dataset.menu;
@@ -209,9 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
       menu?.classList.toggle('open');
     });
 
-    // 총 N권 업데이트
     const count = document.querySelectorAll('.work-card').length;
-    document.querySelector('.library-count').textContent = `총 ${count}권`;
+    document.querySelector('.library-count').textContent = '총 ' + count + '권';
   }
 
   function resetWorkForm() {
@@ -227,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('workAuthor').style.borderColor  = '';
     document.getElementById('workTitle').style.borderColor   = '';
     document.getElementById('genreTrigger').style.borderColor = '';
-    document.querySelectorAll('.custom-select-option.selected').forEach(o => o.classList.remove('selected'));
+    document.querySelectorAll('#genreDropdown .custom-select-option.selected').forEach(o => o.classList.remove('selected'));
   }
 
   function esc(str) {
@@ -237,34 +207,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- 작품 정보 수정 모달 ----------
-  const editBackdrop  = document.getElementById('editModalBackdrop');
-  const editModal     = document.getElementById('editWorkModal');
-  const editCloseBtn  = document.getElementById('editModalClose');
+  const editBackdrop = document.getElementById('editModalBackdrop');
+  const editModal    = document.getElementById('editWorkModal');
+  const editCloseBtn = document.getElementById('editModalClose');
+
+  let currentEditWorkId = null;
 
   function openEditModal(card) {
-    // 카드에서 현재 데이터 읽어 pre-fill
+    currentEditWorkId = card.dataset.workId ?? null;
     const title  = card.querySelector('.work-title')?.textContent.trim() ?? '';
     const meta   = card.querySelector('.work-meta')?.textContent ?? '';
-    const author = meta.match(/필명:\s*([^\|]+)/)?.[1]?.trim() ?? '';
+    const author = meta.match(/필명:\s*([^|]+)/)?.[1]?.trim() ?? '';
     const genre  = meta.match(/장르:\s*(.+)/)?.[1]?.trim() ?? '';
 
     document.getElementById('editWorkTitle').value  = title;
     document.getElementById('editTitleLen').textContent = title.length;
-
     document.getElementById('editWorkAuthor').value = author;
     document.getElementById('editAuthorLen').textContent = author.length;
-
-    // 장르 드롭다운 pre-fill
-    const genreMap = {
-      '로맨스': 'romance', '로맨스 판타지': 'romance_fantasy',
-      '판타지': 'fantasy', '현대 판타지': 'modern_fantasy',
-      '무협': 'murim', 'SF': 'sf', '기타': 'etc',
-    };
-    const genreVal = genreMap[genre] ?? '';
-    document.getElementById('editWorkGenre').value = genreVal;
+    document.getElementById('editWorkGenre').value  = genre;
     document.getElementById('editGenreValue').textContent = genre || '선택하기';
     document.querySelectorAll('#editGenreDropdown .custom-select-option').forEach(o => {
-      o.classList.toggle('selected', o.dataset.value === genreVal);
+      o.classList.toggle('selected', o.dataset.value === genre);
     });
 
     editBackdrop.classList.add('open');
@@ -281,20 +244,12 @@ document.addEventListener('DOMContentLoaded', () => {
   editCloseBtn?.addEventListener('click', closeEditModal);
   editBackdrop?.addEventListener('click', closeEditModal);
 
-  // 수정 모달 ESC
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeModal(); closeEditModal(); }
-  });
-
-  // 작품 정보 수정 메뉴 클릭 → 해당 카드 데이터로 모달 열기
   document.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.work-menu-item:not(.work-menu-delete)');
     if (editBtn) {
       const card = editBtn.closest('.work-card');
       if (card) {
-        closeEditModal(); // 혹시 이미 열려있으면 닫고
         openEditModal(card);
-        // 메뉴 닫기
         editBtn.closest('.work-menu-dropdown')?.classList.remove('open');
       }
     }
@@ -349,6 +304,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!editGenreSelect?.contains(e.target)) editGenreSelect?.classList.remove('open');
   });
 
+  // ---------- 작품 수정 저장 ----------
+  const submitEditBtn = document.getElementById('submitEditWork');
+
+  submitEditBtn?.addEventListener('click', async () => {
+    if (!currentEditWorkId) return;
+
+    const title    = document.getElementById('editWorkTitle').value.trim();
+    const author   = document.getElementById('editWorkAuthor').value.trim();
+    const genre    = document.getElementById('editWorkGenre').value;
+    const synopsis = document.getElementById('editWorkSynopsis')?.value.trim() ?? '';
+
+    if (!title || !author || !genre) return;
+
+    submitEditBtn.disabled = true;
+    submitEditBtn.textContent = '수정 중...';
+
+    try {
+      const fd = new FormData();
+      fd.append('title',    title);
+      fd.append('author',   author);
+      fd.append('genre',    genre);
+      fd.append('synopsis', synopsis);
+      fd.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      const res  = await fetch('/works/' + currentEditWorkId + '/update/', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (data.ok) {
+        location.reload();
+      }
+    } catch (e) {
+      console.error('작품 수정 오류:', e);
+    } finally {
+      submitEditBtn.disabled = false;
+      submitEditBtn.textContent = '작품 수정';
+    }
+  });
+
   // ---------- 정렬 드롭다운 ----------
   const sortDropdown = document.getElementById('sortDropdown');
   const sortTrigger  = document.getElementById('sortTrigger');
@@ -375,7 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
       sortLabel.textContent = opt.textContent.trim();
       sortDropdown.classList.remove('open');
       updateSortCaret();
-      // TODO: 실제 정렬 로직 연결
     });
   });
 
@@ -386,13 +378,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ---------- 작품 카드 점 세 개 메뉴 ----------
+  // ---------- 작품 카드 케밥 메뉴 ----------
   document.querySelectorAll('.work-kebab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const menuId = btn.dataset.menu;
-      const menu = document.getElementById(menuId);
-      // 다른 메뉴 닫기
+      const menu   = document.getElementById(menuId);
       document.querySelectorAll('.work-menu-dropdown.open').forEach(m => {
         if (m !== menu) m.classList.remove('open');
       });

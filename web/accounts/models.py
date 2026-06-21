@@ -19,7 +19,6 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, nickname, password=None, **extra_fields):
-        """Django admin 접속용 (OAuth 아닌 계정)."""
         user = self.model(
             email=self.normalize_email(email),
             nickname=nickname,
@@ -38,13 +37,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    """
-    ERD USERS 테이블.
-    OAuth 전용이므로 password는 unusable로 설정.
-    is_active / last_login은 AbstractBaseUser 필수 →
-    ERD에 없지만 migrate 시 ALTER TABLE로 컬럼 추가됨 (데이터 영향 없음).
-    """
-
     OAUTH_CHOICES = [
         ('NAVER', 'NAVER'),
         ('KAKAO', 'KAKAO'),
@@ -62,7 +54,6 @@ class User(AbstractBaseUser):
     updated_at = models.DateTimeField(auto_now=True)
     withdrawn_at = models.DateTimeField(null=True, blank=True)
 
-    # AbstractBaseUser 필수 (ERD에 없음 → migrate로 컬럼 추가됨)
     is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email'
