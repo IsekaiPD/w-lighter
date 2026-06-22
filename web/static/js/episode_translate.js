@@ -577,4 +577,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  /* ===== 페이지 로드 시 저장된 번역 불러오기(RDS) ===== */
+  // DB 한 행 → 화면 렌더용 result 객체로 변환
+  function buildResultFromSaved(item) {
+    const rep = item.inspectionReport || {};
+    return {
+      finalTranslation: item.translatedText || '',
+      deliveryStatus: 'deliverable',
+      translationRationale: item.summary ? { title: '요약', overview: item.summary } : null,
+      qaIssues: rep.qaIssues || [],
+      readerEndnotes: rep.readerEndnotes || [],
+      authorReviewCards: rep.authorReviewCards || [],
+    };
+  }
+
+  async function loadSavedTranslations() {
+    if (!window.TR_CONFIG?.listUrl) return;
+    try {
+      const res = await fetch(window.TR_CONFIG.listUrl);
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.items) || !data.items.length) return;
+
+      data.items.forEach((item) => {
+        const lang = item.lang || 'EN';
+        const list = trVersionsByLang[lang] || (trVersionsByLang[lang] = []);
+        list.push({ n: list.length + 1, date: item.createdAt || '', result: buildResultFromSaved(item) });
+      });
+
+      // 현재 활성 언어에 저장본이 있으면 최신 버전 표시
+      const cur = trVersionsByLang[getActiveLang()];
+      if (cur && cur.length) selectVersion(cur[cur.length - 1]);
+      else refreshVersionPanels();
+    } catch (e) {
+      console.error('[load translations]', e);
+    }
+  }
+
+  loadSavedTranslations();
+
 });

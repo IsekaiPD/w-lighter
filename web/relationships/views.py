@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -13,6 +14,28 @@ from works.models import Work
 def relationship(request):
     works = Work.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'relationships/relationship.html', {'works': works})
+
+
+@login_required(login_url='pages:landing')
+def relationship_saved(request, work_pk):
+    """작품에 저장된 관계도 목록(RDS relation_maps)을 반환. version 부여(생성순)."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT map_id, map_content, created_at "
+            "FROM relation_maps WHERE work_id = %s ORDER BY map_id ASC",
+            [work.work_id],
+        )
+        rows = cur.fetchall()
+    maps = []
+    for i, r in enumerate(rows):
+        maps.append({
+            'id': r[0],
+            'version': i + 1,  # 생성순 버전
+            'content': r[1],
+            'createdAt': r[2].strftime('%Y.%m.%d %H:%M') if r[2] else '',
+        })
+    return JsonResponse({'ok': True, 'maps': maps})
 
 
 @login_required(login_url='pages:landing')

@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -13,6 +14,25 @@ from works.models import Work
 def cover_image(request):
     works = Work.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'covers/cover_image.html', {'works': works})
+
+
+@login_required(login_url='pages:landing')
+def cover_saved(request, work_pk):
+    """작품에 저장된 표지 목록(RDS covers)을 반환. 작품 선택 시 그리드 복원용."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT cover_id, cover_url, target_country, main_cover_yn, created_at "
+            "FROM covers WHERE work_id = %s ORDER BY cover_id DESC",
+            [work.work_id],
+        )
+        rows = cur.fetchall()
+    covers = [{
+        'id': r[0], 'url': r[1], 'targetCountry': r[2],
+        'isMain': bool(r[3]),
+        'createdAt': r[4].strftime('%Y-%m-%d') if r[4] else '',
+    } for r in rows]
+    return JsonResponse({'ok': True, 'covers': covers})
 
 
 @login_required(login_url='pages:landing')

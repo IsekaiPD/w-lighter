@@ -231,10 +231,44 @@ document.addEventListener('DOMContentLoaded', () => {
       selectTrigger.setAttribute('aria-expanded', 'false');
       if (chevron) chevron.innerHTML = SVG_DOWN;
 
-      // 작품 변경 → 상태 초기화
+      // 작품 변경 → 상태 초기화 + 저장된 관계도 불러오기
       resetLoadedState();
-      renderList(selectedWorkId);
+      loadSavedMaps(selectedWorkId);
     });
+  });
+
+  // ===== 저장된 관계도 불러오기 (작품 선택 시) =====
+  async function loadSavedMaps(workId) {
+    document.getElementById('relDebugBox')?.remove();
+    if (window.REL_CONFIG?.savedUrl) {
+      const url = window.REL_CONFIG.savedUrl.replace('/0/', '/' + workId + '/');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.maps)) {
+          // 최신순(version 큰 것 먼저)으로 목록 구성
+          mockDiagrams[workId] = data.maps.slice().reverse().map(m => ({
+            id: 'db_' + m.id, version: m.version, createdAt: m.createdAt, content: m.content,
+          }));
+        }
+      } catch (e) {
+        console.error('[load relation maps]', e);
+      }
+    }
+    renderList(workId);
+  }
+
+  // 관계도 행 클릭 → 저장된 HTML 내용을 새 창으로 보기
+  diagList?.addEventListener('click', (e) => {
+    const row = e.target.closest('.rel-diagram-row');
+    if (!row) return;
+    const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === row.dataset.id);
+    if (diag && diag.content) {
+      const w = window.open('', '_blank');
+      if (w) { w.document.open(); w.document.write(diag.content); w.document.close(); }
+    } else if (diag && diag.htmlUrl) {
+      window.open(diag.htmlUrl, '_blank');
+    }
   });
 
   document.addEventListener('click', (e) => {

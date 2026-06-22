@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -13,6 +14,24 @@ from works.models import Work
 def character_list(request):
     works = Work.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'characters/character_list.html', {'works': works})
+
+
+@login_required(login_url='pages:landing')
+def character_saved(request, work_pk):
+    """작품에 저장된 캐릭터 목록(RDS characters)을 반환. 작품 선택 시 표 복원용."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT char_name, age, gender, role, appearance, detail_setting, relationships "
+            "FROM characters WHERE work_id = %s ORDER BY character_id ASC",
+            [work.work_id],
+        )
+        rows = cur.fetchall()
+    characters = [{
+        'char_name': r[0], 'age': r[1], 'gender': r[2], 'role': r[3],
+        'appearance': r[4], 'detail_setting': r[5], 'relationships': r[6],
+    } for r in rows]
+    return JsonResponse({'ok': True, 'characters': characters})
 
 
 @login_required(login_url='pages:landing')

@@ -6,4 +6,5 @@ app_name = 'covers'
 urlpatterns = [
     path('', views.cover_image, name='cover_image'),
     path('generate/', views.cover_generate, name='cover_generate'),
+    path('<int:work_pk>/saved/', views.cover_saved, name='cover_saved'),
 ]

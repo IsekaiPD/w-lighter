@@ -74,7 +74,7 @@
         </div>
       </div>
       <div class="ep-textbox ep-trans-box">
-        <div class="ep-textbox-inner ep-trans-text" style="color:var(--color-text-muted);padding:24px;">
+        <div class="ep-textbox-inner ep-trans-text" style="color:var(--color-text-muted);">
           {# TODO: FastAPI translation_results 연동 후 번역 텍스트 표시 #}
           <p>번역 데이터가 없습니다. 번역하기 버튼을 눌러 번역을 시작해 보세요.</p>
         </div>
@@ -86,5 +86,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/episode_detail.js' %}"></script>
+<script>
+  window.EP_CONFIG = {
+    listUrl: "{% url 'works:episode_translations' work_pk=work.work_id episode_pk=episode.episode_id %}",
+  };
+</script>
+<script src="{% static 'js/episode_detail.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}

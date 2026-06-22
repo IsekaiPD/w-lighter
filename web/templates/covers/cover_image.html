@@ -175,7 +175,8 @@
   window.COVER_CONFIG = {
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'covers:cover_generate' %}",
+    savedUrl:    "{% url 'covers:cover_saved' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/cover_image.js' %}?v=credit-use-20260622-1"></script>
+<script src="{% static 'js/cover_image.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}
