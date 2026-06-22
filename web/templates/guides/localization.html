@@ -181,5 +181,13 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.GUIDE_CONFIG = {
+    csrfToken:   "{{ csrf_token }}",
+    generateUrl: "{% url 'guides:guide_generate' %}",
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="{% static 'js/localization.js' %}?v=credit-use-20260622-1"></script>
 {% endblock %}

@@ -40,7 +40,8 @@
             <div class="char-dropdown-item work-option" role="option"
                  data-work-id="{{ work.work_id }}"
                  data-title="{{ work.title }}"
-                 data-genre="{{ work.genre }}">
+                 data-genre="{{ work.genre }}"
+                 data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}">
               <div class="char-di-thumb"><div class="char-di-placeholder"></div></div>
               <div class="char-di-info">
                 <p class="char-di-title">{{ work.title }}</p>
@@ -162,5 +163,11 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.CHAR_CONFIG = {
+    csrfToken:  "{{ csrf_token }}",
+    extractUrl: "{% url 'characters:extract' %}",
+  };
+</script>
 <script src="{% static 'js/character_list.js' %}"></script>
 {% endblock %}

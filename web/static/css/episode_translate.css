@@ -372,9 +372,11 @@
 .tr-version-opt {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
-  padding: 6px 22px;
-  font-size: 15px;
+  /* 트리거 라벨(캐럿 20px + gap 4px + 좌패딩 12px = 36px)과 좌측 줄맞춤 */
+  padding: 6px 14px 6px 36px;
+  font-size: 13px;
   font-weight: 600;
   color: rgba(110, 99, 140, 0.5);
   text-align: left;
@@ -391,7 +393,7 @@
 }
 
 .tr-ver-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: inherit;
 }

@@ -55,6 +55,7 @@
                  data-id="{{ work.work_id }}"
                  data-title="{{ work.title }}"
                  data-genre="{{ work.genre }}"
+                 data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}"
                  data-img="">
               <div class="rel-di-thumb"><div class="rel-di-placeholder"></div></div>
               <div class="rel-di-info">
@@ -200,5 +201,12 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.REL_CONFIG = {
+    csrfToken:   "{{ csrf_token }}",
+    generateUrl: "{% url 'relationships:relationship_map' %}",
+    extractUrl:  "{% url 'characters:extract' %}",
+  };
+</script>
 <script src="{% static 'js/relationship.js' %}?v=credit-use-20260622-1"></script>
 {% endblock %}

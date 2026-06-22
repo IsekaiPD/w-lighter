@@ -85,13 +85,114 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // ===== 추출 =====
-  extractBtn.addEventListener('click', function () {
+  // ===== 추출 (모델 서버 호출 → 응답 구조 확인용 RAW 표시) =====
+  function showDebug(html) {
+    let box = document.getElementById('charDebugBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'charDebugBox';
+      box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
+        'border-radius:12px;background:var(--color-surface,#fff);';
+      (charTableWrap.parentNode || document.body).insertBefore(box, charTableWrap);
+    }
+    box.innerHTML = html;
+  }
+
+  extractBtn.addEventListener('click', async function () {
     if (!selectedWorkId) { showToast('작품을 먼저 선택해주세요.'); return; }
+    const selItem = document.querySelector('.work-option[data-work-id="' + selectedWorkId + '"]');
+    if (selItem && selItem.dataset.synopsis === 'false') {
+      showToast('이 작품은 시놉시스가 없어 캐릭터 설정을 추출할 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
+      return;
+    }
+    if (!window.CHAR_CONFIG || !window.CHAR_CONFIG.extractUrl) { showToast('설정 오류: extractUrl 없음'); return; }
+
+    charEmpty.style.display = 'none';
+    charTableWrap.style.display = 'none';
+    extractBtn.disabled = true;
+    showDebug('<p style="color:var(--color-text-muted);">캐릭터 추출 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+
+    try {
+      const res = await fetch(window.CHAR_CONFIG.extractUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.CHAR_CONFIG.csrfToken,
+        },
+        body: JSON.stringify({ workId: selectedWorkId }),
+      });
+      const data = await res.json();
+
+      console.log('[character-extract] HTTP', res.status, data);
+
+      if (!data.ok) {
+        showDebug(
+          '<p style="font-weight:700;margin-bottom:6px;color:var(--color-text,#2b2440);">캐릭터를 추출하지 못했어요</p>' +
+          '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escapeAttr(data.error || ('오류 ' + res.status)) + '</p>' +
+          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);">' +
+          '<summary style="cursor:pointer;">자세히 (개발용)</summary>' +
+          '<pre style="white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow:auto;margin:8px 0 0;">' +
+          escapeAttr(JSON.stringify(data, null, 2)) + '</pre></details>'
+        );
+        return;
+      }
+
+      renderCharacters((data.result && data.result.characters) || []);
+    } catch (err) {
+      console.error('[character-extract] error', err);
+      showDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
+    } finally {
+      extractBtn.disabled = false;
+    }
+  });
+
+  function escapeAttr(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // 모델 서버 role → 기존 배지(주연/조연/단역) 매핑
+  function mapRole(role) {
+    const r = String(role || '').trim();
+    if (['주인공', '주연'].includes(r)) return { label: '주연', cls: 'role-lead' };
+    if (['조연', '연인', '조력자', '동료', '파트너'].includes(r)) return { label: '조연', cls: 'role-support' };
+    return { label: '단역', cls: 'role-minor' };
+  }
+
+  const ACTIONS_HTML =
+    '<button class="icon-btn edit-btn" aria-label="수정"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>' +
+    '<button class="icon-btn delete-btn" aria-label="삭제"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>';
+
+  // ===== 모델 응답 → 기존 표 UI 렌더링 =====
+  function renderCharacters(characters) {
+    const box = document.getElementById('charDebugBox');
+    if (box) box.remove();
+
+    const cell = (v) => {
+      const t = String(v == null ? '' : v).trim();
+      return '<td>' + (t === '' ? '-' : escapeAttr(t)) + '</td>';
+    };
+
+    tableBody.innerHTML = characters.map(function (c) {
+      const role = mapRole(c.role);
+      return '<tr>' +
+        cell(c.char_name) +
+        '<td><span class="role-badge ' + role.cls + '">' + role.label + '</span></td>' +
+        cell(c.age) +
+        cell(c.gender) +
+        cell(c.appearance) +
+        cell(c.detail_setting) +
+        cell(c.relationships) +
+        '<td class="char-actions">' + ACTIONS_HTML + '</td>' +
+      '</tr>';
+    }).join('');
+
     charEmpty.style.display = 'none';
     charTableWrap.style.display = 'block';
     updateSummary();
-  });
+  }
 
   // ===== 요약/카운트 =====
   function updateSummary() {

@@ -56,6 +56,7 @@
                  data-id="{{ work.work_id }}"
                  data-title="{{ work.title }}"
                  data-genre="{{ work.genre }}"
+                 data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}"
                  data-img="">
               <div class="cover-di-thumb">
                 <div class="cover-di-placeholder"></div>
@@ -170,5 +171,11 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.COVER_CONFIG = {
+    csrfToken:   "{{ csrf_token }}",
+    generateUrl: "{% url 'covers:cover_generate' %}",
+  };
+</script>
 <script src="{% static 'js/cover_image.js' %}?v=credit-use-20260622-1"></script>
 {% endblock %}

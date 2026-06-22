@@ -1,8 +1,11 @@
+import json
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
+from common import model_server
 from .models import Episode, Work
 
 
@@ -184,3 +187,63 @@ def work_set_cover(request, pk):
     work.cover_image_url = url or None
     work.save(update_fields=['cover_image_url'])
     return JsonResponse({'ok': True})
+
+
+# ===== 모델 서버(FastAPI) 연동 프록시 =====
+
+@login_required(login_url='pages:landing')
+@require_POST
+def episode_translate_run(request, work_pk, episode_pk):
+    """번역 실행. 브라우저 → 이 뷰 → FastAPI /translation/translate."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    payload = {
+        'episodeId': str(episode.episode_id),  # 문자열로 보내야 함
+        'sourceText': episode.original_text,
+        'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),
+        'genre': model_server.map_genre(work.genre),
+        'includeInternal': bool(body.get('includeInternal', False)),
+        'saveTranslationResult': True,
+    }
+    try:
+        data = model_server.call('/api/v1/translation/translate', payload)
+    except model_server.ModelServerError as e:
+        return JsonResponse({'ok': False, 'error': e.message}, status=e.status_code)
+
+    return JsonResponse({'ok': True, 'result': data})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def episode_inspect_chat(request, work_pk, episode_pk):
+    """검수 챗봇. 브라우저 → 이 뷰 → FastAPI /translation/inspect-chat."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    message = (body.get('message') or '').strip()
+    if not message:
+        return JsonResponse({'ok': False, 'error': '메시지를 입력해주세요.'}, status=400)
+
+    payload = {
+        'episodeId': str(episode.episode_id),
+        'message': message,
+        'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),
+        'genre': model_server.map_genre(work.genre),
+    }
+    try:
+        data = model_server.call('/api/v1/translation/inspect-chat', payload)
+    except model_server.ModelServerError as e:
+        return JsonResponse({'ok': False, 'error': e.message}, status=e.status_code)
+
+    return JsonResponse({'ok': True, 'result': data})
