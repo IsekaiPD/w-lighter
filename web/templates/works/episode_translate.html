@@ -22,7 +22,12 @@
       <p class="page-desc">회차를 번역하고 검수 챗봇과 수정해 보세요.</p>
     </div>
     <div class="header-utils">
-      <a href="/credits/charge" class="credit-chip" id="creditBalance" data-credit-balance="{{ request.user.credit }}">18,000 C</a>
+      <a href="/credits/charge"
+         class="credit-chip"
+         id="creditBalance"
+         data-credit-balance="{{ request.user.credit }}"
+         data-credit-use-url="{% url 'credits:credit_use' %}"
+         data-csrf="{{ csrf_token }}">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -232,5 +237,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/minigames.js' %}"></script>
-<script src="{% static 'js/episode_translate.js' %}"></script>
+<script src="{% static 'js/episode_translate.js' %}?v=credit-use-20260622-1"></script>
 {% endblock %}

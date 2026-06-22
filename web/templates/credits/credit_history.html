@@ -24,7 +24,9 @@
   </div>
 
   <!-- Table Panel -->
-  <div class="table-panel">
+    <div class="table-panel"
+         data-cancel-url="{% url 'credits:payment_cancel_demo' %}"
+         data-csrf="{{ csrf_token }}">
 
     <!-- Tabs -->
     <div class="tab-row">
@@ -84,7 +86,7 @@
               {% elif row.status == 'CANCELED' %}
                 <span class="status-text">취소 완료</span>
               {% elif row.cancelable %}
-                <button class="status-btn" data-payment-id="{{ row.payment_id }}">구매 취소</button>
+                <button class="status-btn" type="button" data-payment-id="{{ row.payment_id }}">구매 취소</button>
               {% else %}
                 <span class="status-text">취소 불가</span>
               {% endif %}
@@ -166,5 +168,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/credit_history.js' %}"></script>
+<script src="{% static 'js/credit_history.js' %}?v=cancel-demo-20260622-2"></script>
 {% endblock %}

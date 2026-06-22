@@ -182,8 +182,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- 생성 버튼 ----------
   const generateBtn = document.getElementById('coverGenerateBtn');
+  const creditChip = document.querySelector('.credit-chip[data-credit-use-url]');
 
-  generateBtn?.addEventListener('click', () => {
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('ko-KR');
+  }
+
+  function updateCreditBalance(balance) {
+    document.querySelectorAll('.credit-chip').forEach(el => {
+      el.textContent = `${formatNumber(balance)} C`;
+    });
+  }
+
+  async function spendCredit(feature) {
+    const url = creditChip?.dataset.creditUseUrl;
+    const csrf = creditChip?.dataset.csrf;
+    if (!url || !csrf) throw new Error('크레딧 차감 설정을 찾을 수 없습니다.');
+    const form = new FormData();
+    form.append('feature', feature);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+      body: form,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      if (typeof data.balance === 'number') updateCreditBalance(data.balance);
+      throw new Error(data.message || '크레딧 차감에 실패했습니다.');
+    }
+    updateCreditBalance(data.balance);
+    return data;
+  }
+
+  generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
       alert('작품을 먼저 선택해 주세요.');
       return;
@@ -194,6 +225,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5개 꽉 찬 경우 → 토스트
     if (covers.length >= MAX_COVERS) {
       showToast('※ 최대 5개까지 저장 가능합니다. 기존 항목을 삭제 후 다시 시도해주세요.');
+      return;
+    }
+
+    try {
+      await spendCredit('cover_image');
+    } catch (error) {
+      showToast(`※ ${error.message}`);
       return;
     }
 

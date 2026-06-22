@@ -71,6 +71,9 @@ KAKAO_CLIENT_SECRET = os.getenv('KAKAO_CLIENT_SECRET', '')
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID', '')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET', '')
 
+TOSS_CLIENT_KEY = os.getenv('TOSS_CLIENT_KEY', '')
+TOSS_SECRET_KEY = os.getenv('TOSS_SECRET_KEY', '')
+
 if os.getenv('DB_HOST'):
     DATABASES = {
         'default': {
