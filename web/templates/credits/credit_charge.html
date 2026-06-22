@@ -36,36 +36,39 @@
     </a>
   </section>
 
+  {% if payment_notice %}
+  <section class="credits-box" style="margin-top:16px;">
+    <div class="labels">
+      <div class="small">결제 안내</div>
+      <div class="amount" style="font-size:16px;">{{ payment_notice }}</div>
+    </div>
+  </section>
+  {% endif %}
+
   <!-- Plans -->
-  <section class="plans" id="plans">
+  <section class="plans" id="plans"
+           data-prepare-url="{% url 'credits:payment_prepare' %}"
+           data-csrf="{{ csrf_token }}">
 
-    <article class="plan-card" data-plan="basic" data-price="9900">
-      <div class="plan-name">Basic 충전</div>
-      <div class="plan-price">9,900원</div>
-      <div class="plan-credits">10,000 C <span class="sub">(1C당 0.99원)</span></div>
-      <p class="plan-desc">가끔 번역을 맡기는 작가분들께 추천해요.<br>부담 없이 시작해보세요.</p>
-      <button class="select-btn">선택</button>
+    {% for plan in plans %}
+    <article class="plan-card" data-plan="{{ plan.code }}" data-price="{{ plan.price }}">
+      <div class="plan-name">{{ plan.name }}</div>
+      <div class="plan-price">{{ plan.price_display }}</div>
+      <div class="plan-credits">{{ plan.credit_display }} <span class="sub">({{ plan.sub_text }})</span></div>
+      <p class="plan-desc">{{ plan.description }}<br>토스페이먼츠 샌드박스 가상 결제로 진행됩니다.</p>
+      <button class="select-btn" type="button">선택</button>
       <div class="plan-pay">카드, 간편결제 지원</div>
     </article>
+    {% endfor %}
 
-    <article class="plan-card" data-plan="plus" data-price="29900">
-      <div class="plan-name">Plus 충전</div>
-      <div class="plan-price">29,900원</div>
-      <div class="plan-credits">35,000 C <span class="sub">(<span class="discount"><b>14%</b> 할인</span>, 1C당 0.85원)</span></div>
-      <p class="plan-desc">꾸준히 연재 중인 작가라면 Plus 충전을 강력 추천해요!</p>
-      <button class="select-btn">선택</button>
-      <div class="plan-pay">카드, 간편결제 지원</div>
-    </article>
+  </section>
 
-    <article class="plan-card" data-plan="max" data-price="49900">
-      <div class="plan-name">Max 충전</div>
-      <div class="plan-price">49,900원</div>
-      <div class="plan-credits">75,000 C <span class="sub">(<span class="discount"><b>33%</b> 할인</span>, 1C당 0.67원)</span></div>
-      <p class="plan-desc">장기 연재나 완결을 준비 중인 작가라면 최대 33%의 할인 혜택을 누려보세요.</p>
-      <button class="select-btn">선택</button>
-      <div class="plan-pay">카드, 간편결제 지원</div>
-    </article>
-
+  <section class="credits-box" id="tossPaymentBox" style="display:none;margin-top:18px;">
+    <div class="labels" style="width:100%;">
+      <div class="small">토스페이먼츠 샌드박스</div>
+      <div class="amount" id="tossPaymentTitle" style="font-size:16px;">결제수단을 선택해주세요.</div>
+      <div id="tossPaymentWindow" style="margin-top:16px;"></div>
+    </div>
   </section>
 
 {% endblock %}
@@ -95,5 +98,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/credit_charge.js' %}"></script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<script src="{% static 'js/credit_charge.js' %}?v=toss-sandbox-20260622-2"></script>
 {% endblock %}

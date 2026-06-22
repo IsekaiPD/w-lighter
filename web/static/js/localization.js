@@ -71,6 +71,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const countryGroup = document.getElementById('lcCountryGroup');
   const countryChips = document.getElementById('lcCountryChips');
   const toast        = document.getElementById('lcToast');
+  const creditChip   = document.querySelector('.credit-chip[data-credit-use-url]');
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('ko-KR');
+  }
+
+  function updateCreditBalance(balance) {
+    document.querySelectorAll('.credit-chip').forEach(el => {
+      el.textContent = `${formatNumber(balance)} C`;
+    });
+  }
+
+  async function spendCredit(feature) {
+    const url = creditChip?.dataset.creditUseUrl;
+    const csrf = creditChip?.dataset.csrf;
+    if (!url || !csrf) throw new Error('크레딧 차감 설정을 찾을 수 없습니다.');
+    const form = new FormData();
+    form.append('feature', feature);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+      body: form,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      if (typeof data.balance === 'number') updateCreditBalance(data.balance);
+      throw new Error(data.message || '크레딧 차감에 실패했습니다.');
+    }
+    updateCreditBalance(data.balance);
+    return data;
+  }
 
   // ---------- 우측 패널 렌더 ----------
   function renderList(workId) {
@@ -182,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- 생성 버튼 ----------
-  generateBtn?.addEventListener('click', () => {
+  generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
       alert('작품을 먼저 선택해 주세요.');
       return;
@@ -202,7 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    doGenerate(workId);
+    try {
+      await spendCredit('localization_guide');
+      doGenerate(workId);
+    } catch (error) {
+      showToast(`※ ${error.message}`);
+    }
   });
 
   function doGenerate(workId, overwrite = false) {
@@ -355,10 +391,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('lcOverwriteCancel')?.addEventListener('click', closeOverwriteModal);
   lcOverwriteBackdrop?.addEventListener('click', closeOverwriteModal);
-  document.getElementById('lcOverwriteConfirm')?.addEventListener('click', () => {
+  document.getElementById('lcOverwriteConfirm')?.addEventListener('click', async () => {
     const wid = overwriteWorkId;
     closeOverwriteModal();
-    doGenerate(wid, true);
+    try {
+      await spendCredit('localization_guide');
+      doGenerate(wid, true);
+    } catch (error) {
+      showToast(`※ ${error.message}`);
+    }
   });
 
   // ---------- 삭제 확인 모달 ----------

@@ -1,98 +1,82 @@
-/* credit_history.js */
-
 document.addEventListener('DOMContentLoaded', () => {
+  const filterForm = document.getElementById('filterForm');
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo = document.getElementById('dateTo');
+  const resetFilter = document.getElementById('resetFilter');
+  const filterChips = document.querySelectorAll('.filter-chip');
+  const tablePanel = document.querySelector('.table-panel');
+  const fmt = date => date.toISOString().split('T')[0];
 
-  /* ----- 탭 전환 ----- */
-  const tabBtns      = document.querySelectorAll('.tab-btn');
-  const tableCharge  = document.getElementById('table-charge');
-  const tableUsage   = document.getElementById('table-usage');
-  const totalCount   = document.getElementById('totalCount');
-
-  const tabConfig = {
-    charge: { el: tableCharge, total: '전체 8건 중 8건' },
-    usage:  { el: tableUsage,  total: '전체 10건 중 8건' },
-  };
-
-  function switchTab(tab) {
-    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    tableCharge.style.display = tab === 'charge' ? '' : 'none';
-    tableUsage.style.display  = tab === 'usage'  ? '' : 'none';
-    totalCount.textContent = tabConfig[tab].total;
-    resetPagination();
-    // Django: window.location.href = `?tab=${tab}`;
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('ko-KR');
   }
 
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-  });
-
-  /* ----- 기간 필터 칩 ----- */
-  const filterForm  = document.getElementById('filterForm');
-  const filterChips = document.querySelectorAll('.filter-chip');
-  const fmt = d => d.toISOString().split('T')[0];
+  function updateCreditBalance(balance) {
+    document.querySelectorAll('.credit-chip').forEach(el => {
+      el.textContent = `${formatNumber(balance)} C`;
+    });
+  }
 
   filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
-      const months = parseInt(chip.dataset.month);
-      const to   = new Date();
+      const months = Number.parseInt(chip.dataset.month, 10);
+      const to = new Date();
       const from = new Date();
       from.setMonth(from.getMonth() - months);
-      document.getElementById('dateFrom').value = fmt(from);
-      document.getElementById('dateTo').value   = fmt(to);
-      filterForm.submit();
+      if (dateFrom) dateFrom.value = fmt(from);
+      if (dateTo) dateTo.value = fmt(to);
+      filterForm?.submit();
     });
   });
 
-  /* ----- 날짜 직접 변경 시 자동 제출 ----- */
-  document.getElementById('dateFrom').addEventListener('change', () => filterForm.submit());
-  document.getElementById('dateTo').addEventListener('change',   () => filterForm.submit());
-
-  /* ----- 초기화 버튼 ----- */
-  document.getElementById('resetFilter').addEventListener('click', () => {
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value   = fmt(new Date());
-    filterForm.submit();
+  dateFrom?.addEventListener('change', () => filterForm?.submit());
+  dateTo?.addEventListener('change', () => filterForm?.submit());
+  resetFilter?.addEventListener('click', () => {
+    if (dateFrom) dateFrom.value = '';
+    if (dateTo) dateTo.value = fmt(new Date());
+    filterForm?.submit();
   });
 
-  /* ----- 구매 취소 버튼 ----- */
+  async function cancelPaymentDemo(paymentId) {
+    const url = tablePanel?.dataset.cancelUrl;
+    const csrf = tablePanel?.dataset.csrf;
+    if (!url || !csrf) throw new Error('구매 취소 설정을 찾을 수 없습니다.');
+
+    const form = new FormData();
+    form.append('payment_id', paymentId);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: form,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      throw new Error(data.message || '구매 취소 상태 변경에 실패했습니다.');
+    }
+    return data;
+  }
+
+  // Sandbox demo only: do not call the Toss cancel API.
   document.querySelectorAll('.status-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const row   = btn.closest('tr');
-      const date  = row.cells[0].textContent.trim();
-      const plan  = row.cells[1].textContent.trim();
-      const price = row.cells[3].textContent.trim();
-      const ok = confirm(`[${date}] ${plan} (${price}) 구매를 취소하시겠습니까?`);
-      if (ok) {
-        console.log('구매 취소 요청:', { date, plan, price });
-        // Django: fetch('/credits/cancel/', { method: 'POST', ... })
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('tr');
+      const date = row?.cells[0]?.textContent.trim() || '';
+      const plan = row?.cells[1]?.textContent.trim() || '';
+      const price = row?.cells[3]?.textContent.trim() || '';
+      alert(`[샌드박스 데모]\n${date} ${plan} (${price})\n실제 결제 취소 API는 호출하지 않고, 화면 동작만 제공합니다.`);
+      btn.disabled = true;
+      try {
+        const result = await cancelPaymentDemo(btn.dataset.paymentId);
+        if (typeof result.balance === 'number') updateCreditBalance(result.balance);
+        const statusCell = btn.closest('td');
+        if (statusCell) statusCell.innerHTML = '<span class="status-text">취소 완료</span>';
+      } catch (error) {
+        alert(error.message);
+        btn.disabled = false;
       }
     });
   });
-
-  /* ----- 페이지네이션 ----- */
-  const pageNums   = document.querySelectorAll('.page-num');
-  const prevBtn    = document.getElementById('prevPage');
-  const nextBtn    = document.getElementById('nextPage');
-  let currentPage  = 1;
-  const totalPages = pageNums.length;
-
-  function goToPage(page) {
-    currentPage = page;
-    pageNums.forEach((btn, i) => {
-      btn.classList.toggle('active', i + 1 === currentPage);
-    });
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === totalPages;
-    // Django: window.location.href = `?page=${currentPage}`;
-  }
-
-  function resetPagination() {
-    goToPage(1);
-  }
-
-  pageNums.forEach((btn, i) => btn.addEventListener('click', () => goToPage(i + 1)));
-  prevBtn.addEventListener('click', () => { if (currentPage > 1) goToPage(currentPage - 1); });
-  nextBtn.addEventListener('click', () => { if (currentPage < totalPages) goToPage(currentPage + 1); });
-
-  goToPage(1);
 });
