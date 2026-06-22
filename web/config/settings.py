@@ -71,6 +71,10 @@ KAKAO_CLIENT_SECRET = os.getenv('KAKAO_CLIENT_SECRET', '')
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID', '')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET', '')
 
+# FastAPI 모델 서버
+MODEL_SERVER_URL = os.getenv('MODEL_SERVER_URL', 'http://3.38.235.44:8000').rstrip('/')
+MODEL_SERVER_TIMEOUT = int(os.getenv('MODEL_SERVER_TIMEOUT', '120'))
+
 if os.getenv('DB_HOST'):
     DATABASES = {
         'default': {

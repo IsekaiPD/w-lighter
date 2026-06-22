@@ -183,41 +183,105 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- 생성 버튼 ----------
   const generateBtn = document.getElementById('coverGenerateBtn');
 
-  generateBtn?.addEventListener('click', () => {
+  // 모델 서버 응답 구조 확인용 RAW 박스
+  function showCoverDebug(html) {
+    let box = document.getElementById('coverDebugBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'coverDebugBox';
+      box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
+        'border-radius:12px;background:var(--color-surface,#fff);font-size:13px;';
+      (imageGrid?.parentNode || document.body).appendChild(box);
+    }
+    box.innerHTML = html;
+  }
+  function escCover(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 모델 응답에서 표지 이미지 표시용 URL 만들기
+  // 1순위: image_base64 → data URI, 2순위: S3 공개 URL
+  const S3_REGION = 'ap-northeast-2';
+  function coverImageUrl(r) {
+    if (r.image_base64) return 'data:image/png;base64,' + r.image_base64;
+    if (r.s3Bucket && r.s3Key) {
+      return 'https://' + r.s3Bucket + '.s3.' + S3_REGION + '.amazonaws.com/' + r.s3Key;
+    }
+    if (r.s3Uri && r.s3Uri.startsWith('s3://')) {
+      const rest = r.s3Uri.slice('s3://'.length);
+      const slash = rest.indexOf('/');
+      if (slash > 0) {
+        return 'https://' + rest.slice(0, slash) + '.s3.' + S3_REGION + '.amazonaws.com/' + rest.slice(slash + 1);
+      }
+    }
+    return '';
+  }
+
+  generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
       alert('작품을 먼저 선택해 주세요.');
       return;
     }
+    const selItem = document.querySelector('.cover-dropdown-item[data-id="' + selectedWorkId + '"]');
+    if (selItem && selItem.dataset.synopsis === 'false') {
+      showToast('이 작품은 시놉시스가 없어 표지를 생성할 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
+      return;
+    }
+    if (!window.COVER_CONFIG || !window.COVER_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); return; }
 
     const covers = mockCovers[selectedWorkId] || [];
-
-    // 5개 꽉 찬 경우 → 토스트
     if (covers.length >= MAX_COVERS) {
       showToast('※ 최대 5개까지 저장 가능합니다. 기존 항목을 삭제 후 다시 시도해주세요.');
       return;
     }
 
-    // 빈 슬롯 → 생성 중 로딩으로 교체
-    const emptySlot = imageGrid?.querySelector('.cover-slot-empty');
-    if (emptySlot) {
-      emptySlot.outerHTML = `
-        <div class="cover-slot-loading" id="coverLoadingSlot">
-          <div class="cover-spinner"></div>
-          <span>생성 중</span>
-        </div>
-      `;
-    }
-
     generateBtn.disabled = true;
+    showCoverDebug('<p style="color:var(--color-text-muted);">표지 생성 중입니다... 모델 서버 응답을 기다리는 중. (이미지 생성은 시간이 걸릴 수 있어요)</p>');
 
-    // TODO: 실제 AI 생성 API 연동
-    // 임시: 3초 후 생성 완료 mock
-    setTimeout(() => {
-      const newCover = { id: `mock_${Date.now()}`, url: '', createdAt: new Date().toISOString() };
+    try {
+      const res = await fetch(window.COVER_CONFIG.generateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.COVER_CONFIG.csrfToken,
+        },
+        body: JSON.stringify({ workId: selectedWorkId, targetCountry: selectedCountry, dryRun: false }),
+      });
+      const data = await res.json();
+      console.log('[cover] HTTP', res.status, data);
+
+      if (!data.ok) {
+        showCoverDebug(
+          '<p style="font-weight:700;margin-bottom:6px;">표지를 생성하지 못했어요</p>' +
+          '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escCover(data.error || ('오류 ' + res.status)) + '</p>' +
+          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);"><summary style="cursor:pointer;">자세히 (개발용)</summary>' +
+          '<pre style="white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow:auto;margin:8px 0 0;">' +
+          escCover(JSON.stringify(data, null, 2)) + '</pre></details>'
+        );
+        return;
+      }
+
+      // 성공 → 생성된 표지를 그리드에 추가
+      const r = data.result || {};
+      const imgUrl = coverImageUrl(r);
+      if (!imgUrl) {
+        showCoverDebug('<p style="color:#ff2d55;">표지 이미지를 받지 못했어요(image_base64/s3 비어있음). 콘솔의 응답을 확인하세요.</p>');
+        return;
+      }
+      document.getElementById('coverDebugBox')?.remove();
+
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const newCover = { id: 'cv_' + Date.now(), url: imgUrl, createdAt: dateStr };
       mockCovers[selectedWorkId] = [newCover, ...(mockCovers[selectedWorkId] || [])];
       renderGrid(selectedWorkId);
+    } catch (err) {
+      console.error('[cover] error', err);
+      showCoverDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
+    } finally {
       generateBtn.disabled = false;
-    }, 3000);
+    }
   });
 
   // ---------- 이미지 그리드 이벤트 (이벤트 위임) ----------

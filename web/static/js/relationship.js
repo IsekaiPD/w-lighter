@@ -62,6 +62,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // 작품별 관계 수 (mock)
   const mockRelationCounts = { '1': 17, '2': 3, '3': 4, '4': 5 };
 
+  // 캐릭터 설정집에서 추출한 실제 캐릭터 (workId → [{id, name, role}])
+  const loadedChars = {};
+
+  // 모델 서버 role → 배지(주연/조연/단역)
+  function mapRelRole(role) {
+    const r = String(role || '').trim();
+    if (['주인공', '주연'].includes(r)) return '주연';
+    if (['조연', '연인', '조력자', '동료', '파트너'].includes(r)) return '조연';
+    return '단역';
+  }
+
+  // 캐릭터 추출 엔드포인트 호출 → loadedChars 채우기
+  async function loadCharacters(workId) {
+    if (loadedChars[workId]) return loadedChars[workId];
+    if (!window.REL_CONFIG || !window.REL_CONFIG.extractUrl) throw new Error('extractUrl 없음');
+    const res = await fetch(window.REL_CONFIG.extractUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
+      body: JSON.stringify({ workId }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || ('오류 ' + res.status));
+    const chars = ((data.result && data.result.characters) || []).map((c, i) => ({
+      id: 'ch_' + i,
+      name: c.char_name || ('캐릭터 ' + (i + 1)),
+      role: mapRelRole(c.role),
+    }));
+    loadedChars[workId] = chars;
+    return chars;
+  }
+
   // ---------- 상태 ----------
   let selectedWorkId  = null;
   let isLoaded        = false; // 캐릭터 설정 불러오기 완료 여부
@@ -115,10 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- 좌측 패널 상태 ----------
   function showLoadedState(workId) {
-    const chars = mockCharacters[workId] || [];
-    const rels   = mockRelationCounts[workId] || 0;
+    const chars = loadedChars[workId] || mockCharacters[workId] || [];
     statPersons.textContent   = `${chars.length}명`;
-    statRelations.textContent = `${rels}개`;
+    statRelations.textContent = `-`;  // 관계 수는 관계도 생성 후 확정
     statsBox.style.display    = 'flex';
     statsBox.style.flexDirection = 'column';
     generateBtn.textContent   = '관계도 생성하기 · 800C';
@@ -192,8 +222,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!isLoaded) {
-      // 캐릭터 설정 불러오기
-      showLoadedState(selectedWorkId);
+      // 캐릭터 설정집에서 추출한 실제 캐릭터 불러오기
+      const workId = selectedWorkId;
+      const selItem = document.querySelector('.rel-dropdown-item[data-id="' + workId + '"]');
+      if (selItem && selItem.dataset.synopsis === 'false') {
+        showToast('이 작품은 시놉시스가 없어 캐릭터 설정을 불러올 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
+        return;
+      }
+      generateBtn.disabled = true;
+      const prevText = generateBtn.textContent;
+      generateBtn.textContent = '불러오는 중...';
+      loadCharacters(workId)
+        .then(() => { showLoadedState(workId); })
+        .catch((err) => {
+          console.error('[relationship load chars]', err);
+          showToast('캐릭터를 불러오지 못했어요: ' + err.message);
+          generateBtn.textContent = prevText;
+        })
+        .finally(() => { generateBtn.disabled = false; });
       return;
     }
 
@@ -216,17 +262,59 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `);
     generateBtn.disabled = true;
-
-    setTimeout(() => {
-      const maxVer  = existing.reduce((m, d) => Math.max(m, d.version), 0);
-      const now     = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const dateStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      mockDiagrams[workId] = [{ id: `mock_${Date.now()}`, version: maxVer + 1, createdAt: dateStr, htmlUrl: EXAMPLE_HTML_URL }, ...existing];
-      renderList(workId);
-      generateBtn.disabled = false;
-    }, 3000);
+    runRelGenerate(workId);
   });
+
+  // 모델 서버 응답 구조 확인용 RAW 박스
+  function showRelDebug(html) {
+    let box = document.getElementById('relDebugBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'relDebugBox';
+      box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
+        'border-radius:12px;background:var(--color-surface,#fff);font-size:13px;';
+      (diagList?.parentNode || document.body).appendChild(box);
+    }
+    box.innerHTML = html;
+  }
+  function escRel(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function runRelGenerate(workId) {
+    if (!window.REL_CONFIG || !window.REL_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); generateBtn.disabled = false; return; }
+    document.getElementById('relLoadingRow')?.remove();
+    showRelDebug('<p style="color:var(--color-text-muted);">관계도 생성 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+    try {
+      const res = await fetch(window.REL_CONFIG.generateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
+        body: JSON.stringify({ workId }),
+      });
+      const data = await res.json();
+      console.log('[relationship-map] HTTP', res.status, data);
+      if (!data.ok) {
+        showRelDebug(
+          '<p style="font-weight:700;margin-bottom:6px;">관계도를 생성하지 못했어요</p>' +
+          '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escRel(data.error || ('오류 ' + res.status)) + '</p>' +
+          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);"><summary style="cursor:pointer;">자세히 (개발용)</summary>' +
+          '<pre style="white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow:auto;margin:8px 0 0;">' +
+          escRel(JSON.stringify(data, null, 2)) + '</pre></details>'
+        );
+        return;
+      }
+      showRelDebug(
+        '<p style="font-weight:700;margin-bottom:8px;">모델 서버 응답 (relationship-map) — 구조 확인용</p>' +
+        '<pre style="white-space:pre-wrap;word-break:break-all;font-size:12.5px;line-height:1.6;max-height:480px;overflow:auto;margin:0;">' +
+        escRel(JSON.stringify(data.result, null, 2)) + '</pre>'
+      );
+    } catch (err) {
+      console.error('[relationship-map] error', err);
+      showRelDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
+    } finally {
+      generateBtn.disabled = false;
+    }
+  }
 
   // ---------- 등장인물 모달 ----------
   const charBackdrop  = document.getElementById('relCharBackdrop');
@@ -250,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCharList() {
-    const chars = mockCharacters[selectedWorkId] || [];
+    const chars = loadedChars[selectedWorkId] || mockCharacters[selectedWorkId] || [];
     charList.innerHTML = '';
 
     chars.forEach(char => {
@@ -271,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateCharCount(total) {
-    const totalCount = total ?? (mockCharacters[selectedWorkId] || []).length;
+    const totalCount = total ?? (loadedChars[selectedWorkId] || mockCharacters[selectedWorkId] || []).length;
     charSelCount.textContent = `총 ${totalCount}명 중 ${selectedCharIds.size}명 선택됨`;
   }
 

@@ -231,6 +231,13 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.TR_CONFIG = {
+    csrfToken:   "{{ csrf_token }}",
+    translateUrl: "{% url 'works:episode_translate_run' work_pk=work.work_id episode_pk=episode.episode_id %}",
+    inspectUrl:   "{% url 'works:episode_inspect_chat' work_pk=work.work_id episode_pk=episode.episode_id %}",
+  };
+</script>
 <script src="{% static 'js/minigames.js' %}"></script>
 <script src="{% static 'js/episode_translate.js' %}"></script>
 {% endblock %}

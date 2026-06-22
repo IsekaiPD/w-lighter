@@ -12,21 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_GUIDES = 5;
 
   // ---------- Mock 데이터 ----------
-  const mockGuides = {
-    '1': [
-      { id: 'g1-1', title: '현지화 가이드', country: null, createdAt: '2026.06.15 12:30' },
-      { id: 'g1-2', title: '현지화 가이드', country: null, createdAt: '2026.06.10 16:30' },
-    ],
-    '2': [],
-    '3': [
-      { id: 'g3-1', title: '현지화 가이드',       country: null, createdAt: '2026.06.10 16:30' },
-      { id: 'g3-2', title: '현지화 가이드 — 태국', country: 'TH', createdAt: '2026.06.10 16:30' },
-      { id: 'g3-3', title: '현지화 가이드 — 일본', country: 'JP', createdAt: '2026.06.10 16:30' },
-      { id: 'g3-4', title: '현지화 가이드 — 중국', country: 'CN', createdAt: '2026.06.10 16:30' },
-      { id: 'g3-5', title: '현지화 가이드 — 미국', country: 'EN', createdAt: '2026.06.10 16:30' },
-    ],
-    '4': [],
-  };
+  // 실제 생성 결과로 채워짐(workId → [guide]). 초기엔 빈 상태.
+  const mockGuides = {};
 
   // 작품별 시놉 여부 (dropdown item의 data-synopsis 반영)
   const workSynopsisMap = { '1': true, '2': true, '3': false, '4': true };
@@ -109,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- 좌측 패널 상태 ----------
   function applyWorkState(workId) {
-    hasSynopsis = workSynopsisMap[workId] ?? true;
+    // 실제 작품의 시놉시스 유무(드롭다운 항목의 data-synopsis)로 판단
+    const item = document.querySelector('.lc-dropdown-item[data-id="' + workId + '"]');
+    hasSynopsis = item ? item.dataset.synopsis === 'true' : true;
     selectedCountry = null;
 
     if (hasSynopsis) {
@@ -222,24 +211,71 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `);
     generateBtn.disabled = true;
+    runGuideGenerate(workId);
+  }
 
-    setTimeout(() => {
-      const now     = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const dateStr = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  // 모델 서버 응답 구조 확인용 RAW 박스
+  function showGuideDebug(html) {
+    let box = document.getElementById('guideDebugBox');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'guideDebugBox';
+      box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
+        'border-radius:12px;background:var(--color-surface,#fff);font-size:13px;';
+      (guideList?.parentNode || document.body).appendChild(box);
+    }
+    box.innerHTML = html;
+  }
+  function escGuide(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
 
-      const titleSuffix = (!hasSynopsis && selectedCountry) ? ` — ${selectedCountry.name}` : '';
-      const newGuide = {
-        id:        `mock_${Date.now()}`,
-        title:     `현지화 가이드${titleSuffix}`,
-        country:   selectedCountry?.code || null,
+  async function runGuideGenerate(workId) {
+    if (!window.GUIDE_CONFIG || !window.GUIDE_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); generateBtn.disabled = false; return; }
+    document.getElementById('lcLoadingRow')?.remove();
+    showGuideDebug('<p style="color:var(--color-text-muted);">현지화 가이드 생성 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+    try {
+      const res = await fetch(window.GUIDE_CONFIG.generateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.GUIDE_CONFIG.csrfToken },
+        body: JSON.stringify({ workId, targetCountry: selectedCountry?.code || 'EN' }),
+      });
+      const data = await res.json();
+      console.log('[guide] HTTP', res.status, data);
+      if (!data.ok) {
+        showGuideDebug(
+          '<p style="font-weight:700;margin-bottom:6px;">현지화 가이드를 생성하지 못했어요</p>' +
+          '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escGuide(data.error || ('오류 ' + res.status)) + '</p>' +
+          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);"><summary style="cursor:pointer;">자세히 (개발용)</summary>' +
+          '<pre style="white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow:auto;margin:8px 0 0;">' +
+          escGuide(JSON.stringify(data, null, 2)) + '</pre></details>'
+        );
+        return;
+      }
+      // 성공 → 가이드 목록에 추가
+      document.getElementById('guideDebugBox')?.remove();
+      const r = data.result || {};
+      const country = r.displayCountry || r.targetCountryDisplay || selectedCountry?.name || '';
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const dateStr = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const guide = {
+        id: 'gd_' + Date.now(),
+        title: r.title || (country ? `현지화 가이드 — ${country}` : '현지화 가이드'),
+        country: selectedCountry?.code || null,
         createdAt: dateStr,
+        htmlReport: r.htmlReport || '',
       };
-
-      mockGuides[workId] = [newGuide, ...base];
+      const list = mockGuides[workId] || (mockGuides[workId] = []);
+      list.unshift(guide);
+      while (list.length > MAX_GUIDES) list.pop();
       renderList(workId);
+    } catch (err) {
+      console.error('[guide] error', err);
+      showGuideDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
+    } finally {
       generateBtn.disabled = false;
-    }, 3000);
+    }
   }
 
   // ---------- 상세 조회 모달 ----------
@@ -297,11 +333,25 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
+  let detailHtmlReport = '';
+  let detailFilename   = '현지화 가이드';
+
   function openDetailModal(guide) {
     detailTargetId          = guide.id;
+    detailHtmlReport        = guide.htmlReport || '';
+    detailFilename          = (guide.title || '현지화 가이드').replace(/[\\/:*?"<>|]/g, ' ').trim();
     detailTitle.textContent = guide.title;
     detailDate.textContent  = `생성일시  ${guide.createdAt}`;
-    detailBody.innerHTML    = buildGuideContent(guide);
+    if (guide.htmlReport) {
+      // 모델이 만든 완성형 HTML 가이드 → iframe으로 격리 렌더링(자체 스타일 보호)
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'width:100%;height:70vh;border:none;border-radius:12px;background:#fff;';
+      iframe.srcdoc = guide.htmlReport;
+      detailBody.innerHTML = '';
+      detailBody.appendChild(iframe);
+    } else {
+      detailBody.innerHTML = buildGuideContent(guide);
+    }
     detailBackdrop.classList.add('open');
     detailModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -324,8 +374,81 @@ document.addEventListener('DOMContentLoaded', () => {
   detailClose?.addEventListener('click', closeDetailModal);
   detailBackdrop?.addEventListener('click', closeDetailModal);
 
-  document.getElementById('lcDetailPdfBtn')?.addEventListener('click', () => {
-    showToast('※ PDF 다운로드 기능은 준비 중입니다.');
+  // PDF 다운로드: 대화상자 없이 바로 .pdf 저장 (html2pdf). 미로드 시 인쇄로 폴백.
+  const pdfBtn = document.getElementById('lcDetailPdfBtn');
+  pdfBtn?.addEventListener('click', () => {
+    if (!detailHtmlReport) {
+      showToast('※ 이 가이드에는 다운로드할 내용이 없습니다.');
+      return;
+    }
+
+    // 데스크톱 폭(1120px)으로 렌더하기 위한 화면 밖 iframe
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1120px;height:1600px;border:0;';
+    frame.srcdoc = detailHtmlReport;
+    document.body.appendChild(frame);
+
+    const oldText = pdfBtn.textContent;
+    pdfBtn.disabled = true;
+    pdfBtn.textContent = 'PDF 생성 중...';
+
+    const finish = () => { pdfBtn.disabled = false; pdfBtn.textContent = oldText; frame.remove(); };
+    const fail = (e) => { console.error('[guide pdf]', e); showToast('PDF 생성에 실패했습니다.'); finish(); };
+
+    frame.onload = async () => {
+      const doc = frame.contentDocument;
+      const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+
+      // 라이브러리 미로드 → 인쇄로 폴백
+      if (!window.html2canvas || !jsPDFCtor || !doc) {
+        try { frame.contentWindow.focus(); frame.contentWindow.print(); }
+        catch (e) { showToast('PDF 기능을 사용할 수 없습니다.'); }
+        pdfBtn.disabled = false; pdfBtn.textContent = oldText;
+        setTimeout(() => frame.remove(), 60000);
+        return;
+      }
+
+      try {
+        // 폰트/레이아웃 안정화 대기
+        if (doc.fonts && doc.fonts.ready) { try { await doc.fonts.ready; } catch (e) {} }
+        await new Promise(r => setTimeout(r, 150));
+
+        const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
+        // iframe 문서를 통째로 캡처 → 자체 <style>이 그대로 적용됨
+        const canvas = await window.html2canvas(doc.body, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          windowWidth: 1120,
+          width: 1120,
+          height: fullHeight,
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        const pdf = new jsPDFCtor({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgW = pageW;
+        const imgH = canvas.height * (imgW / canvas.width);
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+        let heightLeft = imgH;
+        let position = 0;
+        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+          heightLeft -= pageH;
+        }
+        pdf.save(detailFilename + '.pdf');
+        finish();
+      } catch (e) {
+        fail(e);
+      }
+    };
   });
 
   // 상세 삭제 버튼 → 삭제 확인 모달

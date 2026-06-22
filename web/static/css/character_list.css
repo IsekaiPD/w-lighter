@@ -368,7 +368,11 @@ tr.editing { background: #f8f8fa; }
 }
 .cell-input:focus { outline: none; border-color: var(--color-primary); }
 
-.char-actions { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+/* td는 table-cell로 유지해야 행 구분선이 행 맨 아래에 맞춰 그려짐.
+   (display:flex로 두면 그 칸만 높이가 달라져 구분선이 어긋남) */
+.char-actions { white-space: nowrap; vertical-align: top; }
+.char-actions .icon-btn + .icon-btn,
+.char-actions .mini-btn + .mini-btn { margin-left: 4px; }
 .mini-btn {
   border: none; cursor: pointer;
   padding: 5px 11px; border-radius: 8px;

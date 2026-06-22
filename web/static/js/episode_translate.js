@@ -196,7 +196,18 @@ document.addEventListener('DOMContentLoaded', () => {
     sendBtn.addEventListener('click', sendMessage);
   }
 
-  function sendMessage() {
+  function appendBotMessage(text) {
+    const botMsg = document.createElement('div');
+    botMsg.className = 'tr-chat-msg tr-chat-bot';
+    botMsg.innerHTML =
+      `<div class="tr-chat-bot-icon"></div>` +
+      `<p class="tr-chat-bot-text">${escapeHtml(text)}</p>`;
+    chatArea.appendChild(botMsg);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    return botMsg;
+  }
+
+  async function sendMessage() {
     if (!chatInput || !chatArea) return;
     const text = chatInput.value.trim();
     if (!text) return;
@@ -209,17 +220,317 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chatInput.value = '';
     if (charCount) charCount.textContent = '0/1,000';
+    chatArea.scrollTop = chatArea.scrollHeight;
 
+    // 검수 챗봇 호출
+    if (!window.TR_CONFIG?.inspectUrl) return;
+    const pending = appendBotMessage('답변을 작성 중입니다...');
+    try {
+      const res = await fetch(window.TR_CONFIG.inspectUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.TR_CONFIG.csrfToken,
+        },
+        body: JSON.stringify({ message: text, targetCountry: getActiveLang() }),
+      });
+      const data = await res.json();
+      const reply = data.ok
+        ? (extractText(data.result, ['reply', 'message', 'answer', 'text', 'content']) || JSON.stringify(data.result))
+        : (data.error || '오류가 발생했습니다.');
+      pending.querySelector('.tr-chat-bot-text').textContent = reply;
+    } catch (e) {
+      pending.querySelector('.tr-chat-bot-text').textContent = '네트워크 오류가 발생했습니다.';
+    }
     chatArea.scrollTop = chatArea.scrollHeight;
   }
 
+  /* ===== 모델 서버 연동 헬퍼 ===== */
+  function getActiveLang() {
+    return document.querySelector('.tr-lang-tab.active')?.dataset.lang || 'EN';
+  }
+
+  // 응답 객체에서 후보 키들을 훑어 첫 문자열을 반환(응답 스키마 변동 대비)
+  function extractText(obj, keys) {
+    if (obj == null) return '';
+    if (typeof obj === 'string') return obj;
+    for (const k of keys) {
+      if (obj[k] != null) {
+        if (typeof obj[k] === 'string') return obj[k];
+        if (typeof obj[k] === 'object') {
+          const nested = extractText(obj[k], keys);
+          if (nested) return nested;
+        }
+      }
+    }
+    if (obj.result) return extractText(obj.result, keys);
+    if (obj.data)   return extractText(obj.data, keys);
+    return '';
+  }
+
+  function switchToTab(name) {
+    document.querySelector(`.tr-tab[data-tab="${name}"]`)?.click();
+  }
+
+  /* ===== 번역 실행 (크레딧 확인 후) ===== */
+  document.addEventListener('translation:credit-confirmed', async () => {
+    if (!window.TR_CONFIG?.translateUrl) return;
+    const transPane    = document.querySelector('.tr-trans-text');
+    const reportScroll = document.querySelector('.tr-report-scroll');
+
+    if (translateBtn) { translateBtn.disabled = true; translateBtn.style.opacity = '0.6'; }
+    if (transPane) {
+      transPane.style.color = 'var(--color-text-muted)';
+      transPane.innerHTML = '<p>번역 중입니다... 잠시만 기다려 주세요.</p>';
+    }
+    switchToTab('translation');
+
+    try {
+      const res = await fetch(window.TR_CONFIG.translateUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': window.TR_CONFIG.csrfToken,
+        },
+        body: JSON.stringify({ targetCountry: getActiveLang(), includeInternal: false }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        if (transPane) transPane.innerHTML = `<p style="color:#ff2d55;">${escapeHtml(data.error || '번역에 실패했습니다.')}</p>`;
+        return;
+      }
+
+      const result = data.result || {};
+      // 번역 결과를 버전 목록에 추가하고 화면에 표시
+      addTranslationVersion(getActiveLang(), result);
+    } catch (e) {
+      if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">네트워크 오류가 발생했습니다.</p>';
+    } finally {
+      if (translateBtn) { translateBtn.disabled = false; translateBtn.style.opacity = ''; }
+    }
+  });
+
   function escapeHtml(str) {
-    return str
+    return String(str ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/\n/g, '<br>');
   }
+
+  // 긴 본문을 빈 줄 기준으로 문단(<p>)으로 나눠 렌더링
+  function renderParagraphs(text) {
+    return String(text)
+      .split(/\n{2,}/)
+      .map(p => `<p>${escapeHtml(p.trim())}</p>`)
+      .join('');
+  }
+
+  /* ===== 번역 리포트 렌더링 ===== */
+  function reportSection(title, innerHtml) {
+    return (
+      `<section style="margin-bottom:24px;">` +
+      `<h3 style="font-size:15px;font-weight:700;color:var(--color-text);margin:0 0 10px;">${escapeHtml(title)}</h3>` +
+      innerHtml +
+      `</section>`
+    );
+  }
+
+  function renderReport(result) {
+    const r = result.translationRationale || {};
+    const parts = [];
+
+    // 전달 상태 배지
+    const status = result.deliveryStatus || result?.metadata?.delivery_status;
+    if (status) {
+      const ok = status === 'deliverable';
+      parts.push(
+        `<div style="display:inline-block;margin-bottom:18px;padding:5px 12px;border-radius:999px;` +
+        `font-size:12px;font-weight:600;` +
+        (ok
+          ? `background:var(--color-primary-soft);color:var(--color-primary);border:1px solid var(--color-primary-border);`
+          : `background:#fff0f3;color:#ff2d55;border:1px solid #ffd0da;`) +
+        `">${ok ? '번역 완료' : escapeHtml(status)}</div>`
+      );
+    }
+
+    // 개요 / 문체 의도
+    if (r.overview) {
+      parts.push(reportSection(r.title || '왜 이렇게 번역했는지',
+        `<p style="line-height:1.7;color:var(--color-text);margin:0;">${escapeHtml(r.overview)}</p>`));
+    }
+    if (r.styleIntent) {
+      parts.push(reportSection('문체 의도',
+        `<p style="line-height:1.7;color:var(--color-text-muted);margin:0;">${escapeHtml(r.styleIntent)}</p>`));
+    }
+
+    // 전략 비율 (직역 vs 의역)
+    if (r.strategyRatio && (r.strategyRatio.literal != null || r.strategyRatio.adaptive != null)) {
+      const lit = Number(r.strategyRatio.literal || 0);
+      const ada = Number(r.strategyRatio.adaptive || 0);
+      parts.push(reportSection('번역 전략 비율',
+        `<div style="display:flex;height:14px;border-radius:7px;overflow:hidden;border:1px solid var(--color-border);">` +
+        `<div style="width:${lit}%;background:var(--color-primary);"></div>` +
+        `<div style="width:${ada}%;background:var(--color-primary-soft);"></div>` +
+        `</div>` +
+        `<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--color-text-muted);">` +
+        `<span>직역 ${lit}%</span><span>의역 ${ada}%</span></div>`));
+    }
+
+    // 세부 항목
+    const items = (r.items || []).filter(it => it && (it.explanation || it.sourceSpan || it.targetSpan));
+    if (items.length) {
+      const rows = items.map(it => {
+        const span = (it.sourceSpan || it.targetSpan)
+          ? `<div style="font-size:13px;color:var(--color-text-muted);margin-bottom:4px;">` +
+            (it.sourceSpan ? `<span>${escapeHtml(it.sourceSpan)}</span>` : '') +
+            (it.targetSpan ? ` → <span>${escapeHtml(it.targetSpan)}</span>` : '') + `</div>`
+          : '';
+        const tag = it.category || it.strategy
+          ? `<span style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary);margin-bottom:6px;">${escapeHtml(it.category || it.strategy)}</span>`
+          : '';
+        return `<div style="padding:12px 14px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px;">` +
+          tag + span +
+          `<p style="margin:0;line-height:1.6;color:var(--color-text);font-size:14px;">${escapeHtml(it.explanation || '')}</p></div>`;
+      }).join('');
+      parts.push(reportSection('세부 번역 노트', rows));
+    }
+
+    // QA 이슈
+    if (Array.isArray(result.qaIssues) && result.qaIssues.length) {
+      const rows = result.qaIssues.map(q =>
+        `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(typeof q === 'string' ? q : (q.message || JSON.stringify(q)))}</li>`).join('');
+      parts.push(reportSection('QA 이슈', `<ul style="margin:0;padding-left:18px;color:var(--color-text);">${rows}</ul>`));
+    }
+
+    // 독자용 각주
+    if (Array.isArray(result.readerEndnotes) && result.readerEndnotes.length) {
+      const rows = result.readerEndnotes.map(n =>
+        `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(typeof n === 'string' ? n : (n.text || JSON.stringify(n)))}</li>`).join('');
+      parts.push(reportSection('독자용 각주', `<ul style="margin:0;padding-left:18px;color:var(--color-text);">${rows}</ul>`));
+    }
+
+    // 저장 실패 안내(모델 서버 RDS에 해당 회차가 없을 때)
+    if (result.persisted && result.persisted.saved === false && result.persisted.reason) {
+      parts.push(
+        `<div style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#fff8e6;border:1px solid #ffe2a8;` +
+        `font-size:12.5px;color:#8a6d1a;line-height:1.6;">⚠ 번역 결과가 서버 DB에 저장되지 않았습니다 (${escapeHtml(result.persisted.reason)}).</div>`
+      );
+    }
+
+    if (!parts.length) {
+      return '<div style="padding:24px 0;color:var(--color-text-muted);text-align:center;">리포트 내용이 없습니다.</div>';
+    }
+    return `<div style="padding:8px 0;">${parts.join('')}</div>`;
+  }
+
+  /* ===== 번역 버전 관리 ===== */
+  // 언어별로 버전 보관: { EN: [{n, date, result}], CN: [...], ... }
+  const trVersionsByLang = {};
+  let selectedVersion = null;
+
+  function nowStr() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function renderTranslationResult(result) {
+    const transPane    = document.querySelector('.tr-trans-text');
+    const reportScroll = document.querySelector('.tr-report-scroll');
+    const translated = result.finalTranslation
+      || extractText(result, ['translatedText', 'translation', 'translated', 'text', 'targetText']);
+
+    if (transPane) {
+      transPane.style.color = 'var(--color-text)';
+      transPane.style.padding = '24px';
+      transPane.innerHTML = translated
+        ? renderParagraphs(translated)
+        : `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+    }
+    if (reportScroll) {
+      reportScroll.innerHTML = renderReport(result);
+    }
+  }
+
+  function emptyTransNotice() {
+    const transPane    = document.querySelector('.tr-trans-text');
+    const reportScroll = document.querySelector('.tr-report-scroll');
+    if (transPane) {
+      transPane.style.color = 'var(--color-text-muted)';
+      transPane.innerHTML = '<p>번역 결과가 없습니다. 번역하기 버튼을 눌러 번역을 시작해 보세요.</p>';
+    }
+    if (reportScroll) {
+      reportScroll.innerHTML = '<div style="padding:48px 0;text-align:center;color:var(--color-text-muted);"><p>번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</p></div>';
+    }
+  }
+
+  // 현재 선택된 언어의 버전 목록을 드롭다운에 렌더링
+  function refreshVersionPanels() {
+    const lang = getActiveLang();
+    const list = trVersionsByLang[lang] || [];
+    ['versionPanel2', 'versionPanel3'].forEach((panelId) => {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      if (!list.length) {
+        panel.innerHTML = '<p style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;">번역 결과가 없습니다.</p>';
+        return;
+      }
+      panel.innerHTML = '';
+      list.forEach((v) => {
+        const opt = document.createElement('button');
+        opt.type = 'button';
+        opt.className = 'tr-version-opt' + (selectedVersion === v ? ' active' : '');
+        opt.innerHTML =
+          `<span class="tr-ver-name">ver. ${v.n}</span>` +
+          `<span class="tr-ver-date">${v.date}</span>`;
+        opt.addEventListener('click', () => {
+          selectVersion(v);
+          panel.closest('.tr-version-dropdown')?.classList.remove('open');
+        });
+        panel.appendChild(opt);
+      });
+    });
+  }
+
+  function selectVersion(v) {
+    if (!v) return;
+    selectedVersion = v;
+    renderTranslationResult(v.result);
+    ['versionLabel2', 'versionLabel3'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = `ver. ${v.n}`;
+    });
+    refreshVersionPanels();
+  }
+
+  function addTranslationVersion(lang, result) {
+    const list = trVersionsByLang[lang] || (trVersionsByLang[lang] = []);
+    const v = { n: list.length + 1, date: nowStr(), result };
+    list.push(v);
+    // 언어별 최대 3개 유지(가장 오래된 것 제거)
+    while (list.length > 3) list.shift();
+    selectVersion(v);
+  }
+
+  // 언어 탭을 바꾸면 해당 언어의 버전으로 갱신
+  document.querySelectorAll('.tr-lang-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const list = trVersionsByLang[getActiveLang()] || [];
+      if (list.length) {
+        selectVersion(list[list.length - 1]);
+      } else {
+        selectedVersion = null;
+        emptyTransNotice();
+        refreshVersionPanels();
+        ['versionLabel2', 'versionLabel3'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '버전 선택';
+        });
+      }
+    });
+  });
 
 });
