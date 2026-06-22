@@ -82,8 +82,30 @@ document.addEventListener('DOMContentLoaded', function () {
       workSelect.classList.remove('open');
       trigger.setAttribute('aria-expanded', 'false');
       if (chevron) chevron.innerHTML = SVG_DOWN;
+
+      loadSavedCharacters(selectedWorkId);
     });
   });
+
+  // ===== 저장된 캐릭터 불러오기 (작품 선택 시) =====
+  async function loadSavedCharacters(workId) {
+    document.getElementById('charDebugBox')?.remove();
+    if (!window.CHAR_CONFIG?.savedUrl) return;
+    const url = window.CHAR_CONFIG.savedUrl.replace('/0/', '/' + workId + '/');
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.ok && data.characters && data.characters.length) {
+        renderCharacters(data.characters);
+      } else {
+        // 저장된 캐릭터 없음 → 빈 상태로
+        charTableWrap.style.display = 'none';
+        charEmpty.style.display = '';
+      }
+    } catch (e) {
+      console.error('[load characters]', e);
+    }
+  }
 
   // ===== 추출 (모델 서버 호출 → 응답 구조 확인용 RAW 표시) =====
   function showDebug(html) {

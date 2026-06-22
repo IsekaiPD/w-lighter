@@ -68,12 +68,12 @@
           </div>
           <div class="stat-card">
             <p class="stat-label">번역 완료</p>
-            <p class="stat-value">0</p>
+            <p class="stat-value">{{ translated_count }}</p>
           </div>
         </div>
         <div class="stat-card stat-card-accent">
           <p class="stat-label">미번역</p>
-          <p class="stat-value">{{ episode_count }}</p>
+          <p class="stat-value">{{ untranslated_count }}</p>
         </div>
       </div>
 
@@ -126,11 +126,13 @@
     <div class="episode-list">
 
       {% for episode in episodes %}
-      <div class="episode-row">
+      <div class="episode-row" data-epnum="{{ episode.episode_number }}" data-langs="{{ episode.trans_langs|join:',' }}">
         <div class="ep-badge">{{ episode.episode_number }}화</div>
         <span class="ep-title">{{ episode.title }}</span>
         <div class="ep-langs">
-          {# TODO: 번역 완료 언어 표시 (FastAPI translation_results 연동 후) #}
+          {% for lang in episode.trans_langs %}
+          <span class="lang-tag">{{ lang }}</span>
+          {% endfor %}
         </div>
         <a href="{% url 'works:episode_detail' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-view-btn">
           <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
@@ -245,7 +247,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/work_detail.js' %}"></script>
+<script src="{% static 'js/work_detail.js' %}?v=load-saved-20260622-2"></script>
 <script>
 (function() {
   const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';

@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- 에피소드 정렬/언어 드롭다운 ----------
-  function initEpDropdown(wrapperId, triggerId, panelId, labelId) {
+  function initEpDropdown(wrapperId, triggerId, panelId, labelId, onSelect) {
     const wrap    = document.getElementById(wrapperId);
     const trigger = document.getElementById(triggerId);
     const panel   = document.getElementById(panelId);
@@ -35,12 +35,37 @@ document.addEventListener('DOMContentLoaded', () => {
         label.textContent = opt.dataset.label || opt.textContent.trim();
         wrap.classList.remove('open');
         updateCaret();
+        if (typeof onSelect === 'function') onSelect(opt.dataset.val);
       });
     });
   }
 
-  initEpDropdown('langDropdown',  'langTrigger',  'langPanel',  'langLabel');
-  initEpDropdown('orderDropdown', 'orderTrigger', 'orderPanel', 'orderLabel');
+  // ---------- 회차 필터(언어) + 정렬(회차번호) ----------
+  function applyEpView() {
+    const list = document.querySelector('.episode-list');
+    if (!list) return;
+    const langVal  = document.querySelector('#langPanel .ep-sort-opt.active')?.dataset.val || 'ALL';
+    const orderVal = document.querySelector('#orderPanel .ep-sort-opt.active')?.dataset.val || 'asc';
+
+    const rows = Array.from(list.querySelectorAll('.episode-row'));
+    // 회차번호 기준 정렬
+    rows.sort((a, b) => {
+      const na = parseInt(a.dataset.epnum || '0', 10);
+      const nb = parseInt(b.dataset.epnum || '0', 10);
+      return orderVal === 'desc' ? nb - na : na - nb;
+    });
+    rows.forEach(r => list.appendChild(r));
+    // 언어 필터
+    rows.forEach(r => {
+      const langs = (r.dataset.langs || '').split(',').filter(Boolean);
+      const show = langVal === 'ALL' ? true : langs.includes(langVal);
+      r.style.display = show ? '' : 'none';
+    });
+  }
+
+  initEpDropdown('langDropdown',  'langTrigger',  'langPanel',  'langLabel',  applyEpView);
+  initEpDropdown('orderDropdown', 'orderTrigger', 'orderPanel', 'orderLabel', applyEpView);
+  applyEpView();  // 초기: 회차번호 오름차순 + 전체
 
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.ep-sort-dropdown')) {

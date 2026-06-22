@@ -241,8 +241,9 @@
     csrfToken:   "{{ csrf_token }}",
     translateUrl: "{% url 'works:episode_translate_run' work_pk=work.work_id episode_pk=episode.episode_id %}",
     inspectUrl:   "{% url 'works:episode_inspect_chat' work_pk=work.work_id episode_pk=episode.episode_id %}",
+    listUrl:      "{% url 'works:episode_translations' work_pk=work.work_id episode_pk=episode.episode_id %}",
   };
 </script>
 <script src="{% static 'js/minigames.js' %}"></script>
-<script src="{% static 'js/episode_translate.js' %}?v=credit-use-20260622-1"></script>
+<script src="{% static 'js/episode_translate.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}

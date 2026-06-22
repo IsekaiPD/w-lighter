@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
@@ -8,11 +9,34 @@ from django.views.decorators.http import require_POST
 from common import model_server
 from works.models import Work
 
+_COUNTRY_NAME = {'US': '미국', 'EN': '미국', 'CN': '중국', 'JP': '일본', 'TH': '태국', 'KR': '한국'}
+
 
 @login_required(login_url='pages:landing')
 def localization(request):
     works = Work.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'guides/localization.html', {'works': works})
+
+
+@login_required(login_url='pages:landing')
+def guide_saved(request, work_pk):
+    """작품에 저장된 현지화 가이드 목록(RDS localization_guides)을 반환."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT guide_id, target_country, guide_content, created_at "
+            "FROM localization_guides WHERE work_id = %s ORDER BY guide_id DESC",
+            [work.work_id],
+        )
+        rows = cur.fetchall()
+    guides = [{
+        'id': r[0],
+        'country': r[1] or '',
+        'countryName': _COUNTRY_NAME.get((r[1] or '').upper(), ''),
+        'htmlReport': r[2],
+        'createdAt': r[3].strftime('%Y.%m.%d %H:%M') if r[3] else '',
+    } for r in rows]
+    return JsonResponse({'ok': True, 'guides': guides})
 
 
 @login_required(login_url='pages:landing')

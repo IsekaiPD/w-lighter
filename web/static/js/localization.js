@@ -180,9 +180,33 @@ document.addEventListener('DOMContentLoaded', () => {
       if (chevron) chevron.innerHTML = SVG_DOWN;
 
       applyWorkState(selectedWorkId);
-      renderList(selectedWorkId);
+      loadSavedGuides(selectedWorkId);
     });
   });
+
+  // ===== 저장된 가이드 불러오기 (작품 선택 시) =====
+  async function loadSavedGuides(workId) {
+    document.getElementById('guideDebugBox')?.remove();
+    if (window.GUIDE_CONFIG?.savedUrl) {
+      const url = window.GUIDE_CONFIG.savedUrl.replace('/0/', '/' + workId + '/');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.guides)) {
+          mockGuides[workId] = data.guides.map(g => ({
+            id: 'db_' + g.id,
+            title: g.countryName ? `현지화 가이드 — ${g.countryName}` : '현지화 가이드',
+            country: g.country || null,
+            createdAt: g.createdAt,
+            htmlReport: g.htmlReport || '',
+          }));
+        }
+      } catch (e) {
+        console.error('[load guides]', e);
+      }
+    }
+    renderList(workId);
+  }
 
   document.addEventListener('click', (e) => {
     if (!selectWrap?.contains(e.target)) {

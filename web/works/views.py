@@ -1,12 +1,16 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from common import model_server
 from .models import Episode, Work
+
+# 모델 서버 target_country → 프론트 언어 탭
+_COUNTRY_TO_LANG = {'US': 'EN', 'EN': 'EN', 'CN': 'CN', 'JP': 'JP', 'TH': 'TH', 'KR': 'KR'}
 
 
 @login_required(login_url='pages:landing')
@@ -88,10 +92,38 @@ def work_delete(request, pk):
 @login_required(login_url='pages:landing')
 def work_detail(request, pk):
     work = get_object_or_404(Work, pk=pk, user=request.user)
-    episodes = work.episodes.all().order_by('episode_id')
-    episode_count = episodes.count()
+    # 회차번호 오름차순 기본 정렬
+    episodes = list(work.episodes.all().order_by('episode_number', 'episode_id'))
+    episode_count = len(episodes)
+
+    # 회차별 번역 완료 언어(translation_results) 계산
+    ep_ids = [e.episode_id for e in episodes]
+    trans_map = {}
+    if ep_ids:
+        placeholders = ','.join(['%s'] * len(ep_ids))
+        with connection.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT episode_id, target_country "
+                "FROM translation_results WHERE episode_id IN (%s)" % placeholders,
+                ep_ids,
+            )
+            for ep_id, country in cur.fetchall():
+                lang = _COUNTRY_TO_LANG.get((country or '').upper(), None)
+                if lang:
+                    trans_map.setdefault(ep_id, set()).add(lang)
+
+    lang_order = ['EN', 'CN', 'JP', 'TH']
+    translated_count = 0
+    for e in episodes:
+        langs = trans_map.get(e.episode_id, set())
+        e.trans_langs = [l for l in lang_order if l in langs]  # 정렬된 언어 목록
+        if e.trans_langs:
+            translated_count += 1
+
     return render(request, 'works/work_detail.html', {
         'work': work, 'episodes': episodes, 'episode_count': episode_count,
+        'translated_count': translated_count,
+        'untranslated_count': episode_count - translated_count,
     })
 
 
@@ -247,3 +279,38 @@ def episode_inspect_chat(request, work_pk, episode_pk):
         return JsonResponse({'ok': False, 'error': e.message}, status=e.status_code)
 
     return JsonResponse({'ok': True, 'result': data})
+
+
+@login_required(login_url='pages:landing')
+def episode_translations(request, work_pk, episode_pk):
+    """이 회차에 저장된 번역 목록(RDS translation_results)을 반환.
+    페이지 로드 시 버전 목록/번역본 복원에 사용."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT translation_id, target_country, translated_text, summary, "
+            "inspection_report, created_at "
+            "FROM translation_results WHERE episode_id = %s ORDER BY translation_id ASC",
+            [episode.episode_id],
+        )
+        rows = cur.fetchall()
+
+    items = []
+    for r in rows:
+        report = None
+        if r[4]:
+            try:
+                report = json.loads(r[4]) if isinstance(r[4], str) else r[4]
+            except (ValueError, TypeError):
+                report = None
+        items.append({
+            'id': r[0],
+            'lang': _COUNTRY_TO_LANG.get((r[1] or '').upper(), 'EN'),
+            'translatedText': r[2],
+            'summary': r[3],
+            'inspectionReport': report,
+            'createdAt': r[5].strftime('%Y.%m.%d %H:%M') if r[5] else '',
+        })
+    return JsonResponse({'ok': True, 'items': items})

@@ -167,7 +167,8 @@
   window.CHAR_CONFIG = {
     csrfToken:  "{{ csrf_token }}",
     extractUrl: "{% url 'characters:extract' %}",
+    savedUrl:   "{% url 'characters:saved' work_pk=0 %}",  // 0 → 실제 workId 치환
   };
 </script>
-<script src="{% static 'js/character_list.js' %}"></script>
+<script src="{% static 'js/character_list.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}

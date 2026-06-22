@@ -185,9 +185,10 @@
   window.GUIDE_CONFIG = {
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'guides:guide_generate' %}",
+    savedUrl:    "{% url 'guides:guide_saved' work_pk=0 %}",
   };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="{% static 'js/localization.js' %}?v=credit-use-20260622-1"></script>
+<script src="{% static 'js/localization.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}

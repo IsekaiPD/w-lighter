@@ -145,10 +145,30 @@ document.addEventListener('DOMContentLoaded', () => {
       selectTrigger.setAttribute('aria-expanded', 'false');
       if (chevron) chevron.innerHTML = SVG_DOWN;
 
-      // 우측 패널 업데이트
-      renderGrid(selectedWorkId);
+      // 우측 패널: 저장된 표지 불러와서 렌더
+      loadSavedCovers(selectedWorkId);
     });
   });
+
+  // ===== 저장된 표지 불러오기 (작품 선택 시) =====
+  async function loadSavedCovers(workId) {
+    document.getElementById('coverDebugBox')?.remove();
+    if (window.COVER_CONFIG?.savedUrl) {
+      const url = window.COVER_CONFIG.savedUrl.replace('/0/', '/' + workId + '/');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.covers)) {
+          mockCovers[workId] = data.covers.map(c => ({
+            id: 'db_' + c.id, url: c.url, createdAt: c.createdAt, isMain: c.isMain,
+          }));
+        }
+      } catch (e) {
+        console.error('[load covers]', e);
+      }
+    }
+    renderGrid(workId);
+  }
 
   // 외부 클릭 시 닫기
   document.addEventListener('click', (e) => {

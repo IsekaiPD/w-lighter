@@ -206,7 +206,8 @@
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'relationships:relationship_map' %}",
     extractUrl:  "{% url 'characters:extract' %}",
+    savedUrl:    "{% url 'relationships:relationship_saved' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/relationship.js' %}?v=credit-use-20260622-1"></script>
+<script src="{% static 'js/relationship.js' %}?v=load-saved-20260622-2"></script>
 {% endblock %}
