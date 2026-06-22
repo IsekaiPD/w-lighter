@@ -18,6 +18,13 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
+    def create_user_with_bonus(self, email, nickname, oauth_provider, provider_user_id, **extra_fields):
+        """가입 시 1000C 웰컴 크레딧 지급"""
+        user = self.create_user(email, nickname, oauth_provider, provider_user_id, **extra_fields)
+        user.credit = 1000
+        user.save(update_fields=['credit'])
+        return user
+
     def create_superuser(self, email, nickname, password=None, **extra_fields):
         user = self.model(
             email=self.normalize_email(email),

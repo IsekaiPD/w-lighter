@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Escape' && userInfoModal.classList.contains('open')) closeUserInfoModal();
     });
 
-    userInfoActionBtn?.addEventListener('click', () => {
+    userInfoActionBtn?.addEventListener('click', async () => {
       if (userInfoActionBtn.textContent === '수정') {
         setEditMode();
       } else {
@@ -167,9 +167,30 @@ document.addEventListener('DOMContentLoaded', () => {
           nicknameErrorMsg.textContent = err;
           nicknameError.style.display = 'flex';
           nicknameInput.classList.add('error');
-        } else {
-          nicknameDisplay.textContent = val;
-          setViewMode();
+          return;
+        }
+        // 서버에 저장
+        const url  = userInfoModal.dataset.updateUrl;
+        const csrf = userInfoModal.dataset.csrf;
+        try {
+          const res  = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+            body: JSON.stringify({ nickname: val }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            nicknameDisplay.textContent = val;
+            setViewMode();
+          } else {
+            nicknameErrorMsg.textContent = data.error || '저장에 실패했어요.';
+            nicknameError.style.display = 'flex';
+            nicknameInput.classList.add('error');
+          }
+        } catch {
+          nicknameErrorMsg.textContent = '네트워크 오류가 발생했어요.';
+          nicknameError.style.display = 'flex';
+          nicknameInput.classList.add('error');
         }
       }
     });

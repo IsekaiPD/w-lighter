@@ -9,7 +9,21 @@ from .models import Episode, Work
 @login_required(login_url='pages:landing')
 def library(request):
     works = Work.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'works/library.html', {'works': works})
+    # TODO: FastAPI translations/reviews 테이블 연결 후 수정 필요
+    # 현재는 Episode.updated_at 기준 임시 표시 (번역/검수 구분 불가)
+    # FastAPI 스키마 받은 후 managed=False 모델 만들고 실제 완료 기록으로 교체할 것
+    recent_episode = (
+        Episode.objects
+        .filter(work__user=request.user)
+        .select_related('work')
+        .order_by('-updated_at')
+        .first()
+    )
+    return render(request, 'works/library.html', {
+        'works': works,
+        'nickname': request.user.nickname,
+        'recent_episode': recent_episode,
+    })
 
 
 @login_required(login_url='pages:landing')
@@ -140,20 +154,33 @@ def episode_register(request, work_pk):
     work = get_object_or_404(Work, pk=work_pk, user=request.user)
 
     if request.method == 'POST':
-        title         = request.POST.get('title', '').strip()
-        original_text = request.POST.get('content', '').strip()
+        title          = request.POST.get('title', '').strip()
+        original_text  = request.POST.get('content', '').strip()
+        episode_number = request.POST.get('episode_number', '0').strip()
         errors = {}
         if not title:         errors['title']   = '회차 제목을 입력해주세요'
         if not original_text: errors['content'] = '원문을 입력해주세요'
         if errors:
             return JsonResponse({'ok': False, 'errors': errors})
-        episode = Episode.objects.create(work=work, title=title,
-                                         original_text=original_text)
+        episode = Episode.objects.create(
+            work=work, title=title, original_text=original_text,
+            episode_number=int(episode_number) if episode_number.isdigit() else 0,
+        )
         return JsonResponse({'ok': True, 'episode': {
             'id': episode.episode_id, 'title': episode.title,
+            'episode_number': episode.episode_number,
         }})
 
     episode_count = work.episodes.count()
     return render(request, 'works/episode_register.html', {
         'work': work, 'episode_count': episode_count,
     })
+
+@login_required(login_url='pages:landing')
+@require_POST
+def work_set_cover(request, pk):
+    work = get_object_or_404(Work, pk=pk, user=request.user)
+    url  = request.POST.get('url', '').strip()
+    work.cover_image_url = url or None
+    work.save(update_fields=['cover_image_url'])
+    return JsonResponse({'ok': True})

@@ -9,6 +9,7 @@ urlpatterns = [
     path('works/<int:pk>/', views.work_detail, name='work_detail'),
     path('works/<int:pk>/update/', views.work_update, name='work_update'),
     path('works/<int:pk>/delete/', views.work_delete, name='work_delete'),
+    path('works/<int:pk>/set-cover/', views.work_set_cover, name='work_set_cover'),
     path('works/<int:work_pk>/episodes/new/', views.episode_register, name='episode_register'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/', views.episode_detail, name='episode_detail'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/translate/', views.episode_translate, name='episode_translate'),

@@ -27,6 +27,7 @@ class Work(models.Model):
     pen_name = models.CharField(max_length=10)
     genre    = models.CharField(max_length=10, choices=GENRE_CHOICES)
     synopsis = models.CharField(max_length=10000, null=True, blank=True)
+    cover_image_url = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -37,6 +38,7 @@ class Work(models.Model):
 class Episode(models.Model):
     episode_id    = models.AutoField(primary_key=True)
     work          = models.ForeignKey(Work, on_delete=models.CASCADE, db_column='work_id', related_name='episodes')
+    episode_number = models.PositiveIntegerField(default=0)
     title         = models.CharField(max_length=30)
     original_text = models.CharField(max_length=8000)
     created_at    = models.DateTimeField(auto_now_add=True)

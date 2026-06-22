@@ -16,7 +16,7 @@
       <p class="page-desc">대상 국가의 현지화 리포트를 받아 보세요.</p>
     </div>
     <div class="header-utils">
-      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">18,000 C</a>
+      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -47,25 +47,21 @@
           </button>
 
           <div class="lc-dropdown" id="lcWorkDropdown" role="listbox" aria-label="작품 목록">
-            <div class="lc-dropdown-item" role="option" data-id="1" data-title="안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는..." data-genre="시대극" data-synopsis="true">
+            {% for work in works %}
+            <div class="lc-dropdown-item" role="option"
+                 data-id="{{ work.work_id }}"
+                 data-title="{{ work.title }}"
+                 data-genre="{{ work.genre }}"
+                 data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}">
               <div class="lc-di-thumb"><div class="lc-di-placeholder"></div></div>
               <div class="lc-di-info">
-                <p class="lc-di-title">안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는...</p>
-                <p class="lc-di-genre">시대극</p>
+                <p class="lc-di-title">{{ work.title }}</p>
+                <p class="lc-di-genre">{{ work.genre }}</p>
               </div>
             </div>
-            <div class="lc-dropdown-item" role="option" data-id="2" data-title="별빛 아래 잊힌 왕국" data-genre="판타지" data-synopsis="true">
-              <div class="lc-di-thumb"><div class="lc-di-placeholder"></div></div>
-              <div class="lc-di-info"><p class="lc-di-title">별빛 아래 잊힌 왕국</p><p class="lc-di-genre">판타지</p></div>
-            </div>
-            <div class="lc-dropdown-item" role="option" data-id="3" data-title="악녀는 장미를 숨기지 않는다" data-genre="로맨스 판타지" data-synopsis="false">
-              <div class="lc-di-thumb"><div class="lc-di-placeholder"></div></div>
-              <div class="lc-di-info"><p class="lc-di-title">악녀는 장미를 숨기지 않는다</p><p class="lc-di-genre">로맨스 판타지</p></div>
-            </div>
-            <div class="lc-dropdown-item" role="option" data-id="4" data-title="오늘도, 너와 퇴근" data-genre="로맨스" data-synopsis="true">
-              <div class="lc-di-thumb"><div class="lc-di-placeholder"></div></div>
-              <div class="lc-di-info"><p class="lc-di-title">오늘도, 너와 퇴근</p><p class="lc-di-genre">로맨스</p></div>
-            </div>
+            {% empty %}
+            <p style="padding:12px 16px; font-size:13px; color:var(--color-text-muted);">등록된 작품이 없어요.</p>
+            {% endfor %}
           </div>
         </div>
       </div>

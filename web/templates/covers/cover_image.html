@@ -16,7 +16,7 @@
       <p class="page-desc">내 작품의 첫인상을 만들어보세요.</p>
     </div>
     <div class="header-utils">
-      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">18,000 C</a>
+      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -48,52 +48,23 @@
 
           <!-- 드롭다운 목록 -->
           <div class="cover-dropdown" id="workDropdown" role="listbox" aria-label="작품 목록">
-            <!-- JS로 동적 렌더링 또는 아래처럼 정적 샘플 -->
-            <div class="cover-dropdown-item" role="option" data-id="1"
-                 data-title="안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는..." data-genre="판타지"
+            {% for work in works %}
+            <div class="cover-dropdown-item" role="option"
+                 data-id="{{ work.work_id }}"
+                 data-title="{{ work.title }}"
+                 data-genre="{{ work.genre }}"
                  data-img="">
               <div class="cover-di-thumb">
-                <img src="" alt="" class="cover-di-img" onerror="this.style.display='none'">
                 <div class="cover-di-placeholder"></div>
               </div>
               <div class="cover-di-info">
-                <p class="cover-di-title">안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는...</p>
-                <p class="cover-di-genre">판타지</p>
+                <p class="cover-di-title">{{ work.title }}</p>
+                <p class="cover-di-genre">{{ work.genre }}</p>
               </div>
             </div>
-
-            <div class="cover-dropdown-item" role="option" data-id="2"
-                 data-title="별빛 아래 잊힌 왕국" data-genre="판타지" data-img="">
-              <div class="cover-di-thumb">
-                <div class="cover-di-placeholder"></div>
-              </div>
-              <div class="cover-di-info">
-                <p class="cover-di-title">별빛 아래 잊힌 왕국</p>
-                <p class="cover-di-genre">판타지</p>
-              </div>
-            </div>
-
-            <div class="cover-dropdown-item" role="option" data-id="3"
-                 data-title="악녀는 장미를 숨기지 않는다" data-genre="로맨스 판타지" data-img="">
-              <div class="cover-di-thumb">
-                <div class="cover-di-placeholder"></div>
-              </div>
-              <div class="cover-di-info">
-                <p class="cover-di-title">악녀는 장미를 숨기지 않는다</p>
-                <p class="cover-di-genre">로맨스 판타지</p>
-              </div>
-            </div>
-
-            <div class="cover-dropdown-item" role="option" data-id="4"
-                 data-title="오늘도, 너와 퇴근" data-genre="로맨스" data-img="">
-              <div class="cover-di-thumb">
-                <div class="cover-di-placeholder"></div>
-              </div>
-              <div class="cover-di-info">
-                <p class="cover-di-title">오늘도, 너와 퇴근</p>
-                <p class="cover-di-genre">로맨스</p>
-              </div>
-            </div>
+            {% empty %}
+            <p style="padding:12px 16px; font-size:13px; color:var(--color-text-muted);">등록된 작품이 없어요.</p>
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -145,7 +116,7 @@
       <!-- Empty State -->
       <div class="cover-empty-state" id="coverEmptyState">
         <div class="cover-empty-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
             <line x1="12" y1="11" x2="12" y2="17"/>

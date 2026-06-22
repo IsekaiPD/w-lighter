@@ -13,7 +13,7 @@
 .page-title { font-size: 28px; font-weight: 700; color: var(--color-text); line-height: 1.2; }
 .page-desc { font-size: 14px; line-height: 21px; color: var(--color-text-muted); }
 
-.header-utils { display: flex; align-items: center; gap: 12px; }
+.header-utils { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .credit-chip {
   display: inline-flex; align-items: center; height: 28px; padding: 0 14px;
   border-radius: var(--radius-pill);
@@ -29,12 +29,13 @@
 /* 공통 패널 */
 .char-panel {
   background: var(--color-surface);
-  border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+  border: 1px solid rgba(207, 195, 251, 0.45);
+  border-radius: 22px;
+  box-shadow: var(--shadow-card);
+  padding: 28px 24px 24px;
 }
 .panel-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 16px;
@@ -47,21 +48,22 @@
 
 /* 상단 2단 레이아웃 */
 .char-top-row {
-  display: flex;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 24px;
   margin-bottom: 24px;
   align-items: stretch;
-  min-width: 0;
 }
 .select-panel {
-  flex: 0 0 340px;
-  width: 340px;
-  min-width: 340px;
-  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.summary-panel {
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
-.summary-panel { flex: 1; min-width: 0; }
 
 /* 작품 선택 드롭다운 */
 .char-field-group {
@@ -219,7 +221,7 @@
 .work-select-genre { display: none; }
 /* 추출 버튼 */
 .extract-btn {
-  margin-top: auto;
+  margin-top: 0;
   width: 100%;
   height: 48px;
   border: none;
@@ -235,21 +237,24 @@
 
 /* 결과 요약 */
 .panel-note {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px;
   color: var(--color-text-muted);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  line-height: 1.4;
 }
-.panel-note svg { color: var(--color-primary); flex-shrink: 0; }
+.panel-note svg { flex-shrink: 0; color: var(--color-text-muted); }
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+  flex: 1;
 }
 .summary-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 20px 12px;
   background: var(--color-primary-soft);

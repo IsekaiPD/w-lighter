@@ -20,7 +20,7 @@
       <p class="page-desc">입력한 회차를 수정해 보세요.</p>
     </div>
     <div class="header-utils">
-      <a href="/credits/charge" class="credit-chip">18,000 C</a>
+      <a href="/credits/charge" class="credit-chip">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
