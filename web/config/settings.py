@@ -75,6 +75,9 @@ NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET', '')
 MODEL_SERVER_URL = os.getenv('MODEL_SERVER_URL', 'http://3.38.235.44:8000').rstrip('/')
 MODEL_SERVER_TIMEOUT = int(os.getenv('MODEL_SERVER_TIMEOUT', '120'))
 
+TOSS_CLIENT_KEY = os.getenv('TOSS_CLIENT_KEY', '')
+TOSS_SECRET_KEY = os.getenv('TOSS_SECRET_KEY', '')
+
 if os.getenv('DB_HOST'):
     DATABASES = {
         'default': {

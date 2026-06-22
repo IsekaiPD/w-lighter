@@ -44,6 +44,38 @@ document.addEventListener('DOMContentLoaded', () => {
     return parseCreditValue(creditBalance?.dataset.creditBalance || creditBalance?.textContent);
   }
 
+  function updateCreditBalance(balance) {
+    if (!creditBalance) return;
+    creditBalance.dataset.creditBalance = String(balance);
+    creditBalance.textContent = `${formatNumber(balance)} C`;
+  }
+
+  async function spendCredit(feature, amount) {
+    const url = creditBalance?.dataset.creditUseUrl;
+    const csrf = creditBalance?.dataset.csrf;
+    if (!url || !csrf) throw new Error('크레딧 차감 설정을 찾을 수 없습니다.');
+
+    const form = new FormData();
+    form.append('feature', feature);
+    form.append('amount', String(amount));
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrf,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: form,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      if (typeof data.balance === 'number') updateCreditBalance(data.balance);
+      throw new Error(data.message || '크레딧 차감에 실패했습니다.');
+    }
+    updateCreditBalance(data.balance);
+    return data;
+  }
+
   function getSourceCharacterCount() {
     if (!sourceText) return 0;
     const visibleText = sourceText.textContent.replace(/\s+/g, ' ').trim();
@@ -110,14 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  spendConfirmBtn?.addEventListener('click', () => {
+  spendConfirmBtn?.addEventListener('click', async () => {
     const detail = lastCreditCheck || {
       requiredCredit: getRequiredCredit(),
       currentCredit: getCurrentCredit(),
       sourceCharacterCount: getSourceCharacterCount(),
     };
-    closeCreditModal();
-    document.dispatchEvent(new CustomEvent('translation:credit-confirmed', { detail }));
+    spendConfirmBtn.disabled = true;
+    try {
+      const result = await spendCredit('translation', detail.requiredCredit);
+      closeCreditModal();
+      document.dispatchEvent(new CustomEvent('translation:credit-confirmed', {
+        detail: { ...detail, balance: result.balance },
+      }));
+    } catch (error) {
+      if (requiredCreditText) requiredCreditText.textContent = formatNumber(detail.requiredCredit);
+      openCreditModal(error.message === '크레딧이 부족합니다.' ? 'limit' : 'spend');
+      if (error.message !== '크레딧이 부족합니다.') alert(error.message);
+    } finally {
+      spendConfirmBtn.disabled = false;
+    }
   });
 
   /* ===== 버전 드롭다운 공통 초기화 ===== */

@@ -107,6 +107,37 @@ document.addEventListener('DOMContentLoaded', () => {
   const statRelations= document.getElementById('relStatRelations');
   const generateBtn  = document.getElementById('relGenerateBtn');
   const charLinkBtn  = document.getElementById('relCharLinkBtn');
+  const creditChip   = document.querySelector('.credit-chip[data-credit-use-url]');
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString('ko-KR');
+  }
+
+  function updateCreditBalance(balance) {
+    document.querySelectorAll('.credit-chip').forEach(el => {
+      el.textContent = `${formatNumber(balance)} C`;
+    });
+  }
+
+  async function spendCredit(feature) {
+    const url = creditChip?.dataset.creditUseUrl;
+    const csrf = creditChip?.dataset.csrf;
+    if (!url || !csrf) throw new Error('크레딧 차감 설정을 찾을 수 없습니다.');
+    const form = new FormData();
+    form.append('feature', feature);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+      body: form,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.ok) {
+      if (typeof data.balance === 'number') updateCreditBalance(data.balance);
+      throw new Error(data.message || '크레딧 차감에 실패했습니다.');
+    }
+    updateCreditBalance(data.balance);
+    return data;
+  }
 
   // ---------- 우측 패널 렌더 ----------
   function renderList(workId) {
@@ -215,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- 버튼 (불러오기 / 생성하기) ----------
-  generateBtn?.addEventListener('click', () => {
+  generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
       alert('작품을 먼저 선택해 주세요.');
       return;
@@ -248,6 +279,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const existing = mockDiagrams[workId] || [];
     if (existing.length >= MAX_DIAGRAMS) {
       showToast('※ 캐릭터 관계도는 최대 3개까지 생성 가능합니다.');
+      return;
+    }
+
+    try {
+      await spendCredit('relationship_diagram');
+    } catch (error) {
+      showToast(`※ ${error.message}`);
       return;
     }
 
