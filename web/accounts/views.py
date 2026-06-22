@@ -1,8 +1,10 @@
+import json
 import re
 import secrets
 
 from django.contrib import messages
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 
@@ -41,14 +43,24 @@ def redirect_to_landing_with_error(request, message):
     return redirect('pages:landing')
 
 
+PROVIDER_DISPLAY = {
+    'GOOGLE': '구글',
+    'KAKAO': '카카오',
+    'NAVER': '네이버',
+}
+
+
 def find_existing_user(oauth_profile):
-    provider_user = User.objects.filter(
+    """(제공자+ID) 정확히 일치하는 계정 반환. 없으면 None."""
+    return User.objects.filter(
         oauth_provider=oauth_profile['oauth_provider'],
         provider_user_id=oauth_profile['provider_user_id'],
     ).first()
-    if provider_user:
-        return provider_user
-    return User.objects.filter(email=oauth_profile['email']).first()
+
+
+def find_user_by_email(email):
+    """이메일로 계정 조회 (중복가입 방지용)."""
+    return User.objects.filter(email=email).first()
 
 
 def oauth_login(request, provider):
@@ -81,6 +93,7 @@ def oauth_callback(request, provider):
     except OAuthError as error:
         return redirect_to_landing_with_error(request, str(error))
 
+    # 1. 동일 제공자+ID로 가입된 계정 확인
     existing_user = find_existing_user(oauth_profile)
     if existing_user:
         if existing_user.is_withdrawn:
@@ -88,6 +101,15 @@ def oauth_callback(request, provider):
         login_user(request, existing_user)
         clear_signup_session(request)
         return redirect('works:library')
+
+    # 2. 동일 이메일로 다른 제공자 계정이 이미 존재하는 경우 → 중복가입 차단
+    email_user = find_user_by_email(oauth_profile['email'])
+    if email_user:
+        registered_provider = PROVIDER_DISPLAY.get(email_user.oauth_provider, email_user.oauth_provider)
+        return redirect_to_landing_with_error(
+            request,
+            f'이미 {registered_provider}(으)로 가입된 이메일입니다. {registered_provider} 로그인을 이용해 주세요.'
+        )
 
     request.session[PENDING_SIGNUP_SESSION_KEY] = oauth_profile
     request.session.pop(SIGNUP_TERMS_AGREED_SESSION_KEY, None)
@@ -138,11 +160,20 @@ def signup_name(request):
 
         try:
             with transaction.atomic():
-                user = User.objects.create_user(
+                user = User.objects.create_user_with_bonus(
                     email=pending_signup['email'],
                     nickname=nickname,
                     oauth_provider=pending_signup['oauth_provider'],
                     provider_user_id=pending_signup['provider_user_id'],
+                )
+                # 가입 축하 1000C 무료 지급 내역 기록
+                from credits.models import CreditTransaction
+                CreditTransaction.objects.create(
+                    user=user,
+                    transaction_type='CHARGE',
+                    feature_name='무료 지급',
+                    change_amount=1000,
+                    balance_after=1000,
                 )
         except IntegrityError:
             existing_user = find_existing_user(pending_signup)
@@ -160,6 +191,24 @@ def signup_name(request):
     return render(request, 'accounts/signup_name.html')
 
 
+@login_required(login_url='pages:landing')
+def update_nickname(request):
+    if request.method != 'POST':
+        from django.http import JsonResponse
+        return JsonResponse({'ok': False, 'error': '허용되지 않는 메서드입니다.'}, status=405)
+    from django.http import JsonResponse
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+    nickname = body.get('nickname', '').strip()
+    if not NICKNAME_PATTERN.match(nickname):
+        return JsonResponse({'ok': False, 'error': '닉네임은 공백 없이 한글, 영어, 숫자 2~10자로 입력해 주세요.'}, status=400)
+    request.user.nickname = nickname
+    request.user.save(update_fields=['nickname'])
+    return JsonResponse({'ok': True, 'nickname': nickname})
+
+
 def logout_view(request):
     logout(request)
     clear_signup_session(request)
@@ -167,9 +216,9 @@ def logout_view(request):
 
 
 def withdraw(request):
-    email = 'bugbudaegong@gmail.com'            # 추후 작업 시 변경
     user = getattr(request, 'user', None)
-    if getattr(user, 'is_authenticated', False) and getattr(user, 'email', ''):
+    email = ''
+    if getattr(user, 'is_authenticated', False):
         email = user.email
     return render(request, 'accounts/withdraw.html', {
         'withdraw_email': email,

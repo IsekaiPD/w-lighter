@@ -94,6 +94,13 @@ def build_authorize_url(request, provider_name, state):
     }
     if provider.scope:
         query['scope'] = provider.scope
+    # 항상 계정 선택/로그인 화면 표시 (자동 로그인 방지)
+    if provider_name == 'kakao':
+        query['prompt'] = 'login'
+    elif provider_name == 'google':
+        query['prompt'] = 'select_account'
+    elif provider_name == 'naver':
+        query['auth_type'] = 'reprompt'
     return f'{provider.authorize_url}?{urlencode(query)}'
 
 

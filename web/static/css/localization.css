@@ -7,11 +7,12 @@
 .page-title-group { display: flex; flex-direction: column; gap: 8px; }
 .page-title { font-size: 28px; font-weight: 700; color: var(--color-text); line-height: 1.2; }
 .page-desc { font-size: 14px; line-height: 1.5; color: var(--color-text-muted); }
-.header-utils { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.header-utils { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .credit-chip {
-  display: inline-flex; align-items: center; height: 28px; padding: 0 14px;
+  display: inline-flex; align-items: center; text-decoration: none;
+  height: 28px; padding: 0 14px;
   border-radius: var(--radius-pill); background: var(--color-primary-soft);
-  border: 1px solid #B7A9E6; color: var(--color-primary);
+  border: 1px solid var(--color-primary-border); color: var(--color-primary);
   font-weight: 700; font-size: 12px; white-space: nowrap;
 }
 .profile-icon {
@@ -38,7 +39,7 @@
   padding: 28px 24px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 
 .lc-field-group { display: flex; flex-direction: column; gap: 10px; }
@@ -180,7 +181,7 @@
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 10px;
 }
-.lc-result-title { font-size: 18px; font-weight: 700; color: var(--color-text); }
+.lc-result-title { font-size: 16px; font-weight: 700; color: var(--color-text); }
 .lc-result-count { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
 
 .lc-result-notice {
@@ -193,17 +194,18 @@
 /* Empty State */
 .lc-empty-state {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 14px;
-  border: 1.5px dashed rgba(183, 169, 230, 0.6);
-  border-radius: 14px; padding: 60px 20px;
+  align-items: center; justify-content: center; gap: 12px;
+  min-height: 360px;
+  border: 1.5px dashed #B7A9E6;
+  border-radius: 16px; padding: 32px;
 }
 .lc-empty-icon {
-  width: 68px; height: 68px; border-radius: 50%;
+  width: 72px; height: 72px; border-radius: 50%;
   background: var(--color-primary-soft);
   display: flex; align-items: center; justify-content: center;
-  color: var(--color-primary);
+  color: var(--color-primary); margin-bottom: 4px;
 }
-.lc-empty-title { font-size: 15px; font-weight: 600; color: var(--color-text-muted); }
+.lc-empty-title { font-size: 16px; font-weight: 700; color: var(--color-text); }
 
 /* ---------- 가이드 목록 ---------- */
 .lc-guide-list {

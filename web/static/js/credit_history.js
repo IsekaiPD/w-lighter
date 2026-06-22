@@ -27,26 +27,31 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ----- 기간 필터 칩 ----- */
+  const filterForm  = document.getElementById('filterForm');
   const filterChips = document.querySelectorAll('.filter-chip');
+  const fmt = d => d.toISOString().split('T')[0];
+
   filterChips.forEach(chip => {
     chip.addEventListener('click', () => {
-      filterChips.forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
       const months = parseInt(chip.dataset.month);
       const to   = new Date();
       const from = new Date();
       from.setMonth(from.getMonth() - months);
-      const fmt = d => d.toISOString().split('T')[0];
       document.getElementById('dateFrom').value = fmt(from);
       document.getElementById('dateTo').value   = fmt(to);
+      filterForm.submit();
     });
   });
+
+  /* ----- 날짜 직접 변경 시 자동 제출 ----- */
+  document.getElementById('dateFrom').addEventListener('change', () => filterForm.submit());
+  document.getElementById('dateTo').addEventListener('change',   () => filterForm.submit());
 
   /* ----- 초기화 버튼 ----- */
   document.getElementById('resetFilter').addEventListener('click', () => {
     document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value   = '';
-    filterChips.forEach(c => c.classList.remove('active'));
+    document.getElementById('dateTo').value   = fmt(new Date());
+    filterForm.submit();
   });
 
   /* ----- 구매 취소 버튼 ----- */

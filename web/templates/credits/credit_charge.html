@@ -16,7 +16,7 @@
       <p class="page-desc">크레딧을 충전하고 w.LiGHTER의 모든 기능을 자유롭게 써보세요.</p>
     </div>
     <div class="header-utils">
-      <span class="credit-chip" id="topCredit">18,000 C</span>
+      <span class="credit-chip" id="topCredit">{{ request.user.credit|floatformat:"g" }} C</span>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -28,7 +28,7 @@
     <div class="credit-emoji">C</div>
     <div class="labels">
       <div class="small">현재 잔여 크레딧</div>
-      <div class="amount" id="remainCredit">18,000 C</div>
+      <div class="amount" id="remainCredit">{{ request.user.credit|floatformat:"g" }} C</div>
     </div>
     <a class="credits-link" href="{% url 'credits:credit_history' %}" id="historyLink">
       크레딧 내역 보러가기

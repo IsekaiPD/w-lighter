@@ -372,6 +372,10 @@
 
 /* ---------- Continue Button ---------- */
 .continue-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   flex-shrink: 0;
   height: 40px;
   padding: 0 16px;

@@ -237,8 +237,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // 클릭한 별 채우기
       btn.innerHTML = SVG_STAR_FILLED;
       btn.classList.add('active');
-      // TODO: API 연동 시 대표 이미지 ID 전송
-      console.log(`대표 이미지 설정: ${id}`);
+
+      // 커버 URL 찾기
+      const card   = btn.closest('.cover-img-card');
+      const imgEl  = card?.querySelector('img');
+      const imgUrl = imgEl?.src || '';
+      const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
+      const fd     = new FormData();
+      fd.append('url', imgUrl);
+      fd.append('csrfmiddlewaretoken', csrf);
+      fetch('/works/' + selectedWorkId + '/set-cover/', { method: 'POST', body: fd })
+        .catch(e => console.error('대표 이미지 저장 오류:', e));
     }
 
     if (action === 'delete') {

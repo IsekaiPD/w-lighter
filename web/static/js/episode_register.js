@@ -1,5 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+  /* ===== 토스트 팝업 ===== */
+  let toastEl = null;
+  let toastTimer = null;
+  function showToast(msg) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'ep-toast';
+      document.body.appendChild(toastEl);
+    }
+    clearTimeout(toastTimer);
+    toastEl.textContent = '※ ' + msg;
+    toastEl.classList.add('show');
+    toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2800);
+  }
+
+
   /* ===== 탭 전환 ===== */
   document.querySelectorAll('.ep-reg-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -61,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleFiles(files) {
     for (const f of files) {
       if (attachedFiles.length + queueItems.length >= MAX_FILES) {
-        alert('파일은 최대 5개까지 추가할 수 있어요.');
+        showToast('파일은 최대 5개까지 첨부 가능합니다.');
         break;
       }
-      if (!f.name.match(/\.(txt|docx)$/i)) { alert(f.name + ': txt, docx 파일만 지원해요.'); continue; }
+      if (!f.name.match(/\.(txt|docx)$/i)) { showToast('지원하지 않는 파일 형식입니다.'); continue; }
       if (f.size > 1024 * 1024) { alert(f.name + ': 1MB를 초과합니다.'); continue; }
       if (attachedFiles.find(x => x.name === f.name)) continue;
       attachedFiles.push(f);
@@ -168,8 +184,12 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const content = await parseFile(file);
       if (!content) { alert('파일에서 텍스트를 추출할 수 없습니다.'); return; }
+      if (content.length > 8000) {
+        showToast('원문은 공백 포함 8,000자를 초과할 수 없습니다.');
+        return;
+      }
       if (!isKorean(content)) {
-        alert('한국어 텍스트가 아닌 것 같아요.\n한글 비율이 70% 미만이면 등록할 수 없어요.');
+        showToast('회차 입력은 한국어 소설을 기준으로 합니다.');
         return;
       }
 
@@ -231,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const fd = new FormData();
           fd.append('title', item.title);
           fd.append('content', item.content);
+          fd.append('episode_number', item.epNum);
           fd.append('csrfmiddlewaretoken', csrf);
           const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });
           const data = await res.json();
@@ -258,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const fd = new FormData();
       fd.append('title', title);
       fd.append('content', content);
+      fd.append('episode_number', document.getElementById('directNumber')?.value ?? '0');
       fd.append('csrfmiddlewaretoken', csrf);
       try {
         const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });

@@ -12,7 +12,7 @@
       <p class="page-desc">캐릭터 정보를 한곳에서 관리해보세요.</p>
     </div>
     <div class="header-utils">
-      <a href="/credits/charge" class="credit-chip">18,000 C</a>
+      <a href="{% url 'credits:credit_charge' %}" class="credit-chip">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -36,34 +36,20 @@
           </button>
 
           <div class="char-dropdown" id="workSelectDropdown" role="listbox" aria-label="작품 목록">
-            <div class="char-dropdown-item work-option" role="option" data-work-id="1" data-title="안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는..." data-genre="판타지">
+            {% for work in works %}
+            <div class="char-dropdown-item work-option" role="option"
+                 data-work-id="{{ work.work_id }}"
+                 data-title="{{ work.title }}"
+                 data-genre="{{ work.genre }}">
               <div class="char-di-thumb"><div class="char-di-placeholder"></div></div>
               <div class="char-di-info">
-                <p class="char-di-title">안녕하세요 이 세계로 전이했는데 사람들이 이상하게 보는...</p>
-                <p class="char-di-genre">판타지</p>
+                <p class="char-di-title">{{ work.title }}</p>
+                <p class="char-di-genre">{{ work.genre }}</p>
               </div>
             </div>
-            <div class="char-dropdown-item work-option" role="option" data-work-id="2" data-title="별빛 아래 잊힌 왕국" data-genre="판타지">
-              <div class="char-di-thumb"><div class="char-di-placeholder"></div></div>
-              <div class="char-di-info">
-                <p class="char-di-title">별빛 아래 잊힌 왕국</p>
-                <p class="char-di-genre">판타지</p>
-              </div>
-            </div>
-            <div class="char-dropdown-item work-option" role="option" data-work-id="3" data-title="악녀는 장미를 숨기지 않는다" data-genre="로맨스 판타지">
-              <div class="char-di-thumb"><div class="char-di-placeholder"></div></div>
-              <div class="char-di-info">
-                <p class="char-di-title">악녀는 장미를 숨기지 않는다</p>
-                <p class="char-di-genre">로맨스 판타지</p>
-              </div>
-            </div>
-            <div class="char-dropdown-item work-option" role="option" data-work-id="4" data-title="오늘도, 너와 퇴근" data-genre="로맨스">
-              <div class="char-di-thumb"><div class="char-di-placeholder"></div></div>
-              <div class="char-di-info">
-                <p class="char-di-title">오늘도, 너와 퇴근</p>
-                <p class="char-di-genre">로맨스</p>
-              </div>
-            </div>
+            {% empty %}
+            <p style="padding:12px 16px; font-size:13px; color:var(--color-text-muted);">등록된 작품이 없어요.</p>
+            {% endfor %}
           </div>
           <span class="work-select-genre" id="workSelectGenre"></span>
         </div>
@@ -74,7 +60,7 @@
     <div class="char-panel summary-panel">
       <h2 class="panel-title">추출된 결과 요약</h2>
       <p class="panel-note">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>
         AI로 추출한 캐릭터 설정입니다. 의도치 않은 요소가 있을 수 있으니 확인해 주세요.
       </p>
       <div class="summary-grid">

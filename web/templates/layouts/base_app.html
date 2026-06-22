@@ -25,7 +25,9 @@
 
   <!-- 사용자 정보 모달 -->
   <div class="ui-backdrop" id="userInfoBackdrop"></div>
-  <div class="ui-modal" id="userInfoModal" role="dialog" aria-modal="true">
+  <div class="ui-modal" id="userInfoModal" role="dialog" aria-modal="true"
+       data-update-url="{% url 'accounts:update_nickname' %}"
+       data-csrf="{{ csrf_token }}">
     <button class="ui-modal-close" id="userInfoClose" aria-label="닫기">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
@@ -39,10 +41,10 @@
         <span class="ui-info-label">닉네임</span>
         <div class="ui-info-value-wrap">
           <!-- 보기 모드 -->
-          <span class="ui-info-value" id="nicknameDisplay">킹왕짱웹소설작가</span>
+          <span class="ui-info-value" id="nicknameDisplay">{{ request.user.nickname }}</span>
           <!-- 수정 모드 -->
           <div class="ui-input-group" id="nicknameEditWrap" style="display:none">
-            <input class="ui-nickname-input" id="nicknameInput" type="text" maxlength="10" value="킹왕짱웹소설작가">
+            <input class="ui-nickname-input" id="nicknameInput" type="text" maxlength="10" value="{{ request.user.nickname }}">
             <div class="ui-input-error" id="nicknameError" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff2d55"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12" stroke="#fff" stroke-width="2"/><circle cx="12" cy="16" r="1" fill="#fff"/></svg>
               <span id="nicknameErrorMsg"></span>
@@ -54,13 +56,13 @@
       <!-- 이메일 -->
       <div class="ui-info-row">
         <span class="ui-info-label">이메일</span>
-        <span class="ui-info-value">bugbudaegong@gmail.com</span>
+        <span class="ui-info-value">{{ request.user.email }}</span>
       </div>
 
       <!-- 로그인 연동자 -->
       <div class="ui-info-row">
         <span class="ui-info-label">로그인 연동자</span>
-        <span class="ui-info-value">Google</span>
+        <span class="ui-info-value">{{ request.user.get_oauth_provider_display }}</span>
       </div>
 
     </div>

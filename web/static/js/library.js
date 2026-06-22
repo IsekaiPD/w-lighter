@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function resetWorkForm() {
     document.getElementById('workTitle').value   = '';
-    document.getElementById('workAuthor').value  = '';
+    document.getElementById('workAuthor').value  = document.getElementById('workAuthor').dataset.default ?? '';
     document.getElementById('workSynopsis').value = '';
     document.getElementById('workGenre').value   = '';
     document.getElementById('genreValue').textContent = '선택하기';
