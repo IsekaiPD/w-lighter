@@ -153,6 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const card   = document.createElement('div');
     card.className = 'work-card';
     card.dataset.workId = work.id;
+    card.dataset.created = work.id;     // 등록일 순(신규 = 큰 id)
+    card.dataset.title = work.title;
+    card.dataset.epdate = Math.floor(Date.now() / 1000);  // 회차 등록일순(방금 생성 → 최신)
     card.innerHTML = '<a href="/works/' + work.id + '/" class="work-cover work-cover-empty"></a>'
       + '<div class="work-info">'
       + '<div class="work-card-header">'
@@ -182,6 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const count = document.querySelectorAll('.work-card').length;
     document.querySelector('.library-count').textContent = '총 ' + count + '권';
+
+    // 현재 정렬 기준으로 새 작품을 올바른 위치에 재배치
+    if (window.__applyLibrarySort) window.__applyLibrarySort();
   }
 
   function resetWorkForm() {
@@ -361,6 +367,39 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSortCaret();
   });
 
+  // 현재 정렬 기준으로 카드 재배치
+  function applySort() {
+    const grid = document.querySelector('.works-grid');
+    if (!grid) return;
+    const active = document.querySelector('.sort-opt.active');
+    const sort = active ? active.dataset.sort : 'created';
+    const cards = Array.from(grid.querySelectorAll('.work-card'));
+    cards.sort((a, b) => {
+      if (sort === 'title') {
+        // 한글(가나다) → 영문(A-Z) → 숫자 → 특수문자 순
+        const rank = (s) => {
+          const c = (s || '').trim().charAt(0);
+          if (/[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(c)) return 0;  // 한글
+          if (/[a-zA-Z]/.test(c)) return 1;            // 영문
+          if (/[0-9]/.test(c)) return 2;               // 숫자
+          return 3;                                    // 특수문자/기타
+        };
+        const ra = rank(a.dataset.title), rb = rank(b.dataset.title);
+        if (ra !== rb) return ra - rb;
+        return (a.dataset.title || '').localeCompare(b.dataset.title || '', 'ko');
+      }
+      if (sort === 'episode') {
+        // 회차 등록일순: 가장 최근 회차 등록 시각이 최신인 작품부터
+        return parseInt(b.dataset.epdate || '0', 10) - parseInt(a.dataset.epdate || '0', 10);
+      }
+      // created: 등록일 최신순 (work_id 내림차순)
+      return parseInt(b.dataset.created || '0', 10) - parseInt(a.dataset.created || '0', 10);
+    });
+    cards.forEach((c) => grid.appendChild(c));
+  }
+  // 전역에서 호출 가능하게 (작품 등록 직후 재정렬)
+  window.__applyLibrarySort = applySort;
+
   sortOpts.forEach(opt => {
     opt.addEventListener('click', () => {
       sortOpts.forEach(o => o.classList.remove('active'));
@@ -368,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sortLabel.textContent = opt.textContent.trim();
       sortDropdown.classList.remove('open');
       updateSortCaret();
+      applySort();
     });
   });
 
