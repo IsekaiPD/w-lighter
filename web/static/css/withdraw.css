@@ -199,6 +199,22 @@
   color: var(--color-primary);
 }
 
+.withdraw-button-secondary {
+  border-color: #E0E0E0;
+  background: #fff;
+  color: #2D2440;
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 600;
+  transition: opacity .15s ease, transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.withdraw-button-secondary:not(:disabled):hover {
+  background: #F2F2F7;
+  border-color: #E0E0E0;
+  color: #2D2440;
+}
+
 .withdraw-button-primary,
 .withdraw-modal-submit {
   background: var(--color-primary);

@@ -285,25 +285,26 @@
 }
 
 .signup-primary-button {
-  width: 424px;
-  height: 54px;
-  margin-top: 56px;
-  display: inline-flex;
+  width: 398px;
+  height: 42px;
+  margin: 56px auto 0;
+  display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  border: none;
+  border-radius: 999px;
+  background: #6E5BB8;
+  color: #fff;
   font-size: 16px;
-  font-weight: 700;
+  line-height: 19px;
+  font-weight: 600;
   transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
 .signup-primary-button:not(:disabled):hover,
 .signup-primary-button:not(:disabled):focus-visible {
   transform: translateY(-1px);
-  background: var(--color-primary-badge);
+  background: #5F4AA6;
   box-shadow: 0 10px 22px rgba(110, 91, 184, 0.14);
 }
 

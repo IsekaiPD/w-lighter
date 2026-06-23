@@ -177,8 +177,8 @@
 /* 버전 선택 드롭다운 — ep-sort-dropdown과 동일 스타일 */
 .ep-version-dropdown {
   position: relative;
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 300px;
+  min-width: 286px;
 }
 
 .ep-version-trigger {
@@ -200,6 +200,15 @@
 .ep-version-trigger svg {
   flex-shrink: 0;
   color: #8E8E93;
+}
+
+.ep-version-trigger span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ep-version-trigger:hover,
@@ -312,6 +321,7 @@
   font-size: 16px;
   font-weight: 600;
   color: inherit;
+  white-space: nowrap;
 }
 
 .ep-version-date {
@@ -319,6 +329,9 @@
   font-weight: 400;
   color: inherit;
   opacity: 0.7;
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* 번역 삭제 버튼 */
@@ -444,5 +457,9 @@
 
   .ep-textbox-inner {
     padding: 48px 48px;
+  }
+
+  .ep-version-dropdown {
+    min-width: 0;
   }
 }
