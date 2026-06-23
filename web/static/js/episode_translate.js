@@ -761,34 +761,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  // 토스트
-  const trToastEl = document.getElementById('trToast');
-  function trToast(msg) {
-    if (!trToastEl) { return; }
-    trToastEl.textContent = msg;
-    trToastEl.classList.add('show');
-    setTimeout(() => trToastEl.classList.remove('show'), 3000);
-  }
-
-  // 삭제 확인 모달
-  function trConfirm() {
-    return new Promise((resolve) => {
-      const bd = document.getElementById('trConfirmBackdrop');
-      const md = document.getElementById('trConfirmModal');
-      if (!bd || !md) { resolve(window.confirm('이 번역본을 삭제할까요?')); return; }
-      bd.classList.add('open'); md.classList.add('open'); document.body.style.overflow = 'hidden';
-      const close = (r) => {
-        bd.classList.remove('open'); md.classList.remove('open'); document.body.style.overflow = '';
-        document.getElementById('trConfirmOk').onclick = null;
-        document.getElementById('trConfirmCancel').onclick = null;
-        bd.onclick = null;
-        resolve(r);
-      };
-      document.getElementById('trConfirmOk').onclick = () => close(true);
-      document.getElementById('trConfirmCancel').onclick = () => close(false);
-      bd.onclick = () => close(false);
-    });
-  }
+  // 토스트 / 확인 모달 (공통 AppUI)
+  const trToast = (m) => (window.AppUI ? window.AppUI.toast(m) : alert(m));
+  const trConfirm = () => (window.AppUI
+    ? window.AppUI.confirm({ title: '이 번역본을 삭제할까요?', desc: '선택한 <strong>번역본</strong>이 삭제되며 복구할 수 없습니다.' })
+    : Promise.resolve(window.confirm('이 번역본을 삭제할까요?')));
 
   document.querySelectorAll('.tr-apply-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {

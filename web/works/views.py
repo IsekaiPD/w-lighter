@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
+from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -16,7 +17,12 @@ _COUNTRY_TO_LANG = {'US': 'EN', 'EN': 'EN', 'CN': 'CN', 'JP': 'JP', 'TH': 'TH', 
 
 @login_required(login_url='pages:landing')
 def library(request):
-    works = list(Work.objects.filter(user=request.user).order_by('-created_at'))
+    # latest_ep: 작품의 가장 최근 회차 등록 시각(회차 등록일순 정렬용)
+    works = list(
+        Work.objects.filter(user=request.user)
+        .annotate(latest_ep=Max('episodes__created_at'))
+        .order_by('-created_at')
+    )
 
     # 작품별 번역 회차 수 + 번역 언어 계산 (translation_results)
     work_ids = [w.work_id for w in works]

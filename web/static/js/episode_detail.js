@@ -125,38 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ----- 토스트 -----
-  const toastEl = document.getElementById('epToast');
-  function showToast(msg) {
-    if (!toastEl) return;
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    setTimeout(() => toastEl.classList.remove('show'), 3000);
-  }
-
-  // ----- 삭제 확인 모달 -----
-  const confirmBackdrop = document.getElementById('epConfirmBackdrop');
-  const confirmModal    = document.getElementById('epConfirmModal');
-  function openConfirm() {
-    return new Promise((resolve) => {
-      if (!confirmBackdrop || !confirmModal) { resolve(window.confirm('이 번역본을 삭제할까요?')); return; }
-      confirmBackdrop.classList.add('open');
-      confirmModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      const close = (result) => {
-        confirmBackdrop.classList.remove('open');
-        confirmModal.classList.remove('open');
-        document.body.style.overflow = '';
-        document.getElementById('epConfirmOk').onclick = null;
-        document.getElementById('epConfirmCancel').onclick = null;
-        confirmBackdrop.onclick = null;
-        resolve(result);
-      };
-      document.getElementById('epConfirmOk').onclick = () => close(true);
-      document.getElementById('epConfirmCancel').onclick = () => close(false);
-      confirmBackdrop.onclick = () => close(false);
-    });
-  }
+  // ----- 토스트/확인 모달 (공통 AppUI) -----
+  const showToast = (m) => (window.AppUI ? window.AppUI.toast(m) : alert(m));
 
   // ----- 번역 삭제 -----
   document.querySelector('.ep-delete-btn')?.addEventListener('click', async () => {
@@ -165,7 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (!window.EP_CONFIG || !window.EP_CONFIG.deleteUrl) return;
-    if (!(await openConfirm())) return;
+    const ok = window.AppUI
+      ? await window.AppUI.confirm({ title: '이 번역본을 삭제할까요?', desc: '선택한 <strong>번역본</strong>이 삭제되며 복구할 수 없습니다.' })
+      : window.confirm('이 번역본을 삭제할까요?');
+    if (!ok) return;
     try {
       const res = await fetch(window.EP_CONFIG.deleteUrl, {
         method: 'POST',

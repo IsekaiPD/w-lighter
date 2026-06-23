@@ -83,56 +83,6 @@
 
   </div>
 
-  <!-- 번역 삭제 확인 모달 -->
-  <div class="epc-backdrop" id="epConfirmBackdrop"></div>
-  <div class="epc-modal" id="epConfirmModal" role="dialog" aria-modal="true">
-    <h3 class="epc-title">이 번역본을 삭제할까요?</h3>
-    <p class="epc-desc">선택한 <strong>번역본</strong>이 삭제되며 복구할 수 없습니다.</p>
-    <div class="epc-actions">
-      <button class="epc-btn cancel" id="epConfirmCancel">취소하기</button>
-      <button class="epc-btn confirm" id="epConfirmOk">삭제하기</button>
-    </div>
-  </div>
-
-  <style>
-    .epc-backdrop {
-      display: none; position: fixed; inset: 0;
-      background: rgba(40, 30, 60, 0.35); z-index: 900;
-    }
-    .epc-backdrop.open { display: block; }
-    .epc-modal {
-      display: none; position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 420px; max-width: calc(100vw - 40px);
-      background: #fff; border-radius: 20px; padding: 32px 28px 24px;
-      box-shadow: 0 20px 50px rgba(60, 40, 100, 0.25); z-index: 901; text-align: left;
-    }
-    .epc-modal.open { display: block; }
-    .epc-title { margin: 0 0 12px; font-size: 20px; font-weight: 700; color: var(--color-text, #241528); }
-    .epc-desc { margin: 0 0 28px; font-size: 14px; color: var(--color-text-muted, #73606f); line-height: 1.6; }
-    .epc-desc strong { color: var(--color-primary, #7c3aed); font-weight: 700; }
-    .epc-actions { display: flex; gap: 12px; }
-    .epc-btn { flex: 1; height: 48px; border: none; cursor: pointer; border-radius: 999px; font-size: 15px; font-weight: 700; transition: background .15s; }
-    .epc-btn.cancel { background: var(--color-primary-soft, #f1ecff); color: var(--color-primary, #7c3aed); }
-    .epc-btn.cancel:hover { background: #e9e1ff; }
-    .epc-btn.confirm { background: var(--color-primary, #7c3aed); color: #fff; }
-    .epc-btn.confirm:hover { background: #5f4aa6; }
-
-    .ep-toast {
-      display: none; position: fixed; top: 80px;
-      left: calc(var(--sidebar-w, 88px) + (100vw - var(--sidebar-w, 88px)) / 2);
-      transform: translateX(-50%); z-index: 1000;
-      height: 48px; padding: 0 28px; border-radius: 999px;
-      border: 1px solid rgba(242, 198, 255, 0.78); background: #f9e9fa;
-      color: var(--color-primary, #7c3aed); font-size: 14px; font-weight: 500;
-      white-space: nowrap; align-items: center; justify-content: center;
-      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.15);
-    }
-    .ep-toast.show { display: flex; }
-  </style>
-
-  <div class="ep-toast" id="epToast"></div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -143,5 +93,5 @@
     csrfToken: "{{ csrf_token }}",
   };
 </script>
-<script src="{% static 'js/episode_detail.js' %}?v=load-saved-20260622-11"></script>
+<script src="{% static 'js/episode_detail.js' %}?v=load-saved-20260622-12"></script>
 {% endblock %}
