@@ -425,25 +425,27 @@
   display: flex; align-items: center; gap: 10px; flex-shrink: 0;
 }
 .rel-detail-pdf-btn {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 38px; padding: 0 18px;
-  border-radius: var(--radius-pill);
-  border: 1.5px solid #B7A9E6;
-  background: none; color: var(--color-primary);
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: background 0.15s;
+  border-radius: 999px;
+  border: 1px solid #6E5BB8;
+  background: #fff; color: #6E5BB8;
+  font-size: 14px; line-height: 21px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.rel-detail-pdf-btn:hover { background: var(--color-primary-soft); }
+.rel-detail-pdf-btn:hover { background: #F3EEFF; }
+.rel-detail-pdf-btn svg { flex-shrink: 0; }
 
 .rel-detail-delete-btn {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   height: 38px; padding: 0 18px;
-  border-radius: var(--radius-pill);
-  border: none; background: var(--color-primary);
-  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: background 0.15s;
+  border-radius: 999px;
+  border: 1px solid #E0E0E0; background: #fff;
+  color: #2D2440; font-size: 14px; line-height: 21px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.rel-detail-delete-btn:hover { background: #5f4aa6; }
+.rel-detail-delete-btn:hover { background: #F2F2F7; border-color: #E0E0E0; color: #2D2440; }
+.rel-detail-delete-btn svg { flex-shrink: 0; color: #8E8E93; }
 
 .rel-detail-close {
   width: 32px; height: 32px; border-radius: 50%;
