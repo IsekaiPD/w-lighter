@@ -5,10 +5,15 @@ import secrets
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import User
+
+WITHDRAW_BLOCK_DAYS = 7  # 탈퇴 후 재가입 차단 기간
 from .oauth import (
     OAuthError,
     build_authorize_url,
@@ -97,19 +102,37 @@ def oauth_callback(request, provider):
     existing_user = find_existing_user(oauth_profile)
     if existing_user:
         if existing_user.is_withdrawn:
-            return redirect_to_landing_with_error(request, '탈퇴 처리된 계정입니다.')
-        login_user(request, existing_user)
-        clear_signup_session(request)
-        return redirect('works:library')
+            if withdraw_block_active(existing_user):
+                days_left = WITHDRAW_BLOCK_DAYS - (timezone.now() - existing_user.withdrawn_at).days
+                return redirect_to_landing_with_error(
+                    request,
+                    f'탈퇴한 계정은 {WITHDRAW_BLOCK_DAYS}일간 재가입할 수 없습니다. (약 {max(days_left, 1)}일 남음)'
+                )
+            # 7일 경과 → 보관 정보 삭제 후 신규 가입 허용
+            existing_user.delete()
+            existing_user = None
+        else:
+            login_user(request, existing_user)
+            clear_signup_session(request)
+            return redirect('works:library')
 
-    # 2. 동일 이메일로 다른 제공자 계정이 이미 존재하는 경우 → 중복가입 차단
+    # 2. 동일 이메일로 다른 제공자/탈퇴 계정이 존재하는 경우
     email_user = find_user_by_email(oauth_profile['email'])
     if email_user:
-        registered_provider = PROVIDER_DISPLAY.get(email_user.oauth_provider, email_user.oauth_provider)
-        return redirect_to_landing_with_error(
-            request,
-            f'이미 {registered_provider}(으)로 가입된 이메일입니다. {registered_provider} 로그인을 이용해 주세요.'
-        )
+        if email_user.is_withdrawn:
+            if withdraw_block_active(email_user):
+                days_left = WITHDRAW_BLOCK_DAYS - (timezone.now() - email_user.withdrawn_at).days
+                return redirect_to_landing_with_error(
+                    request,
+                    f'탈퇴한 계정은 {WITHDRAW_BLOCK_DAYS}일간 재가입할 수 없습니다. (약 {max(days_left, 1)}일 남음)'
+                )
+            email_user.delete()  # 7일 경과 → 삭제 후 재가입 허용
+        else:
+            registered_provider = PROVIDER_DISPLAY.get(email_user.oauth_provider, email_user.oauth_provider)
+            return redirect_to_landing_with_error(
+                request,
+                f'이미 {registered_provider}(으)로 가입된 이메일입니다. {registered_provider} 로그인을 이용해 주세요.'
+            )
 
     request.session[PENDING_SIGNUP_SESSION_KEY] = oauth_profile
     request.session.pop(SIGNUP_TERMS_AGREED_SESSION_KEY, None)
@@ -215,11 +238,72 @@ def logout_view(request):
     return redirect('pages:landing')
 
 
+def withdraw_block_active(user):
+    """탈퇴 후 재가입 차단 기간(7일)이 아직 유효한지."""
+    if not user or not getattr(user, 'is_withdrawn', False) or not user.withdrawn_at:
+        return False
+    return (timezone.now() - user.withdrawn_at).days < WITHDRAW_BLOCK_DAYS
+
+
+def purge_user_data(user):
+    """사용자 데이터 + 대화 내역 삭제 (식별자/이메일은 보관).
+    작품·회차(및 모델 서버 테이블)·크레딧 내역을 모두 제거."""
+    from works.models import Work, Episode
+    work_ids = list(Work.objects.filter(user=user).values_list('work_id', flat=True))
+    ep_ids = list(Episode.objects.filter(work__user=user).values_list('episode_id', flat=True))
+
+    with connection.cursor() as cur:
+        if ep_ids:
+            ph = ','.join(['%s'] * len(ep_ids))
+            for sql in [
+                "DELETE FROM chat_messages WHERE translation_id IN "
+                "(SELECT translation_id FROM translation_results WHERE episode_id IN (%s))" % ph,
+                "DELETE FROM translation_results WHERE episode_id IN (%s)" % ph,
+            ]:
+                try:
+                    cur.execute(sql, ep_ids)
+                except Exception:
+                    pass
+        if work_ids:
+            ph = ','.join(['%s'] * len(work_ids))
+            for table in ['character_images', 'characters', 'covers',
+                          'relation_maps', 'localization_guides', 'glossary']:
+                try:
+                    cur.execute("DELETE FROM %s WHERE work_id IN (%s)" % (table, ph), work_ids)
+                except Exception:
+                    pass
+
+    try:
+        from credits.models import CreditTransaction
+        CreditTransaction.objects.filter(user=user).delete()
+    except Exception:
+        pass
+
+    # 작품 삭제(회차는 FK CASCADE로 함께 삭제)
+    Work.objects.filter(user=user).delete()
+
+
+@ensure_csrf_cookie
+@login_required(login_url='pages:landing')
 def withdraw(request):
+    if request.method == 'POST':
+        user = request.user
+        try:
+            with transaction.atomic():
+                purge_user_data(user)
+                # 식별자(user_id)·이메일·제공자 정보는 7일 보관, 나머지는 비움
+                user.nickname = '탈퇴회원'
+                user.credit = 0
+                user.is_active = False
+                user.withdrawn_at = timezone.now()
+                user.save(update_fields=['nickname', 'credit', 'is_active', 'withdrawn_at'])
+            logout(request)
+            return JsonResponse({'ok': True})
+        except Exception:
+            return JsonResponse({'ok': False, 'error': '탈퇴 처리에 실패했습니다.'}, status=500)
+
     user = getattr(request, 'user', None)
-    email = ''
-    if getattr(user, 'is_authenticated', False):
-        email = user.email
+    email = user.email if getattr(user, 'is_authenticated', False) else ''
     return render(request, 'accounts/withdraw.html', {
         'withdraw_email': email,
         'is_complete': False,

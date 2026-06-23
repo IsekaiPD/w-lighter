@@ -33,8 +33,10 @@
     <div class="work-info-layout">
 
       <!-- 표지 -->
-      <div class="work-detail-cover work-cover-empty">
-        <!-- 표지 이미지 있으면: <img src="..." alt=""> -->
+      <div class="work-detail-cover{% if not work.cover_image_url %} work-cover-empty{% endif %}">
+        {% if work.cover_image_url %}
+        <img src="{{ work.cover_image_url }}" alt="{{ work.title }} 표지" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">
+        {% endif %}
       </div>
 
       <!-- 정보 -->

@@ -134,7 +134,10 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .sidebar.open .sidebar-logo-full {
   opacity: 1;
-  max-height: 64px;
+  /* 닫힌 로고와 같은 레이아웃 높이만 차지 → 아래 아이콘 위치 동일.
+     로고 이미지는 overflow:visible로 온전히 표시 */
+  max-height: 57px;
+  overflow: visible;
   pointer-events: auto;
 }
 
