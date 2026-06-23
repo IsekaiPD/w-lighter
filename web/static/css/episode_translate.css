@@ -373,7 +373,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 28px;
   /* 트리거 라벨(캐럿 20px + gap 4px + 좌패딩 12px = 36px)과 좌측 줄맞춤 */
   padding: 6px 14px 6px 36px;
   font-size: 13px;
