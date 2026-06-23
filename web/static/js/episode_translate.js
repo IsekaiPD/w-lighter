@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       if (requiredCreditText) requiredCreditText.textContent = formatNumber(detail.requiredCredit);
       openCreditModal(error.message === '크레딧이 부족합니다.' ? 'limit' : 'spend');
-      if (error.message !== '크레딧이 부족합니다.') alert(error.message);
+      if (error.message !== '크레딧이 부족합니다.') trToast(error.message);
     } finally {
       spendConfirmBtn.disabled = false;
     }
@@ -251,6 +251,39 @@ document.addEventListener('DOMContentLoaded', () => {
     return botMsg;
   }
 
+  function appendUserMessage(text) {
+    if (!chatArea) return;
+    const div = document.createElement('div');
+    div.className = 'tr-chat-msg tr-chat-user';
+    div.innerHTML = `<p class="tr-chat-user-text">${escapeHtml(text)}</p>`;
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  // 첫 환영 메시지만 남기고 대화 비우기
+  function resetChat() {
+    if (!chatArea) return;
+    Array.from(chatArea.children).forEach((c, i) => { if (i > 0) c.remove(); });
+  }
+
+  // 선택된 번역 버전의 저장된 챗봇 대화 불러오기
+  async function loadChatForVersion(translationId) {
+    resetChat();
+    if (!translationId || !window.TR_CONFIG?.chatUrl) return;
+    try {
+      const res = await fetch(window.TR_CONFIG.chatUrl + '?translation_id=' + encodeURIComponent(translationId));
+      const data = await res.json();
+      if (!data.ok || !Array.isArray(data.messages)) return;
+      data.messages.forEach((m) => {
+        const isUser = /user|질문|me/i.test(m.sender || '');
+        if (isUser) appendUserMessage(m.text);
+        else appendBotMessage(m.text);
+      });
+    } catch (e) {
+      console.error('[load chat]', e);
+    }
+  }
+
   async function sendMessage() {
     if (!chatInput || !chatArea) return;
     const text = chatInput.value.trim();
@@ -276,13 +309,21 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'X-CSRFToken': window.TR_CONFIG.csrfToken,
         },
-        body: JSON.stringify({ message: text, targetCountry: getActiveLang() }),
+        body: JSON.stringify({ message: text, targetCountry: getActiveLang(), translationId: selectedVersion?.translationId }),
       });
       const data = await res.json();
-      const reply = data.ok
-        ? (extractText(data.result, ['reply', 'message', 'answer', 'text', 'content']) || JSON.stringify(data.result))
-        : (data.error || '오류가 발생했습니다.');
-      pending.querySelector('.tr-chat-bot-text').textContent = reply;
+      if (!data.ok) {
+        pending.querySelector('.tr-chat-bot-text').textContent = data.error || '오류가 발생했습니다.';
+      } else {
+        const r = data.result || {};
+        let answer = r.answer || extractText(r, ['answer', 'reply', 'message', 'text', 'content']) || '';
+        if (typeof answer !== 'string') answer = JSON.stringify(answer);
+        pending.querySelector('.tr-chat-bot-text').textContent = answer || '(응답 없음)';
+        // 수정 제안이 있으면 "수정 제안" 카드 추가
+        if (r.proposedTranslation && String(r.proposedTranslation).trim()) {
+          appendSuggestionCard(r.changeSummary || '제안된 수정 번역입니다.', r.proposedTranslation);
+        }
+      }
     } catch (e) {
       pending.querySelector('.tr-chat-bot-text').textContent = '네트워크 오류가 발생했습니다.';
     }
@@ -493,6 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
       transPane.innerHTML = translated
         ? renderParagraphs(translated)
         : `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+      // 번역본 편집 가능 (수정 후 "변경사항 적용"으로 저장)
+      transPane.setAttribute('contenteditable', 'true');
+      transPane.style.outline = 'none';
     }
     if (reportScroll) {
       reportScroll.innerHTML = renderReport(result);
@@ -545,9 +589,10 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTranslationResult(v.result);
     ['versionLabel2', 'versionLabel3'].forEach((id) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = `ver. ${v.n}`;
+      if (el) el.textContent = v.date ? `ver. ${v.n}  ${v.date}` : `ver. ${v.n}`;
     });
     refreshVersionPanels();
+    loadChatForVersion(v.translationId);
   }
 
   function addTranslationVersion(lang, result) {
@@ -601,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data.items.forEach((item) => {
         const lang = item.lang || 'EN';
         const list = trVersionsByLang[lang] || (trVersionsByLang[lang] = []);
-        list.push({ n: list.length + 1, date: item.createdAt || '', result: buildResultFromSaved(item) });
+        list.push({ n: list.length + 1, date: item.createdAt || '', result: buildResultFromSaved(item), translationId: item.id });
       });
 
       // 현재 활성 언어에 저장본이 있으면 최신 버전 표시
@@ -612,6 +657,193 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[load translations]', e);
     }
   }
+
+  /* ===== 수정 제안 카드 + 적용 ===== */
+  function appendSuggestionCard(summary, proposedText) {
+    if (!chatArea) return;
+    const card = document.createElement('div');
+    card.className = 'tr-chat-msg tr-chat-bot';
+    card.innerHTML =
+      `<div class="tr-chat-bot-icon"></div>` +
+      `<div style="background:var(--color-surface,#fff);border:1px solid var(--color-primary-border,#cfc3fb);border-radius:12px;padding:14px;max-width:100%;">` +
+        `<p style="font-weight:700;margin:0 0 6px;color:var(--color-text);">수정 제안</p>` +
+        `<p style="margin:0 0 10px;color:var(--color-text-muted);font-size:13px;line-height:1.5;">${escapeHtml(summary)}</p>` +
+        `<button type="button" class="tr-suggestion-apply" style="border:none;cursor:pointer;background:var(--color-primary);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:8px;">번역 제안 적용</button>` +
+      `</div>`;
+    card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyProposed(proposedText));
+    chatArea.appendChild(card);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  // 제안(부분 수정)을 현재 번역문 전체에 병합 — 바뀐 구간만 찾아 교체
+  function mergeProposal(current, proposed) {
+    const curLines  = current.split('\n');
+    const propLines = proposed.split('\n');
+    const propNonEmpty = propLines.filter((l) => l.trim());
+    if (!propNonEmpty.length) return { text: current, located: false };
+
+    const words = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
+    const sim = (a, b) => {
+      const wa = words(a); if (!wa.length) return 0;
+      const wb = new Set(words(b)); if (!wb.size) return 0;
+      let c = 0; wa.forEach((w) => { if (wb.has(w)) c++; });
+      return c / Math.max(wa.length, wb.size);
+    };
+
+    const firstP = propNonEmpty[0];
+    const lastP  = propNonEmpty[propNonEmpty.length - 1];
+
+    // 시작 위치: 제안 첫 줄과 가장 비슷한 현재 줄
+    let startIdx = -1, bestS = 0.25;
+    curLines.forEach((l, i) => {
+      if (!l.trim()) return;
+      const s = sim(firstP, l);
+      if (s > bestS) { bestS = s; startIdx = i; }
+    });
+    if (startIdx === -1) return { text: current, located: false };
+
+    // 끝 위치: 시작 이후 좁은 범위에서 제안 마지막 줄과 가장 비슷한 줄
+    const windowEnd = Math.min(curLines.length - 1, startIdx + propLines.length + 4);
+    let endIdx = startIdx, bestE = -1;
+    for (let i = startIdx; i <= windowEnd; i++) {
+      if (!curLines[i].trim()) continue;
+      const s = sim(lastP, curLines[i]);
+      if (s > bestE) { bestE = s; endIdx = i; }
+    }
+    if (endIdx < startIdx) endIdx = startIdx;
+
+    const merged = curLines.slice(0, startIdx).concat(propLines).concat(curLines.slice(endIdx + 1)).join('\n');
+    return { text: merged, located: true };
+  }
+
+  function applyProposed(proposedText) {
+    const transPane = document.querySelector('.tr-trans-text');
+    if (!transPane) return;
+    const current = currentTransText();
+    const { text: merged, located } = mergeProposal(current, proposedText);
+
+    transPane.style.color = 'var(--color-text)';
+    transPane.style.padding = '24px';
+    transPane.innerHTML = renderParagraphs(merged);
+    transPane.setAttribute('contenteditable', 'true');
+    if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = merged;
+    switchToTab('translation');
+
+    if (located) {
+      appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경사항 적용"을 눌러 저장하세요.');
+    } else {
+      appendBotMessage('제안 위치를 자동으로 찾지 못해 번역본을 그대로 뒀어요. 직접 수정 후 "변경사항 적용"으로 저장해 주세요.');
+    }
+  }
+
+  /* ===== 변경사항 적용(저장) / 번역 삭제 ===== */
+  function currentTransText() {
+    const transPane = document.querySelector('.tr-trans-text');
+    return (transPane?.innerText || '').replace(/ /g, ' ').trim();
+  }
+
+  // 현재 버전의 translation_id 확보 — 없으면(방금 생성한 번역) DB에서 최신 것 조회
+  async function ensureTranslationId() {
+    if (selectedVersion && selectedVersion.translationId) return selectedVersion.translationId;
+    if (!window.TR_CONFIG?.listUrl) return null;
+    try {
+      const res = await fetch(window.TR_CONFIG.listUrl);
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.items) && data.items.length) {
+        const lang = getActiveLang();
+        const matches = data.items.filter((it) => (it.lang || 'EN') === lang);
+        const pick = matches.length ? matches : data.items;
+        const id = pick[pick.length - 1].id;
+        if (selectedVersion) selectedVersion.translationId = id;
+        return id;
+      }
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
+  // 토스트
+  const trToastEl = document.getElementById('trToast');
+  function trToast(msg) {
+    if (!trToastEl) { return; }
+    trToastEl.textContent = msg;
+    trToastEl.classList.add('show');
+    setTimeout(() => trToastEl.classList.remove('show'), 3000);
+  }
+
+  // 삭제 확인 모달
+  function trConfirm() {
+    return new Promise((resolve) => {
+      const bd = document.getElementById('trConfirmBackdrop');
+      const md = document.getElementById('trConfirmModal');
+      if (!bd || !md) { resolve(window.confirm('이 번역본을 삭제할까요?')); return; }
+      bd.classList.add('open'); md.classList.add('open'); document.body.style.overflow = 'hidden';
+      const close = (r) => {
+        bd.classList.remove('open'); md.classList.remove('open'); document.body.style.overflow = '';
+        document.getElementById('trConfirmOk').onclick = null;
+        document.getElementById('trConfirmCancel').onclick = null;
+        bd.onclick = null;
+        resolve(r);
+      };
+      document.getElementById('trConfirmOk').onclick = () => close(true);
+      document.getElementById('trConfirmCancel').onclick = () => close(false);
+      bd.onclick = () => close(false);
+    });
+  }
+
+  document.querySelectorAll('.tr-apply-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!window.TR_CONFIG?.saveUrl) return;
+      const text = currentTransText();
+      if (!text) { trToast('번역본이 비어 있습니다.'); return; }
+      btn.disabled = true;
+      const old = btn.textContent; btn.textContent = '저장 중...';
+      try {
+        const tid = await ensureTranslationId();
+        if (!tid) { trToast('저장할 번역본을 찾지 못했어요. 먼저 번역을 실행해 주세요.'); return; }
+        const res = await fetch(window.TR_CONFIG.saveUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.TR_CONFIG.csrfToken },
+          body: JSON.stringify({ translationId: tid, translatedText: text }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = text;
+          trToast('번역본이 저장되었습니다.');
+        } else {
+          trToast(data.error || '저장에 실패했습니다.');
+        }
+      } catch (e) {
+        trToast('네트워크 오류로 저장에 실패했습니다.');
+      } finally {
+        btn.disabled = false; btn.textContent = old;
+      }
+    });
+  });
+
+  document.querySelectorAll('.tr-delete-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!window.TR_CONFIG?.deleteUrl) return;
+      if (!(await trConfirm())) return;
+      try {
+        const tid = await ensureTranslationId();
+        if (!tid) { trToast('삭제할 번역본을 찾지 못했어요.'); return; }
+        const res = await fetch(window.TR_CONFIG.deleteUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.TR_CONFIG.csrfToken },
+          body: JSON.stringify({ translationId: tid }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          trToast('번역본이 삭제되었습니다.');
+          setTimeout(() => location.reload(), 1200);
+        } else {
+          trToast(data.error || '삭제에 실패했습니다.');
+        }
+      } catch (e) {
+        trToast('네트워크 오류로 삭제에 실패했습니다.');
+      }
+    });
+  });
 
   loadSavedTranslations();
 

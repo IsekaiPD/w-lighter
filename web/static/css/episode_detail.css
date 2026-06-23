@@ -270,7 +270,8 @@
 .ep-version-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 28px;
   font-size: 16px;
   font-weight: 600;
   color: rgba(110, 99, 140, 0.5);

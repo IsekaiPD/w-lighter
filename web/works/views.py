@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from common import model_server
@@ -15,21 +16,75 @@ _COUNTRY_TO_LANG = {'US': 'EN', 'EN': 'EN', 'CN': 'CN', 'JP': 'JP', 'TH': 'TH', 
 
 @login_required(login_url='pages:landing')
 def library(request):
-    works = Work.objects.filter(user=request.user).order_by('-created_at')
-    # TODO: FastAPI translations/reviews 테이블 연결 후 수정 필요
-    # 현재는 Episode.updated_at 기준 임시 표시 (번역/검수 구분 불가)
-    # FastAPI 스키마 받은 후 managed=False 모델 만들고 실제 완료 기록으로 교체할 것
-    recent_episode = (
-        Episode.objects
-        .filter(work__user=request.user)
-        .select_related('work')
-        .order_by('-updated_at')
-        .first()
-    )
+    works = list(Work.objects.filter(user=request.user).order_by('-created_at'))
+
+    # 작품별 번역 회차 수 + 번역 언어 계산 (translation_results)
+    work_ids = [w.work_id for w in works]
+    eps_by_work = {}   # work_id -> set(episode_id)  (번역된 회차)
+    langs_by_work = {}  # work_id -> set(lang)
+    if work_ids:
+        placeholders = ','.join(['%s'] * len(work_ids))
+        with connection.cursor() as cur:
+            cur.execute(
+                "SELECT e.work_id, t.episode_id, t.target_country "
+                "FROM episodes e JOIN translation_results t ON t.episode_id = e.episode_id "
+                "WHERE e.work_id IN (%s)" % placeholders,
+                work_ids,
+            )
+            for work_id, ep_id, country in cur.fetchall():
+                eps_by_work.setdefault(work_id, set()).add(ep_id)
+                lang = _COUNTRY_TO_LANG.get((country or '').upper(), None)
+                if lang:
+                    langs_by_work.setdefault(work_id, set()).add(lang)
+
+    # 작품별 마지막 번역 시각
+    last_by_work = {}
+    if work_ids:
+        with connection.cursor() as cur:
+            cur.execute(
+                "SELECT e.work_id, MAX(t.created_at) "
+                "FROM episodes e JOIN translation_results t ON t.episode_id = e.episode_id "
+                "WHERE e.work_id IN (%s) GROUP BY e.work_id" % placeholders,
+                work_ids,
+            )
+            for work_id, last_at in cur.fetchall():
+                last_by_work[work_id] = last_at
+
+    def _aware(dt):
+        if dt and timezone.is_naive(dt):
+            return timezone.make_aware(dt, timezone.get_current_timezone())
+        return dt
+
+    lang_order = ['EN', 'CN', 'JP', 'TH']
+    for w in works:
+        w.trans_ep_count = len(eps_by_work.get(w.work_id, set()))
+        w.trans_langs = [l for l in lang_order if l in langs_by_work.get(w.work_id, set())]
+        # 최근 업데이트: 마지막 번역 시각, 없으면 작품 수정 시각
+        w.last_update = _aware(last_by_work.get(w.work_id)) or w.updated_at
+
+    # 최근 작업: 내 모든 작품 중 가장 최근에 번역한 회차
+    recent = None
+    if work_ids:
+        with connection.cursor() as cur:
+            cur.execute(
+                "SELECT e.work_id, w.title, e.episode_number, e.episode_id, t.created_at "
+                "FROM translation_results t "
+                "JOIN episodes e ON t.episode_id = e.episode_id "
+                "JOIN works w ON e.work_id = w.work_id "
+                "WHERE w.user_id = %s ORDER BY t.created_at DESC LIMIT 1",
+                [request.user.user_id],
+            )
+            row = cur.fetchone()
+            if row:
+                recent = {
+                    'work_id': row[0], 'work_title': row[1],
+                    'episode_number': row[2], 'episode_id': row[3],
+                }
+
     return render(request, 'works/library.html', {
         'works': works,
         'nickname': request.user.nickname,
-        'recent_episode': recent_episode,
+        'recent': recent,
     })
 
 
@@ -267,12 +322,37 @@ def episode_inspect_chat(request, work_pk, episode_pk):
     if not message:
         return JsonResponse({'ok': False, 'error': '메시지를 입력해주세요.'}, status=400)
 
+    # 현재 번역문(선택된 버전)을 함께 보내야 모델이 수정안(proposedTranslation)을 제시함
+    current_translation = ''
+    translation_id = body.get('translationId')
+    if translation_id:
+        with connection.cursor() as cur:
+            cur.execute(
+                "SELECT translated_text FROM translation_results "
+                "WHERE translation_id = %s AND episode_id = %s",
+                [translation_id, episode.episode_id],
+            )
+            row = cur.fetchone()
+            if row:
+                current_translation = row[0] or ''
+
+    # 모델 서버 제한: 각 필드 최대 8000자
+    current_translation = current_translation[:8000]
+    source_text = (episode.original_text or '')[:8000]
+
     payload = {
         'episodeId': str(episode.episode_id),
+        'question': message,   # 모델 서버는 'question' 필드를 요구
         'message': message,
         'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),
         'genre': model_server.map_genre(work.genre),
+        # 원문 + 현재 번역문 (수정안 제시에 필요)
+        'sourceText': source_text,
+        'currentTranslation': current_translation,
+        'translatedText': current_translation,
     }
+    if translation_id:
+        payload['translationId'] = str(translation_id)
     try:
         data = model_server.call('/api/v1/translation/inspect-chat', payload)
     except model_server.ModelServerError as e:
@@ -314,3 +394,89 @@ def episode_translations(request, work_pk, episode_pk):
             'createdAt': r[5].strftime('%Y.%m.%d %H:%M') if r[5] else '',
         })
     return JsonResponse({'ok': True, 'items': items})
+
+
+@login_required(login_url='pages:landing')
+def episode_chat(request, work_pk, episode_pk):
+    """특정 번역 버전(translation_id)에 저장된 검수 챗봇 대화 반환."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+    translation_id = request.GET.get('translation_id')
+    if not translation_id:
+        return JsonResponse({'ok': True, 'messages': []})
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT c.sender_type, c.message_text, c.created_at "
+            "FROM chat_messages c "
+            "JOIN translation_results t ON c.translation_id = t.translation_id "
+            "WHERE c.translation_id = %s AND t.episode_id = %s "
+            "ORDER BY c.message_id ASC",
+            [translation_id, episode.episode_id],
+        )
+        rows = cur.fetchall()
+
+    messages = [{
+        'sender': r[0],
+        'text': r[1],
+        'createdAt': r[2].strftime('%Y.%m.%d %H:%M') if r[2] else '',
+    } for r in rows]
+    return JsonResponse({'ok': True, 'messages': messages})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def episode_translation_save(request, work_pk, episode_pk):
+    """수정된 번역본을 해당 버전(translation_id)에 덮어쓰기 저장."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    tid  = body.get('translationId')
+    text = (body.get('translatedText') or '').strip()
+    if not tid or not text:
+        return JsonResponse({'ok': False, 'error': '번역 버전과 내용이 필요합니다.'}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "UPDATE translation_results SET translated_text = %s "
+            "WHERE translation_id = %s AND episode_id = %s",
+            [text, tid, episode.episode_id],
+        )
+        affected = cur.rowcount
+    if affected == 0:
+        return JsonResponse({'ok': False, 'error': '해당 번역본을 찾을 수 없습니다.'}, status=404)
+    return JsonResponse({'ok': True})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def episode_translation_delete(request, work_pk, episode_pk):
+    """번역본 버전 삭제 (+ 그 버전의 챗봇 대화도 삭제)."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    tid = body.get('translationId')
+    if not tid:
+        return JsonResponse({'ok': False, 'error': '번역 버전이 필요합니다.'}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT 1 FROM translation_results WHERE translation_id = %s AND episode_id = %s",
+            [tid, episode.episode_id],
+        )
+        if not cur.fetchone():
+            return JsonResponse({'ok': False, 'error': '해당 번역본을 찾을 수 없습니다.'}, status=404)
+        cur.execute("DELETE FROM chat_messages WHERE translation_id = %s", [tid])
+        cur.execute(
+            "DELETE FROM translation_results WHERE translation_id = %s AND episode_id = %s",
+            [tid, episode.episode_id],
+        )
+    return JsonResponse({'ok': True})

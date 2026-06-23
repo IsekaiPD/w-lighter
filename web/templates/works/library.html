@@ -39,9 +39,9 @@
         </svg>
       </div>
       <span class="recent-label">최근 작업</span>
-      {% if recent_episode %}
-      <span class="recent-text">{{ recent_episode.work.title }}&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;{{ recent_episode.episode_number }}화 번역 완료</span>
-      <a href="{% url 'works:episode_translate' recent_episode.work.work_id recent_episode.episode_id %}" class="continue-btn">작업 이어하기</a>
+      {% if recent %}
+      <span class="recent-text">{{ recent.work_title }}&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;{{ recent.episode_number }}화 번역 완료</span>
+      <a href="{% url 'works:episode_translate' recent.work_id recent.episode_id %}" class="continue-btn">작업 이어하기</a>
       {% else %}
       <span class="recent-text">최근 작업 내역이 없어요</span>
       {% endif %}
@@ -109,8 +109,12 @@
             </div>
           </div>
           <p class="work-meta">필명: {{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;장르: {{ work.genre }}</p>
-          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 0화</p>
-          <div class="work-langs"></div>
+          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;{% if work.trans_ep_count %}번역 {{ work.trans_ep_count }}화{% else %}번역 없음{% endif %}{% if work.last_update %}&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 {{ work.last_update|timesince }} 전{% endif %}</p>
+          <div class="work-langs">
+            {% for lang in work.trans_langs %}
+            <span class="lang-tag">{{ lang }}</span>
+            {% endfor %}
+          </div>
         </div>
       </div>
       {% endfor %}

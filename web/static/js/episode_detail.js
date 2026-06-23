@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 저장된 번역: { en:[{n,date,text}], cn:[...], jp:[...], th:[...] }
   const byLang = { en: [], cn: [], jp: [], th: [] };
   let activeLang = 'en';
+  let selectedTransId = null;
 
   function updateCaret() {
     if (caretPath) {
@@ -59,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = list[i];
     if (!v) return;
 
+    selectedTransId = v.id || null;
     activeLang = lang;
     langOpts.forEach(o => o.classList.toggle('active', o.dataset.lang === lang));
     list.forEach(x => { x.selected = false; });
@@ -68,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       transText.style.color = 'var(--color-text)';
       transText.innerHTML = renderParas(v.text);
     }
-    label.textContent = `${LANG_NAME[lang] || ''} ver. ${v.n}`.trim();
+    label.textContent = `${LANG_NAME[lang] || ''} ver. ${v.n}${v.date ? '  ' + v.date : ''}`.trim();
 
     renderVersionList(lang);
     wrap.classList.remove('open');
@@ -112,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data.items.forEach(it => {
         const lang = (it.lang || 'EN').toLowerCase();
         if (!byLang[lang]) byLang[lang] = [];
-        byLang[lang].push({ n: byLang[lang].length + 1, date: it.createdAt || '', text: it.translatedText || '' });
+        byLang[lang].push({ n: byLang[lang].length + 1, date: it.createdAt || '', text: it.translatedText || '', id: it.id });
       });
 
       // 번역이 있는 첫 언어의 최신 버전을 자동 표시
@@ -122,6 +124,65 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[episode_detail load]', e);
     }
   }
+
+  // ----- 토스트 -----
+  const toastEl = document.getElementById('epToast');
+  function showToast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 3000);
+  }
+
+  // ----- 삭제 확인 모달 -----
+  const confirmBackdrop = document.getElementById('epConfirmBackdrop');
+  const confirmModal    = document.getElementById('epConfirmModal');
+  function openConfirm() {
+    return new Promise((resolve) => {
+      if (!confirmBackdrop || !confirmModal) { resolve(window.confirm('이 번역본을 삭제할까요?')); return; }
+      confirmBackdrop.classList.add('open');
+      confirmModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      const close = (result) => {
+        confirmBackdrop.classList.remove('open');
+        confirmModal.classList.remove('open');
+        document.body.style.overflow = '';
+        document.getElementById('epConfirmOk').onclick = null;
+        document.getElementById('epConfirmCancel').onclick = null;
+        confirmBackdrop.onclick = null;
+        resolve(result);
+      };
+      document.getElementById('epConfirmOk').onclick = () => close(true);
+      document.getElementById('epConfirmCancel').onclick = () => close(false);
+      confirmBackdrop.onclick = () => close(false);
+    });
+  }
+
+  // ----- 번역 삭제 -----
+  document.querySelector('.ep-delete-btn')?.addEventListener('click', async () => {
+    if (!selectedTransId) {
+      showToast('삭제할 번역본이 없습니다. 먼저 번역본을 선택하세요.');
+      return;
+    }
+    if (!window.EP_CONFIG || !window.EP_CONFIG.deleteUrl) return;
+    if (!(await openConfirm())) return;
+    try {
+      const res = await fetch(window.EP_CONFIG.deleteUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.EP_CONFIG.csrfToken },
+        body: JSON.stringify({ translationId: selectedTransId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('번역본이 삭제되었습니다.');
+        setTimeout(() => location.reload(), 1200);
+      } else {
+        showToast(data.error || '삭제에 실패했습니다.');
+      }
+    } catch (e) {
+      showToast('네트워크 오류로 삭제에 실패했습니다.');
+    }
+  });
 
   loadSaved();
 
