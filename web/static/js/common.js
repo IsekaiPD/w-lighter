@@ -1,5 +1,10 @@
 // 공통 js
 
+// 뒤로가기 캐시(bfcache)로 복원되면 최신 데이터 반영 위해 새로고침
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) window.location.reload();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Sidebar ----------

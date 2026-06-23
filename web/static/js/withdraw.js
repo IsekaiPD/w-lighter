@@ -44,10 +44,33 @@
     button.addEventListener('click', closeModal);
   });
 
-  submitButton?.addEventListener('click', () => {
+  submitButton?.addEventListener('click', async () => {
     const completeUrl = submitButton.dataset.completeUrl;
-    if (!completeUrl) return;
-    window.location.href = completeUrl;
+    submitButton.disabled = true;
+    const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+    try {
+      const res = await fetch('/accounts/withdraw/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const data = await res.json().catch(() => ({ ok: res.ok }));
+      if (data.ok) {
+        window.location.href = completeUrl || '/';
+      } else {
+        throw new Error(data.error || '실패');
+      }
+    } catch (e) {
+      submitButton.disabled = false;
+      closeModal();
+      if (failToast) {
+        failToast.hidden = false;
+        window.requestAnimationFrame(() => failToast.classList.add('is-visible'));
+        window.setTimeout(() => {
+          failToast.classList.remove('is-visible');
+          window.setTimeout(() => { failToast.hidden = true; }, 150);
+        }, 2800);
+      }
+    }
   });
 
   document.addEventListener('keydown', (event) => {
