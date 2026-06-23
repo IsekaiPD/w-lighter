@@ -27,9 +27,11 @@ def cover_saved(request, work_pk):
             [work.work_id],
         )
         rows = cur.fetchall()
+    main_url = (work.cover_image_url or '').strip()
     covers = [{
         'id': r[0], 'url': r[1], 'targetCountry': r[2],
-        'isMain': bool(r[3]),
+        # 대표 여부 = 현재 작품 대표 표지 URL과 일치하는지
+        'isMain': bool(main_url) and r[1] == main_url,
         'createdAt': r[4].strftime('%Y-%m-%d') if r[4] else '',
     } for r in rows]
     return JsonResponse({'ok': True, 'covers': covers})

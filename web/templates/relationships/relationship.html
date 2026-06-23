@@ -56,8 +56,8 @@
                  data-title="{{ work.title }}"
                  data-genre="{{ work.genre }}"
                  data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}"
-                 data-img="">
-              <div class="rel-di-thumb"><div class="rel-di-placeholder"></div></div>
+                 data-img="{{ work.cover_image_url|default:'' }}">
+              <div class="rel-di-thumb">{% if work.cover_image_url %}<img class="rel-di-img" src="{{ work.cover_image_url }}" alt="{{ work.title }}" style="width:100%;height:100%;object-fit:cover;">{% else %}<div class="rel-di-placeholder"></div>{% endif %}</div>
               <div class="rel-di-info">
                 <p class="rel-di-title">{{ work.title }}</p>
                 <p class="rel-di-genre">{{ work.genre }}</p>

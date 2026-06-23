@@ -258,9 +258,19 @@ def episode_register(request, work_pk):
         if not original_text: errors['content'] = '원문을 입력해주세요'
         if errors:
             return JsonResponse({'ok': False, 'errors': errors})
+
+        ep_num = int(episode_number) if episode_number.isdigit() else 0
+        # 중복 회차 번호 거절
+        if ep_num and work.episodes.filter(episode_number=ep_num).exists():
+            return JsonResponse({
+                'ok': False,
+                'error': f'{ep_num}화는 이미 등록된 회차입니다.',
+                'duplicate': ep_num,
+            }, status=409)
+
         episode = Episode.objects.create(
             work=work, title=title, original_text=original_text,
-            episode_number=int(episode_number) if episode_number.isdigit() else 0,
+            episode_number=ep_num,
         )
         return JsonResponse({'ok': True, 'episode': {
             'id': episode.episode_id, 'title': episode.title,
@@ -268,8 +278,12 @@ def episode_register(request, work_pk):
         }})
 
     episode_count = work.episodes.count()
+    existing_numbers = list(
+        work.episodes.values_list('episode_number', flat=True)
+    )
     return render(request, 'works/episode_register.html', {
         'work': work, 'episode_count': episode_count,
+        'existing_numbers': existing_numbers,
     })
 
 @login_required(login_url='pages:landing')

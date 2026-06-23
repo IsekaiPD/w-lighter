@@ -57,9 +57,13 @@
                  data-title="{{ work.title }}"
                  data-genre="{{ work.genre }}"
                  data-synopsis="{% if work.synopsis %}true{% else %}false{% endif %}"
-                 data-img="">
+                 data-img="{{ work.cover_image_url|default:'' }}">
               <div class="cover-di-thumb">
+                {% if work.cover_image_url %}
+                <img class="cover-di-img" src="{{ work.cover_image_url }}" alt="{{ work.title }}" style="width:100%;height:100%;object-fit:cover;">
+                {% else %}
                 <div class="cover-di-placeholder"></div>
+                {% endif %}
               </div>
               <div class="cover-di-info">
                 <p class="cover-di-title">{{ work.title }}</p>
@@ -178,5 +182,5 @@
     savedUrl:    "{% url 'covers:cover_saved' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/cover_image.js' %}?v=load-saved-20260622-2"></script>
+<script src="{% static 'js/cover_image.js' %}?v=cover-20260623-2"></script>
 {% endblock %}
