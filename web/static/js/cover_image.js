@@ -82,8 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                 </button>
                 <!-- 대표 이미지 설정 -->
-                <button class="cover-img-icon-btn" title="대표 이미지 설정" data-action="setMain" data-id="${cover.id}">
-                  ${SVG_STAR_EMPTY}
+                <button class="cover-img-icon-btn${cover.isMain ? ' active' : ''}" title="대표 이미지 설정" data-action="setMain" data-id="${cover.id}">
+                  ${cover.isMain ? SVG_STAR_FILLED : SVG_STAR_EMPTY}
                 </button>
               </div>
             </div>
@@ -296,7 +296,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     generateBtn.disabled = true;
-    showCoverDebug('<p style="color:var(--color-text-muted);">표지 생성 중입니다... 모델 서버 응답을 기다리는 중. (이미지 생성은 시간이 걸릴 수 있어요)</p>');
+    // "생성 중" 로딩: 빈 슬롯 자리를 로딩으로 교체 (없으면 그리드에 추가)
+    document.getElementById('coverDebugBox')?.remove();
+    const loadingHTML = '<div class="cover-slot-loading" id="coverLoadingSlot"><div class="cover-spinner"></div><span>생성 중</span></div>';
+    const emptySlot = imageGrid.querySelector('.cover-slot-empty');
+    if (emptySlot) {
+      emptySlot.outerHTML = loadingHTML;
+    } else {
+      emptyState.style.display = 'none';
+      imageGrid.style.display = 'grid';
+      if (!imageGrid.querySelector('.cover-img-card')) imageGrid.innerHTML = '';
+      imageGrid.insertAdjacentHTML('beforeend', loadingHTML);
+    }
 
     try {
       const res = await fetch(window.COVER_CONFIG.generateUrl, {
@@ -311,36 +322,26 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('[cover] HTTP', res.status, data);
 
       if (!data.ok) {
-        showCoverDebug(
-          '<p style="font-weight:700;margin-bottom:6px;">표지를 생성하지 못했어요</p>' +
-          '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escCover(data.error || ('오류 ' + res.status)) + '</p>' +
-          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);"><summary style="cursor:pointer;">자세히 (개발용)</summary>' +
-          '<pre style="white-space:pre-wrap;word-break:break-all;line-height:1.6;max-height:320px;overflow:auto;margin:8px 0 0;">' +
-          escCover(JSON.stringify(data, null, 2)) + '</pre></details>'
-        );
+        showToast('※ ' + (data.error || ('표지 생성에 실패했습니다 (' + res.status + ')')));
         return;
       }
-
-      // 성공 → 생성된 표지를 그리드에 추가
       const r = data.result || {};
       const imgUrl = coverImageUrl(r);
       if (!imgUrl) {
-        showCoverDebug('<p style="color:#ff2d55;">표지 이미지를 받지 못했어요(image_base64/s3 비어있음). 콘솔의 응답을 확인하세요.</p>');
+        showToast('※ 표지 이미지를 받지 못했어요. 잠시 후 다시 시도해 주세요.');
         return;
       }
-      document.getElementById('coverDebugBox')?.remove();
-
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      const newCover = { id: 'cv_' + Date.now(), url: imgUrl, createdAt: dateStr };
-      mockCovers[selectedWorkId] = [newCover, ...(mockCovers[selectedWorkId] || [])];
-      renderGrid(selectedWorkId);
+      mockCovers[selectedWorkId] = [{ id: 'cv_' + Date.now(), url: imgUrl, createdAt: dateStr }, ...(mockCovers[selectedWorkId] || [])];
     } catch (err) {
       console.error('[cover] error', err);
-      showCoverDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
+      showToast('※ 네트워크 오류가 발생했습니다.');
     } finally {
       generateBtn.disabled = false;
+      document.getElementById('coverLoadingSlot')?.remove();
+      renderGrid(selectedWorkId);
     }
   });
 
@@ -366,12 +367,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const card   = btn.closest('.cover-img-card');
       const imgEl  = card?.querySelector('img');
       const imgUrl = imgEl?.src || '';
+
+      // 로컬 상태(mockCovers)에도 대표 표시 반영 → 새로고침 전까지 유지
+      (mockCovers[selectedWorkId] || []).forEach(c => { c.isMain = (c.id === id); });
+
       const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
       const fd     = new FormData();
       fd.append('url', imgUrl);
       fd.append('csrfmiddlewaretoken', csrf);
       fetch('/works/' + selectedWorkId + '/set-cover/', { method: 'POST', body: fd })
-        .catch(e => console.error('대표 이미지 저장 오류:', e));
+        .then(r => r.json())
+        .then(d => { showToast(d.ok ? '대표 이미지로 설정되었습니다. 내 서재에도 반영돼요.' : '※ 대표 이미지 저장에 실패했습니다.'); })
+        .catch(e => { console.error('대표 이미지 저장 오류:', e); showToast('※ 대표 이미지 저장에 실패했습니다.'); });
     }
 
     if (action === 'delete') {

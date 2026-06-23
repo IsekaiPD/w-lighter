@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+  // 이미 등록된 회차 번호 (중복 방지)
+  let existingNumbers = [];
+  try {
+    const el = document.getElementById('existingNumbers');
+    if (el) existingNumbers = (JSON.parse(el.textContent) || []).map(Number);
+  } catch (e) { /* ignore */ }
+
   /* ===== 토스트 팝업 ===== */
   let toastEl = null;
   let toastTimer = null;
@@ -177,6 +184,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const epNum = parseInt(epNumberEl?.value ?? '');
     if (!epNum || epNum < 1) { alert('회차 번호를 입력해주세요.'); epNumberEl?.focus(); return; }
+
+    // 중복 회차 번호 차단 (이미 등록된 회차 / 대기열에 있는 회차)
+    if (existingNumbers.includes(epNum)) {
+      showToast(epNum + '화는 이미 등록된 회차입니다.');
+      epNumberEl?.focus();
+      return;
+    }
+    if (queueItems.some((it) => it.epNum === epNum)) {
+      showToast(epNum + '화는 이미 등록 대기 중입니다.');
+      epNumberEl?.focus();
+      return;
+    }
 
     const file = attachedFiles[selectedIdx];
     addBtn.disabled = true;
