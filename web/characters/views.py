@@ -1,13 +1,57 @@
 import json
+import logging
 
 from django.contrib.auth.decorators import login_required
-from django.db import connection
+from django.db import connection, transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from common import model_server
 from works.models import Work
+
+logger = logging.getLogger(__name__)
+
+# characters 테이블 제약: gender 는 'M' / 'F' / 'U' 만 허용
+_GENDER_DISPLAY = {'M': '남성', 'F': '여성', 'U': '미상'}
+
+
+def _gender_code(g):
+    g = (g or '').strip()
+    if g in ('M', '남', '남성', 'male', 'Male', 'MALE'):
+        return 'M'
+    if g in ('F', '여', '여성', 'female', 'Female', 'FEMALE'):
+        return 'F'
+    return 'U'
+
+
+def _save_characters(work, chars):
+    """모델 서버 저장이 제약조건 위반으로 실패하므로 Django가 직접 저장(작품 기준 교체).
+    gender는 M/F/Unknown으로 변환해 넣는다."""
+    if not chars:
+        return
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cur:
+                cur.execute("DELETE FROM characters WHERE work_id = %s", [work.work_id])
+                for c in chars:
+                    cur.execute(
+                        "INSERT INTO characters "
+                        "(work_id, char_name, gender, age, `role`, appearance, relationships, detail_setting) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        [
+                            work.work_id,
+                            (c.get('char_name') or '')[:30],
+                            _gender_code(c.get('gender')),
+                            (c.get('age') or '')[:10],
+                            (c.get('role') or '')[:5],
+                            (c.get('appearance') or '')[:300],
+                            (c.get('relationships') or '')[:500],
+                            (c.get('detail_setting') or '')[:1000],
+                        ],
+                    )
+    except Exception as e:
+        logger.warning('character save failed (work %s): %s', work.work_id, e)
 
 
 @login_required(login_url='pages:landing')
@@ -28,7 +72,9 @@ def character_saved(request, work_pk):
         )
         rows = cur.fetchall()
     characters = [{
-        'char_name': r[0], 'age': r[1], 'gender': r[2], 'role': r[3],
+        'char_name': r[0], 'age': r[1],
+        'gender': _GENDER_DISPLAY.get(r[2], r[2]),  # M/F/Unknown → 한국어
+        'role': r[3],
         'appearance': r[4], 'detail_setting': r[5], 'relationships': r[6],
     } for r in rows]
     return JsonResponse({'ok': True, 'characters': characters})
@@ -73,5 +119,8 @@ def character_extract(request):
             'sentPayload': payload,
             'detail': e.payload,
         }, status=e.status_code)
+
+    # 모델 서버 저장이 제약조건 위반으로 실패하므로 Django가 직접 저장
+    _save_characters(work, (data or {}).get('characters') or [])
 
     return JsonResponse({'ok': True, 'result': data})
