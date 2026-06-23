@@ -194,7 +194,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const cell = (v) => {
       const t = String(v == null ? '' : v).trim();
-      return '<td>' + (t === '' ? '-' : escapeAttr(t)) + '</td>';
+      if (t === '') return '<td style="text-align:center;color:var(--color-text-muted,#8a8a99);">-</td>';
+      return '<td>' + escapeAttr(t) + '</td>';
     };
 
     tableBody.innerHTML = characters.map(function (c) {
@@ -308,9 +309,18 @@ document.addEventListener('DOMContentLoaded', function () {
     Object.keys(FIELDS).forEach(function (idx) {
       const cell = cells[idx];
       const val = cell.querySelector('.cell-input').value.trim();
-      cell.textContent = (val === '') ? '-' : val;
+      if (val === '') {
+        cell.textContent = '-';
+        cell.style.textAlign = 'center';
+        cell.style.color = 'var(--color-text-muted, #8a8a99)';
+      } else {
+        cell.textContent = val;
+        cell.style.textAlign = '';
+        cell.style.color = '';
+      }
       delete cell.dataset.original;
     });
+    delete row.dataset.isNew;  // 저장 완료 → 정식 캐릭터
     // 역할 저장 → 색상 뱃지로 복원
     const roleCell = cells[1];
     const roleVal = roleCell.querySelector('.cell-select').value;
@@ -330,6 +340,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ===== 취소 =====
   function cancelEdit(row) {
+    // 저장된 적 없는 새 행이면 그냥 제거 (빈 캐릭터 추가 방지)
+    if (row.dataset.isNew) {
+      row.remove();
+      updateSummary();
+      if (tableBody.querySelectorAll('tr').length === 0) {
+        charTableWrap.style.display = 'none';
+        charEmpty.style.display = '';
+      }
+      return;
+    }
     const cells = row.querySelectorAll('td');
     Object.keys(FIELDS).forEach(function (idx) {
       const cell = cells[idx];
@@ -380,11 +400,12 @@ document.addEventListener('DOMContentLoaded', function () {
     charEmpty.style.display = 'none';
     charTableWrap.style.display = 'block';
     const tr = document.createElement('tr');
+    tr.dataset.isNew = '1';  // 저장 전 새 행 (취소/이름없음 시 제거)
     tr.innerHTML =
-      '<td>새 캐릭터</td>' +
+      '<td>-</td>' +
       '<td><span class="role-badge role-minor">단역</span></td>' +
       '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>' +
-      '<td class="char-actions">' + ACTION_HTML + '</td>';
+      '<td class="char-actions">' + ACTIONS_HTML + '</td>';
     tableBody.appendChild(tr);
     updateSummary();
     enterEdit(tr);

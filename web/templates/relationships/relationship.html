@@ -205,9 +205,9 @@
   window.REL_CONFIG = {
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'relationships:relationship_map' %}",
-    extractUrl:  "{% url 'characters:extract' %}",
+    charSavedUrl: "{% url 'characters:saved' work_pk=0 %}",
     savedUrl:    "{% url 'relationships:relationship_saved' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/relationship.js' %}?v=load-saved-20260622-2"></script>
+<script src="{% static 'js/relationship.js' %}?v=relchars-20260623-1"></script>
 {% endblock %}

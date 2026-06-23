@@ -73,18 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return '단역';
   }
 
-  // 캐릭터 추출 엔드포인트 호출 → loadedChars 채우기
+  // 캐릭터 설정집에서 "저장된" 캐릭터만 조회 (추출/생성 안 함 — 읽기 전용)
   async function loadCharacters(workId) {
     if (loadedChars[workId]) return loadedChars[workId];
-    if (!window.REL_CONFIG || !window.REL_CONFIG.extractUrl) throw new Error('extractUrl 없음');
-    const res = await fetch(window.REL_CONFIG.extractUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
-      body: JSON.stringify({ workId }),
-    });
+    if (!window.REL_CONFIG || !window.REL_CONFIG.charSavedUrl) throw new Error('charSavedUrl 없음');
+    const url = window.REL_CONFIG.charSavedUrl.replace('/0/', '/' + workId + '/');
+    const res = await fetch(url);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || ('오류 ' + res.status));
-    const chars = ((data.result && data.result.characters) || []).map((c, i) => ({
+    const chars = ((data.characters) || []).map((c, i) => ({
       id: 'ch_' + i,
       name: c.char_name || ('캐릭터 ' + (i + 1)),
       role: mapRelRole(c.role),
@@ -287,18 +284,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!isLoaded) {
-      // 캐릭터 설정집에서 추출한 실제 캐릭터 불러오기
+      // 캐릭터 설정집에서 "이미 추출해 저장한" 캐릭터만 불러옴 (여기서 추출하지 않음)
       const workId = selectedWorkId;
-      const selItem = document.querySelector('.rel-dropdown-item[data-id="' + workId + '"]');
-      if (selItem && selItem.dataset.synopsis === 'false') {
-        showToast('이 작품은 시놉시스가 없어 캐릭터 설정을 불러올 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
-        return;
-      }
       generateBtn.disabled = true;
       const prevText = generateBtn.textContent;
       generateBtn.textContent = '불러오는 중...';
       loadCharacters(workId)
-        .then(() => { showLoadedState(workId); })
+        .then((chars) => {
+          if (!chars || chars.length === 0) {
+            showToast('먼저 캐릭터 설정집에서 캐릭터를 추출해 주세요. 추출된 캐릭터가 있어야 관계도를 생성할 수 있어요.');
+            generateBtn.textContent = prevText;
+            return;
+          }
+          showLoadedState(workId);
+        })
         .catch((err) => {
           console.error('[relationship load chars]', err);
           showToast('캐릭터를 불러오지 못했어요: ' + err.message);

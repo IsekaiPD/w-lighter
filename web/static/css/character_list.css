@@ -316,13 +316,25 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  table-layout: fixed;
 }
 .char-table th, .char-table td {
   padding: 12px 10px;
   text-align: left;
   vertical-align: top;
   border-bottom: 1px solid var(--color-border-soft);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
+/* 컬럼 폭: 이름·외형은 넓게, 역할/나이/성별은 좁게, 세부설정은 줄임 */
+.char-table th:nth-child(1), .char-table td:nth-child(1) { width: 11%; }  /* 이름 */
+.char-table th:nth-child(2), .char-table td:nth-child(2) { width: 6%;  }  /* 역할 */
+.char-table th:nth-child(3), .char-table td:nth-child(3) { width: 5%;  }  /* 나이 */
+.char-table th:nth-child(4), .char-table td:nth-child(4) { width: 6%;  }  /* 성별 */
+.char-table th:nth-child(5), .char-table td:nth-child(5) { width: 14%; }  /* 외형 */
+.char-table th:nth-child(6), .char-table td:nth-child(6) { width: 25%; }  /* 세부설정 */
+.char-table th:nth-child(7), .char-table td:nth-child(7) { width: 23%; }  /* 관계요약 */
+.char-table th:nth-child(8), .char-table td:nth-child(8) { width: 10%; }  /* 액션 */
 .char-table th {
   font-weight: 700;
   color: var(--color-text-muted);
