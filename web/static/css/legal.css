@@ -50,10 +50,10 @@
 .legal-nav {
   display: flex;
   justify-content: center;
-  gap: 88px;
+  gap: 56px;
   color: var(--color-text);
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 24px;
 }
 
@@ -76,22 +76,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: 48px;
   padding: 0 24px;
   border: 1px solid var(--color-primary-border);
   border-radius: var(--radius-pill);
   background: var(--color-primary-soft);
   color: var(--color-primary);
   font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
+  font-weight: 600;
   transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .legal-login-button:hover,
 .legal-login-button:focus-visible {
   transform: translateY(-1px);
-  background: var(--color-primary-badge);
+  background: #efe7ff;
   box-shadow: 0 10px 22px rgba(110, 91, 184, 0.14);
 }
 
