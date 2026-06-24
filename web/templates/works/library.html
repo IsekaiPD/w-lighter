@@ -293,13 +293,22 @@
     const card   = btn.closest('.work-card');
     const workId = card?.dataset.workId;
     if (!workId) return;
-    if (!confirm('이 작품을 삭제하시겠습니까?\n회차 데이터도 모두 삭제됩니다.')) return;
+    const ok = window.AppUI
+      ? await AppUI.confirm({
+          title: '이 작품을 삭제할까요?',
+          desc: '회차 데이터도 모두 삭제되며 복구할 수 없습니다.',
+          okText: '삭제하기',
+          cancelText: '취소',
+        })
+      : confirm('이 작품을 삭제하시겠습니까?\n회차 데이터도 모두 삭제됩니다.');
+    if (!ok) return;
     const res  = await fetch(`/works/${workId}/delete/`, {
       method: 'POST',
       headers: { 'X-CSRFToken': CSRF },
     });
     const data = await res.json();
     if (data.ok) location.reload();
+    else if (window.AppUI) AppUI.toast('작품 삭제에 실패했습니다.');
     else alert('삭제에 실패했습니다.');
   });
 })();

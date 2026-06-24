@@ -222,7 +222,7 @@
 
 .rel-row-loading {
   display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 20px;
-  height: 80px; background: var(--color-primary-soft, #F3EEFF); border: 1px solid #B7A9E6;
+  height: 80px; background: var(--color-primary-soft, #F3EEFF); border: 1.5px dashed #B7A9E6;
   border-radius: 10px;
 }
 .rel-row-loading span { font-size: 13px; color: var(--color-text-muted); }
@@ -359,14 +359,15 @@
 
 /* 역할 배지 */
 .rel-role-badge {
-  width: 64px; text-align: center;
-  font-size: 13px; border-radius: 6px;
-  padding: 3px 0;
   display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 12px; font-weight: 600;
+  white-space: nowrap;
 }
-.rel-role-badge.주연 { background: #E9E1FF; color: #6E5BB8; }
-.rel-role-badge.조연 { background: #FFE4EC; color: #72243E; }
-.rel-role-badge.단역 { background: #F0EFED; color: #5F5E5A; }
+.rel-role-badge.주연 { background: #efe7ff; color: #7b61d8; }
+.rel-role-badge.조연 { background: #e4f0ff; color: #3b82c4; }
+.rel-role-badge.단역 { background: #f0f0f3; color: #8a8a99; }
 
 /* 모달 하단 */
 .rel-char-modal-footer {
@@ -479,21 +480,21 @@
   display: none; position: fixed; top: 50%; left: 50%;
   transform: translate(-50%, -50%); z-index: 201;
   background: var(--color-surface); border-radius: 20px;
-  padding: 32px 28px 28px;
+  padding: 24px 40px 28px;
   box-shadow: 0 20px 60px rgba(45, 36, 64, 0.22), var(--shadow-glow-soft);
-  width: 420px;
+  width: 400px; max-width: calc(100vw - 32px);
 }
 .rel-delete-modal.open { display: block; }
-.rel-delete-title { font-size: 20px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; }
-.rel-delete-desc { font-size: 14px; color: var(--color-text-muted); line-height: 1.6; margin-bottom: 28px; }
+.rel-delete-title { font-size: 20px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
+.rel-delete-desc { font-size: 15px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 24px; }
 .rel-delete-actions { display: flex; gap: 12px; }
 .rel-delete-btn {
-  flex: 1; height: 48px; border-radius: var(--radius-pill);
+  flex: 1; height: 40px; border-radius: var(--radius-pill);
   font-size: 15px; font-weight: 700; cursor: pointer;
   transition: background 0.15s; border: none;
 }
-.rel-delete-btn.cancel { background: var(--color-primary-soft); color: var(--color-primary); }
-.rel-delete-btn.cancel:hover { background: #e9e1ff; }
+.rel-delete-btn.cancel { background: #F2F2F7; color: #2D2440; }
+.rel-delete-btn.cancel:hover { background: #E8E8F0; }
 .rel-delete-btn.confirm { background: var(--color-primary); color: #fff; }
 .rel-delete-btn.confirm:hover { background: #5f4aa6; }
 

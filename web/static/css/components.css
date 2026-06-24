@@ -118,41 +118,41 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 510px;
+  width: 400px;
   max-width: calc(100vw - 32px);
   background: #fff;
-  border-radius: 24px;
-  padding: 28px 44px 34px;
+  border-radius: 20px;
+  padding: 24px 40px 28px;
   box-shadow: 0 20px 50px rgba(60, 40, 100, 0.25);
   z-index: 1901;
 }
 .app-modal.open { display: block; }
 
 .app-modal-title {
-  margin: 0 0 16px;
-  color: #000;
-  font-size: 24px;
-  line-height: 29px;
+  margin: 0 0 8px;
+  color: var(--color-text, #2d2440);
+  font-size: 20px;
+  line-height: 1.35;
   font-weight: 700;
 }
 .app-modal-desc {
-  margin: 0 0 28px;
-  color: #6E638C;
-  font-size: 18px;
-  line-height: 25px;
+  margin: 0 0 24px;
+  color: var(--color-text-muted, #6E638C);
+  font-size: 15px;
+  line-height: 1.5;
 }
 .app-modal-desc strong { color: var(--color-primary, #7c3aed); font-weight: 700; }
 
-.app-modal-actions { display: flex; gap: 16px; }
+.app-modal-actions { display: flex; gap: 12px; }
 .app-modal-btn {
   flex: 1;
-  height: 44px;
+  height: 40px;
   border: none;
   cursor: pointer;
   border-radius: 999px;
-  font-size: 16px;
-  line-height: 19px;
-  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
   transition: background 0.15s;
 }
 .app-modal-btn.cancel { background: #F2F2F7; color: #2D2440; }

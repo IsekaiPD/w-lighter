@@ -4,7 +4,7 @@
 {% block title %}캐릭터 관계도 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/relationship.css' %}?v=toastsize-20260624-1">
+<link rel="stylesheet" href="{% static 'css/relationship.css' %}?v=badge-20260624-4">
 {% endblock %}
 
 {% block content %}
@@ -190,7 +190,7 @@
   <h3 class="rel-delete-title">이 관계도를 삭제할까요?</h3>
   <p class="rel-delete-desc">선택한 관계도가 삭제되며 복구할 수 없습니다. 재생성 시 크레딧이 소모됩니다.</p>
   <div class="rel-delete-actions">
-    <button class="rel-delete-btn cancel" id="relDeleteCancel">취소하기</button>
+    <button class="rel-delete-btn cancel" id="relDeleteCancel">취소</button>
     <button class="rel-delete-btn confirm" id="relDeleteConfirm">삭제하기</button>
   </div>
 </div>
@@ -207,9 +207,10 @@
     generateUrl: "{% url 'relationships:relationship_map' %}",
     charSavedUrl: "{% url 'characters:saved' work_pk=0 %}",
     savedUrl:    "{% url 'relationships:relationship_saved' work_pk=0 %}",
+    deleteUrl:   "{% url 'relationships:relationship_delete' work_pk=0 %}",
   };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="{% static 'js/relationship.js' %}?v=creditmodal-20260624-5"></script>
+<script src="{% static 'js/relationship.js' %}?v=delid-20260624-8"></script>
 {% endblock %}

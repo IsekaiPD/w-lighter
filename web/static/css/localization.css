@@ -246,7 +246,7 @@
   display: flex; align-items: center; justify-content: center;
   gap: 12px; height: 80px;
   background: var(--color-primary-soft, #F3EEFF);
-  border: 1px solid #B7A9E6; border-radius: 10px;
+  border: 1.5px dashed #B7A9E6; border-radius: 10px;
   color: var(--color-text-muted); font-size: 14px;
 }
 .lc-spinner {
@@ -388,29 +388,29 @@
   display: none; position: fixed; top: 50%; left: 50%;
   transform: translate(-50%, -50%); z-index: 201;
   background: var(--color-surface); border-radius: 20px;
-  padding: 32px 28px 28px;
+  padding: 24px 40px 28px;
   box-shadow: 0 20px 60px rgba(45, 36, 64, 0.22), var(--shadow-glow-soft);
-  width: 440px;
+  width: 400px; max-width: calc(100vw - 32px);
 }
 .lc-overwrite-modal.open,
 .lc-delete-modal.open { display: block; }
 
 .lc-overwrite-title,
-.lc-delete-title { font-size: 20px; font-weight: 700; color: var(--color-text); margin-bottom: 12px; }
+.lc-delete-title { font-size: 20px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
 
 .lc-overwrite-desc,
-.lc-delete-desc { font-size: 14px; color: var(--color-text-muted); line-height: 1.7; margin-bottom: 28px; }
+.lc-delete-desc { font-size: 15px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 24px; }
 
 .lc-overwrite-actions,
 .lc-delete-actions { display: flex; gap: 12px; }
 
 .lc-modal-btn {
-  flex: 1; height: 48px; border-radius: var(--radius-pill);
+  flex: 1; height: 40px; border-radius: var(--radius-pill);
   font-size: 15px; font-weight: 700; cursor: pointer;
   transition: background 0.15s; border: none;
 }
-.lc-modal-btn.cancel { background: var(--color-primary-soft); color: var(--color-primary); }
-.lc-modal-btn.cancel:hover { background: #e9e1ff; }
+.lc-modal-btn.cancel { background: #F2F2F7; color: #2D2440; }
+.lc-modal-btn.cancel:hover { background: #E8E8F0; }
 .lc-modal-btn.confirm { background: var(--color-primary); color: #fff; }
 .lc-modal-btn.confirm:hover { background: #5f4aa6; }
 

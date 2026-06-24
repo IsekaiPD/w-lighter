@@ -4,7 +4,7 @@
 {% block title %}현지화 가이드 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/localization.css' %}?v=infohint-20260624-1">
+<link rel="stylesheet" href="{% static 'css/localization.css' %}?v=modalsize-20260624-3">
 {% endblock %}
 
 {% block content %}
@@ -88,7 +88,7 @@
 
       <!-- 생성 버튼 -->
       <button class="lc-generate-btn" id="lcGenerateBtn" type="button">
-        현지화 가이드 생성하기 · 800C
+        현지화 가이드 생성하기 · 300C
       </button>
 
     </div>
@@ -157,9 +157,9 @@
 <div class="lc-overwrite-backdrop" id="lcOverwriteBackdrop"></div>
 <div class="lc-overwrite-modal" id="lcOverwriteModal">
   <h3 class="lc-overwrite-title">해당 작품의 가이드를 새로 생성할까요?</h3>
-  <p class="lc-overwrite-desc">작품별 현지화 가이드는 <strong>최대 5개</strong>까지 저장되며, 새로 생성할 경우 가장 오래된 버전이 삭제됩니다. 삭제된 <strong>현지화 가이드</strong>는 복구할 수 없습니다.</p>
+  <p class="lc-overwrite-desc">작품별 현지화 가이드는 최대 5개까지 저장되며, 새로 생성할 경우 가장 오래된 버전이 삭제됩니다. 삭제된 현지화 가이드는 복구할 수 없습니다.</p>
   <div class="lc-overwrite-actions">
-    <button class="lc-modal-btn cancel" id="lcOverwriteCancel">취소하기</button>
+    <button class="lc-modal-btn cancel" id="lcOverwriteCancel">취소</button>
     <button class="lc-modal-btn confirm" id="lcOverwriteConfirm">새로 생성하기</button>
   </div>
 </div>
@@ -168,9 +168,9 @@
 <div class="lc-delete-backdrop" id="lcDeleteBackdrop"></div>
 <div class="lc-delete-modal" id="lcDeleteModal">
   <h3 class="lc-delete-title">이 가이드를 삭제할까요?</h3>
-  <p class="lc-delete-desc">선택한 <strong>가이드</strong>가 삭제되며 복구할 수 없습니다.</p>
+  <p class="lc-delete-desc">선택한 가이드가 삭제되며 복구할 수 없습니다.</p>
   <div class="lc-delete-actions">
-    <button class="lc-modal-btn cancel" id="lcDeleteCancel">취소하기</button>
+    <button class="lc-modal-btn cancel" id="lcDeleteCancel">취소</button>
     <button class="lc-modal-btn confirm" id="lcDeleteConfirm">삭제하기</button>
   </div>
 </div>
@@ -186,9 +186,10 @@
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'guides:guide_generate' %}",
     savedUrl:    "{% url 'guides:guide_saved' work_pk=0 %}",
+    deleteUrl:   "{% url 'guides:guide_delete' work_pk=0 %}",
   };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="{% static 'js/localization.js' %}?v=creditmodal-20260624-2"></script>
+<script src="{% static 'js/localization.js' %}?v=delid-20260624-4"></script>
 {% endblock %}

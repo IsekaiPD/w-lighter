@@ -438,120 +438,91 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  function renderReport(result) {
-    const r = result.translationRationale || {};
-    const tr = result.translationReport || {};
-    const parts = [];
+  const REPORT_CHECK_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-    // 명세 정규화: summary / inspectionReport(전체 decisions) / readerEndnotes
+  function reportStatChip(label, n, variant) {
+    const bg = variant === 'pink' ? '#FBEAF0' : '#EEEDFE';
+    return '<div class="tr-report-stat-chip" style="background:' + bg + ';border-color:transparent;">' +
+      '<span class="tr-stat-label">' + label + '</span>' +
+      '<span class="tr-stat-count">' + n + '<em> 건</em></span></div>';
+  }
+
+  function renderReport(result) {
+    const tr = result.translationReport || {};
+    const r = result.translationRationale || {};
+
+    // 명세 정규화
     const summary = result.summary || tr.summary || r.overview || '';
     const inspection = Array.isArray(result.inspectionReport) ? result.inspectionReport
                      : (Array.isArray(tr.inspectionReport) ? tr.inspectionReport : []);
     const cultural = inspection.filter(d => d && d.reviewerType === 'cultural');
     const endnotes = Array.isArray(result.readerEndnotes) ? result.readerEndnotes
                    : (Array.isArray(tr.readerEndnotes) ? tr.readerEndnotes : []);
+    const glossary = Array.isArray(result.glossaryCandidates) ? result.glossaryCandidates
+                   : (Array.isArray(tr.glossaryCandidates) ? tr.glossaryCandidates : []);
 
-    // 전달 상태 배지
-    const status = result.deliveryStatus || result?.metadata?.delivery_status;
-    if (status) {
-      const ok = status === 'deliverable';
-      parts.push(
-        `<div style="display:inline-block;margin-bottom:18px;padding:5px 12px;border-radius:999px;` +
-        `font-size:12px;font-weight:600;` +
-        (ok
-          ? `background:var(--color-primary-soft);color:var(--color-primary);border:1px solid var(--color-primary-border);`
-          : `background:#fff0f3;color:#ff2d55;border:1px solid #ffd0da;`) +
-        `">${ok ? '번역 완료' : escapeHtml(status)}</div>`
-      );
+    if (!summary && !cultural.length && !endnotes.length && !glossary.length) {
+      return '<div class="tr-report-empty">번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</div>';
     }
 
-    // 번역 총평(summary)
-    if (summary) {
-      parts.push(reportSection('번역 총평',
-        `<p style="line-height:1.7;color:var(--color-text);margin:0;">${escapeHtml(summary).replace(/\n/g, '<br>')}</p>`));
+    function checkItem(term, desc, on) {
+      return '<div class="tr-check-item' + (on ? ' tr-check-on' : '') + '">' +
+        '<div class="tr-check-box">' + (on ? REPORT_CHECK_SVG : '') + '</div>' +
+        '<div class="tr-check-body">' +
+          '<div class="tr-check-term">' + escapeHtml(term) + '</div>' +
+          (desc ? '<div class="tr-check-desc">' + escapeHtml(desc) + '</div>' : '') +
+        '</div></div>';
     }
-    if (r.styleIntent) {
-      parts.push(reportSection('문체 의도',
-        `<p style="line-height:1.7;color:var(--color-text-muted);margin:0;">${escapeHtml(r.styleIntent)}</p>`));
-    }
+    const emptyMsg = '<div class="tr-check-desc">항목이 없습니다.</div>';
 
-    // 전략 비율 (직역 vs 의역)
-    if (r.strategyRatio && (r.strategyRatio.literal != null || r.strategyRatio.adaptive != null)) {
-      const lit = Number(r.strategyRatio.literal || 0);
-      const ada = Number(r.strategyRatio.adaptive || 0);
-      parts.push(reportSection('번역 전략 비율',
-        `<div style="display:flex;height:14px;border-radius:7px;overflow:hidden;border:1px solid var(--color-border);">` +
-        `<div style="width:${lit}%;background:var(--color-primary);"></div>` +
-        `<div style="width:${ada}%;background:var(--color-primary-soft);"></div>` +
-        `</div>` +
-        `<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--color-text-muted);">` +
-        `<span>직역 ${lit}%</span><span>의역 ${ada}%</span></div>`));
-    }
+    const glossaryList = glossary.length
+      ? glossary.map(g => checkItem(
+          g.source || g.original_word || '',
+          (g.suggested_target ? '↔ ' + g.suggested_target : (g.translated_word ? '↔ ' + g.translated_word : '')),
+          Number(g.applied) === 1)).join('')
+      : emptyMsg;
 
-    // 세부 항목
-    const items = (r.items || []).filter(it => it && (it.explanation || it.sourceSpan || it.targetSpan));
-    if (items.length) {
-      const rows = items.map(it => {
-        const span = (it.sourceSpan || it.targetSpan)
-          ? `<div style="font-size:13px;color:var(--color-text-muted);margin-bottom:4px;">` +
-            (it.sourceSpan ? `<span>${escapeHtml(it.sourceSpan)}</span>` : '') +
-            (it.targetSpan ? ` → <span>${escapeHtml(it.targetSpan)}</span>` : '') + `</div>`
-          : '';
-        const tag = it.category || it.strategy
-          ? `<span style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary);margin-bottom:6px;">${escapeHtml(it.category || it.strategy)}</span>`
-          : '';
-        return `<div style="padding:12px 14px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px;">` +
-          tag + span +
-          `<p style="margin:0;line-height:1.6;color:var(--color-text);font-size:14px;">${escapeHtml(it.explanation || '')}</p></div>`;
-      }).join('');
-      parts.push(reportSection('세부 번역 노트', rows));
-    }
+    const endnoteList = endnotes.length
+      ? endnotes.map(n => (typeof n === 'string'
+          ? checkItem(n, '', false)
+          : checkItem(n.keyword || '', n.koreanNote || '', Number(n.applied) === 1))).join('')
+      : emptyMsg;
 
-    // 문화 리스크 (inspectionReport 중 reviewerType==='cultural'만)
-    if (cultural.length) {
-      const rows = cultural.map(d => {
-        const span = (d.sourceSpan || d.targetSpan)
-          ? `<div style="font-size:13px;color:var(--color-text-muted);margin-bottom:4px;">` +
-            (d.sourceSpan ? `<span>${escapeHtml(d.sourceSpan)}</span>` : '') +
-            (d.targetSpan ? ` → <span>${escapeHtml(d.targetSpan)}</span>` : '') + `</div>`
-          : '';
-        const act = d.action
-          ? `<span style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary);margin-bottom:6px;">${d.action === 'deferred' ? '보류(각주 대체)' : '반영'}</span>`
-          : '';
-        return `<div style="padding:12px 14px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px;">` +
-          act + span +
-          (d.problem ? `<p style="margin:0 0 4px;line-height:1.6;color:var(--color-text);font-size:14px;">${escapeHtml(d.problem)}</p>` : '') +
-          (d.reason ? `<p style="margin:0;line-height:1.6;color:var(--color-text-muted);font-size:13px;">${escapeHtml(d.reason)}</p>` : '') +
-          `</div>`;
-      }).join('');
-      parts.push(reportSection('문화 리스크', rows));
-    }
+    const culturalList = cultural.length
+      ? '<ul class="tr-report-bullet-list">' + cultural.map(d => {
+          const head = d.sourceSpan ? '<strong>' + escapeHtml(d.sourceSpan) + '</strong> – ' : '';
+          return '<li>' + head + escapeHtml(d.problem || d.reason || '') + '</li>';
+        }).join('') + '</ul>'
+      : emptyMsg;
 
-    // 독자용 각주 (readerEndnotes: {keyword, koreanNote, targetNote})
-    if (endnotes.length) {
-      const rows = endnotes.map(n => {
-        if (typeof n === 'string') return `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(n)}</li>`;
-        const kw = n.keyword ? `<strong>${escapeHtml(n.keyword)}</strong> — ` : '';
-        const ko = n.koreanNote ? escapeHtml(n.koreanNote) : '';
-        const tgt = n.targetNote ? `<div style="color:var(--color-text-muted);margin-top:2px;">${escapeHtml(n.targetNote)}</div>` : '';
-        return `<li style="margin-bottom:8px;line-height:1.6;">${kw}${ko}${tgt}</li>`;
-      }).join('');
-      parts.push(reportSection('독자용 각주', `<ul style="margin:0;padding-left:18px;color:var(--color-text);">${rows}</ul>`));
-    }
-
-    // 저장 실패 안내(모델 서버 RDS에 해당 회차가 없을 때)
-    if (result.persisted && result.persisted.saved === false && result.persisted.reason) {
-      parts.push(
-        `<div style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#fff8e6;border:1px solid #ffe2a8;` +
-        `font-size:12.5px;color:#8a6d1a;line-height:1.6;">⚠ 번역 결과가 서버 DB에 저장되지 않았습니다 (${escapeHtml(result.persisted.reason)}).</div>`
-      );
-    }
-
-    if (!parts.length) {
-      return '<div style="padding:24px 0;color:var(--color-text-muted);text-align:center;">리포트 내용이 없습니다.</div>';
-    }
-    return `<div style="padding:8px 0;">${parts.join('')}</div>`;
+    return (
+      '<div class="tr-report-strategy">' +
+        '<div class="tr-report-strategy-title">문체 / 현지화 전략</div>' +
+        '<div class="tr-report-strategy-desc">' +
+          (summary ? escapeHtml(summary).replace(/\n/g, '<br>') : '제공된 전략 정보가 없습니다.') +
+        '</div>' +
+      '</div>' +
+      '<div class="tr-report-stats">' +
+        reportStatChip('고유 명사', glossary.length, 'purple') +
+        reportStatChip('주석 추출', endnotes.length, 'pink') +
+        reportStatChip('검수 항목', cultural.length, 'purple') +
+      '</div>' +
+      '<div class="tr-report-cards">' +
+        '<div class="tr-report-card"><div class="tr-report-card-title">고유 명사 확정</div><div class="tr-report-checklist">' + glossaryList + '</div></div>' +
+        '<div class="tr-report-card"><div class="tr-report-card-title">주석 삽입 추천</div><div class="tr-report-checklist">' + endnoteList + '</div></div>' +
+        '<div class="tr-report-card"><div class="tr-report-card-title">문화권 유의사항</div>' + culturalList + '</div>' +
+      '</div>'
+    );
   }
+
+  // 리포트 체크박스 토글 (선택 사항 적용용)
+  document.querySelector('.tr-report-scroll')?.addEventListener('click', function (e) {
+    const item = e.target.closest('.tr-check-item');
+    if (!item) return;
+    item.classList.toggle('tr-check-on');
+    const box = item.querySelector('.tr-check-box');
+    if (box) box.innerHTML = item.classList.contains('tr-check-on') ? REPORT_CHECK_SVG : '';
+  });
 
   /* ===== 번역 버전 관리 ===== */
   // 언어별로 버전 보관: { EN: [{n, date, result}], CN: [...], ... }
