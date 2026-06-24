@@ -352,20 +352,22 @@ def episode_inspect_chat(request, work_pk, episode_pk):
 
     payload = {
         'episodeId': str(episode.episode_id),
-        'question': message,   # 모델 서버는 'question' 필드를 요구
-        'message': message,
+        'question': message,
         'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),
         'genre': model_server.map_genre(work.genre),
-        # 원문 + 현재 번역문 (수정안 제시에 필요)
         'sourceText': source_text,
         'currentTranslation': current_translation,
         'translatedText': current_translation,
     }
     if translation_id:
         try:
-            payload['translationId'] = int(translation_id)  # int (명세)
+            payload['translationId'] = int(translation_id)
         except (TypeError, ValueError):
             payload['translationId'] = translation_id
+    payload['workId'] = str(work.work_id)
+    pending_action = body.get('pendingAction')
+    if pending_action and isinstance(pending_action, dict):
+        payload['pendingAction'] = pending_action
     try:
         data = model_server.call('/api/v1/translation/inspect-chat', payload)
     except model_server.ModelServerError as e:

@@ -269,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 선택된 번역 버전의 저장된 챗봇 대화 불러오기
   async function loadChatForVersion(translationId) {
     resetChat();
+    currentPendingAction = null;
     if (!translationId || !window.TR_CONFIG?.chatUrl) return;
     try {
       const res = await fetch(window.TR_CONFIG.chatUrl + '?translation_id=' + encodeURIComponent(translationId));
@@ -309,7 +310,12 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'X-CSRFToken': window.TR_CONFIG.csrfToken,
         },
-        body: JSON.stringify({ message: text, targetCountry: getActiveLang(), translationId: selectedVersion?.translationId }),
+        body: JSON.stringify({
+          message: text,
+          targetCountry: getActiveLang(),
+          translationId: selectedVersion?.translationId,
+          pendingAction: currentPendingAction,
+        }),
       });
       const data = await res.json();
       if (!data.ok) {
@@ -319,6 +325,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let answer = r.answer || extractText(r, ['answer', 'reply', 'message', 'text', 'content']) || '';
         if (typeof answer !== 'string') answer = JSON.stringify(answer);
         pending.querySelector('.tr-chat-bot-text').textContent = answer || '(응답 없음)';
+        // pendingAction 상태 갱신
+        currentPendingAction = r.pendingAction ?? null;
         // 수정 제안이 있으면 "수정 제안" 카드 추가
         if (r.proposedTranslation && String(r.proposedTranslation).trim()) {
           appendSuggestionCard(r.changeSummary || '제안된 수정 번역입니다.', r.proposedTranslation);
@@ -549,6 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 언어별로 버전 보관: { EN: [{n, date, result}], CN: [...], ... }
   const trVersionsByLang = {};
   let selectedVersion = null;
+  let currentPendingAction = null;
 
   function nowStr() {
     const d = new Date();
