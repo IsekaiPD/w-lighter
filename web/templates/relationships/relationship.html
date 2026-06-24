@@ -4,7 +4,7 @@
 {% block title %}캐릭터 관계도 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/relationship.css' %}">
+<link rel="stylesheet" href="{% static 'css/relationship.css' %}?v=toastsize-20260624-1">
 {% endblock %}
 
 {% block content %}
@@ -209,5 +209,7 @@
     savedUrl:    "{% url 'relationships:relationship_saved' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/relationship.js' %}?v=relchars-20260623-2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="{% static 'js/relationship.js' %}?v=toast-20260624-3"></script>
 {% endblock %}

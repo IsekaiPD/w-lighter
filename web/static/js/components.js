@@ -15,7 +15,7 @@
   }
   function toast(msg) {
     const t = ensureToast();
-    t.textContent = msg;
+    t.textContent = '※ ' + msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);

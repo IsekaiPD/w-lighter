@@ -43,9 +43,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ===== 토스트 =====
   function showToast(message) {
+    toastWrap.innerHTML = '';  // 기존 토스트 제거 → 한 번에 하나만 표시
     const t = document.createElement('div');
     t.className = 'toast';
-    t.textContent = '✶ ' + message;
+    t.textContent = '※ ' + message;
     toastWrap.appendChild(t);
     setTimeout(function () { t.classList.add('hide'); }, 2000);
     setTimeout(function () { t.remove(); }, 2400);

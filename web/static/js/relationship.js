@@ -215,19 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderList(workId);
   }
 
-  // 관계도 행 클릭 → 저장된 HTML 내용을 새 창으로 보기
-  diagList?.addEventListener('click', (e) => {
-    const row = e.target.closest('.rel-diagram-row');
-    if (!row) return;
-    const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === row.dataset.id);
-    if (diag && diag.content) {
-      const w = window.open('', '_blank');
-      if (w) { w.document.open(); w.document.write(diag.content); w.document.close(); }
-    } else if (diag && diag.htmlUrl) {
-      window.open(diag.htmlUrl, '_blank');
-    }
-  });
-
   document.addEventListener('click', (e) => {
     if (!selectWrap?.contains(e.target)) {
       selectWrap?.classList.remove('open');
@@ -239,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- 버튼 (불러오기 / 생성하기) ----------
   generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
-      alert('작품을 먼저 선택해 주세요.');
+      showToast('※ 작품을 먼저 선택해 주세요.');
       return;
     }
 
@@ -289,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     diagList.insertAdjacentHTML('afterbegin', `
       <div class="rel-row-loading" id="relLoadingRow">
         <div class="rel-spinner"></div>
-        <span>관계도 생성 중...</span>
+        <span>생성 중</span>
       </div>
     `);
     generateBtn.disabled = true;
@@ -312,10 +299,49 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // 저장된 관계도 content(문자열/객체/JSON문자열)에서 실제 HTML 문자열을 뽑아낸다.
+  function toRelHtml(content) {
+    if (!content) return '';
+    if (typeof content === 'object') {
+      return content.html || content.relation_html || content.relationMapHtml || '';
+    }
+    const s = String(content);
+    const t = s.trim();
+    if (t.startsWith('{') || t.startsWith('[')) {
+      try { const o = JSON.parse(t); if (o && (o.html || o.relation_html)) return o.html || o.relation_html; } catch (e) { /* not json */ }
+    }
+    return s;  // 이미 HTML 문자열
+  }
+
+  // 모델 서버 relationship-map 응답에서 관계도 HTML을 찾아낸다(필드명 불확실 → 재귀 탐색).
+  function extractRelContent(result) {
+    if (!result) return '';
+    const direct = [
+      result.html,
+      result.data && result.data.html,
+      result.result && result.result.html,
+      result.map_content && result.map_content.html,
+    ];
+    for (const c of direct) {
+      if (typeof c === 'string' && c.indexOf('<') !== -1) return c;
+    }
+    let found = '';
+    (function walk(o) {
+      if (found || o == null) return;
+      if (typeof o === 'string') {
+        if (o.indexOf('<') !== -1 && o.indexOf('>') !== -1 && o.length > 40) found = o;
+        return;
+      }
+      if (typeof o === 'object') {
+        for (const k in o) { walk(o[k]); if (found) return; }
+      }
+    })(result);
+    return found;
+  }
+
   async function runRelGenerate(workId) {
-    if (!window.REL_CONFIG || !window.REL_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); generateBtn.disabled = false; return; }
-    document.getElementById('relLoadingRow')?.remove();
-    showRelDebug('<p style="color:var(--color-text-muted);">관계도 생성 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+    if (!window.REL_CONFIG || !window.REL_CONFIG.generateUrl) { showToast('※ 설정 오류로 관계도를 생성할 수 없습니다.'); generateBtn.disabled = false; return; }
+    // 생성 중에는 상단의 로딩 박스(rel-row-loading)를 그대로 유지
     try {
       const res = await fetch(window.REL_CONFIG.generateUrl, {
         method: 'POST',
@@ -325,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       console.log('[relationship-map] HTTP', res.status, data);
       if (!data.ok) {
+        document.getElementById('relLoadingRow')?.remove();
         showRelDebug(
           '<p style="font-weight:700;margin-bottom:6px;">관계도를 생성하지 못했어요</p>' +
           '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escRel(data.error || ('오류 ' + res.status)) + '</p>' +
@@ -334,13 +361,32 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         return;
       }
-      showRelDebug(
-        '<p style="font-weight:700;margin-bottom:8px;">모델 서버 응답 (relationship-map) — 구조 확인용</p>' +
-        '<pre style="white-space:pre-wrap;word-break:break-all;font-size:12.5px;line-height:1.6;max-height:480px;overflow:auto;margin:0;">' +
-        escRel(JSON.stringify(data.result, null, 2)) + '</pre>'
-      );
+      document.getElementById('relLoadingRow')?.remove();
+      document.getElementById('relDebugBox')?.remove();
+      const html = extractRelContent(data.result);
+      if (!html) {
+        showRelDebug(
+          '<p style="font-weight:700;margin-bottom:6px;">관계도 HTML을 찾지 못했어요</p>' +
+          '<p style="color:#ff2d55;margin:0 0 10px;">응답에 HTML 형식의 관계도가 없습니다.</p>' +
+          '<details style="font-size:12px;color:var(--color-text-muted,#8a8a99);"><summary style="cursor:pointer;">자세히 (개발용)</summary>' +
+          '<pre style="white-space:pre-wrap;word-break:break-all;max-height:320px;overflow:auto;margin:8px 0 0;">' +
+          escRel(JSON.stringify(data.result, null, 2)) + '</pre></details>'
+        );
+        return;
+      }
+      // 새 관계도를 목록 맨 앞에 추가하고 상세 모달로 바로 보여줌
+      const list = mockDiagrams[workId] || (mockDiagrams[workId] = []);
+      const newVersion = list.reduce((m, d) => Math.max(m, d.version || 0), 0) + 1;
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const createdAt = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const newDiag = { id: 'gen_' + Date.now(), version: newVersion, createdAt, content: html };
+      list.unshift(newDiag);
+      renderList(workId);
+      openDetailModal(newDiag);
     } catch (err) {
       console.error('[relationship-map] error', err);
+      document.getElementById('relLoadingRow')?.remove();
       showRelDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {
       generateBtn.disabled = false;
@@ -433,9 +479,14 @@ document.addEventListener('DOMContentLoaded', () => {
     detailTargetId          = diag.id;
     detailTitle.textContent = `관계도 ver.${diag.version}`;
     detailDate.textContent  = `생성일시  ${diag.createdAt}`;
-    detailFrame.src         = '';
-  // 잠깐 후 src 설정해야 load 이벤트가 확실히 발화
-  setTimeout(() => { detailFrame.src = diag.htmlUrl || ''; }, 0);
+    detailFrame.removeAttribute('src');
+    detailFrame.srcdoc = '';
+    const html = toRelHtml(diag.content);
+    // 인라인 HTML이면 srcdoc, 아니면 URL(src)로 렌더
+    setTimeout(() => {
+      if (html) detailFrame.srcdoc = html;
+      else detailFrame.src = diag.htmlUrl || '';
+    }, 0);
     detailBackdrop.classList.add('open');
     detailModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -474,8 +525,64 @@ document.addEventListener('DOMContentLoaded', () => {
   detailBackdrop?.addEventListener('click', closeDetailModal);
 
   detailPdfBtn?.addEventListener('click', () => {
-    // TODO: PDF 다운로드
-    showToast('※ PDF 다운로드 기능은 준비 중입니다.');
+    const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === detailTargetId);
+    const html = toRelHtml(diag && diag.content);
+    if (!html) { showToast('※ 이 관계도에는 다운로드할 내용이 없습니다.'); return; }
+
+    // 화면 밖 iframe에 관계도 HTML을 렌더 후 캡처
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1240px;height:1600px;border:0;';
+    frame.srcdoc = html;
+    document.body.appendChild(frame);
+
+    const oldText = detailPdfBtn.textContent;
+    detailPdfBtn.disabled = true;
+    detailPdfBtn.textContent = 'PDF 생성 중...';
+    const finish = () => { detailPdfBtn.disabled = false; detailPdfBtn.textContent = oldText; frame.remove(); };
+
+    frame.onload = async () => {
+      const doc = frame.contentDocument;
+      const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+      if (!window.html2canvas || !jsPDFCtor || !doc) {
+        try { frame.contentWindow.focus(); frame.contentWindow.print(); }
+        catch (e) { showToast('※ PDF 기능을 사용할 수 없습니다.'); }
+        detailPdfBtn.disabled = false; detailPdfBtn.textContent = oldText;
+        setTimeout(() => frame.remove(), 60000);
+        return;
+      }
+      try {
+        if (doc.fonts && doc.fonts.ready) { try { await doc.fonts.ready; } catch (e) {} }
+        await new Promise(r => setTimeout(r, 150));
+        // 콘텐츠 전체 폭/높이로 캡처 → 우측 잘림 방지
+        const fullWidth  = Math.max(doc.body.scrollWidth, doc.documentElement.scrollWidth, 1);
+        const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 1);
+        const canvas = await window.html2canvas(doc.body, {
+          scale: 2, useCORS: true, backgroundColor: '#ffffff',
+          windowWidth: fullWidth, width: fullWidth, height: fullHeight, scrollX: 0, scrollY: 0,
+        });
+        const pdf = new jsPDFCtor({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+        const pageW = pdf.internal.pageSize.getWidth();
+        const pageH = pdf.internal.pageSize.getHeight();
+        const imgW = pageW;
+        const imgH = canvas.height * (imgW / canvas.width);
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        let heightLeft = imgH, position = 0;
+        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+        heightLeft -= pageH;
+        while (heightLeft > 0) {
+          position -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
+          heightLeft -= pageH;
+        }
+        pdf.save(`관계도_ver${diag ? diag.version : ''}.pdf`);
+        finish();
+      } catch (e) {
+        console.error('[rel pdf]', e);
+        showToast('※ PDF 생성에 실패했습니다.');
+        finish();
+      }
+    };
   });
 
   // 상세 모달 내 삭제 버튼 → 삭제 확인 모달 열기

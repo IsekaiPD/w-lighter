@@ -4,7 +4,7 @@
 {% block title %}표지 이미지 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/cover_image.css' %}">
+<link rel="stylesheet" href="{% static 'css/cover_image.css' %}?v=toastsize-20260624-1">
 {% endblock %}
 
 {% block content %}
@@ -180,7 +180,8 @@
     csrfToken:   "{{ csrf_token }}",
     generateUrl: "{% url 'covers:cover_generate' %}",
     savedUrl:    "{% url 'covers:cover_saved' work_pk=0 %}",
+    deleteUrl:   "{% url 'covers:cover_delete' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/cover_image.js' %}?v=cover-20260624-1"></script>
+<script src="{% static 'js/cover_image.js' %}?v=del-20260624-3"></script>
 {% endblock %}
