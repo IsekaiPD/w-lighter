@@ -4,7 +4,7 @@
 {% block title %}표지 이미지 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/cover_image.css' %}?v=toastsize-20260624-1">
+<link rel="stylesheet" href="{% static 'css/cover_image.css' %}?v=modalsize-20260624-2">
 {% endblock %}
 
 {% block content %}
@@ -105,7 +105,7 @@
 
       <!-- 생성 버튼 -->
       <button class="cover-generate-btn" id="coverGenerateBtn" type="button">
-        표지 이미지 생성하기 · 800C
+        표지 이미지 생성하기 · 300C
       </button>
 
     </div>
@@ -164,7 +164,7 @@
   <h3 class="cover-delete-title">이 표지 이미지를 삭제할까요?</h3>
   <p class="cover-delete-desc">선택한 표지 이미지가 삭제되며 복구할 수 없습니다. 재생성 시 크레딧이 소모됩니다.</p>
   <div class="cover-delete-actions">
-    <button class="cover-delete-btn cancel" id="coverDeleteCancel">취소하기</button>
+    <button class="cover-delete-btn cancel" id="coverDeleteCancel">취소</button>
     <button class="cover-delete-btn confirm" id="coverDeleteConfirm">삭제하기</button>
   </div>
 </div>
@@ -183,5 +183,5 @@
     deleteUrl:   "{% url 'covers:cover_delete' work_pk=0 %}",
   };
 </script>
-<script src="{% static 'js/cover_image.js' %}?v=apispec-20260624-6"></script>
+<script src="{% static 'js/cover_image.js' %}?v=delfix-20260624-9"></script>
 {% endblock %}

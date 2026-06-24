@@ -100,7 +100,9 @@ def build_authorize_url(request, provider_name, state):
     elif provider_name == 'google':
         query['prompt'] = 'select_account'
     elif provider_name == 'naver':
-        query['auth_type'] = 'reprompt'
+        # reauthenticate: 매번 네이버 로그인(계정 선택) 화면 표시 — 카카오 prompt=login 과 동일 역할.
+        # reprompt 와 달리 '동의(개인정보 제공)' 화면은 다시 띄우지 않음(이미 동의했으면 건너뜀).
+        query['auth_type'] = 'reauthenticate'
     return f'{provider.authorize_url}?{urlencode(query)}'
 
 

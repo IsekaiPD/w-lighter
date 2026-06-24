@@ -323,8 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const dateStr = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      // 모델 서버가 저장한 실제 guide_id를 받아 id로 사용 → 새로고침 전에도 서버 삭제 가능
+      const pg = r.persistedGuide || {};
+      const gid = pg.guide_id || pg.id;
       const guide = {
-        id: 'gd_' + Date.now(),
+        id: gid ? ('db_' + gid) : ('gd_' + Date.now()),
         title: r.title || (country ? `현지화 가이드 — ${country}` : '현지화 가이드'),
         country: selectedCountry?.code || null,
         createdAt: dateStr,
@@ -570,12 +573,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('lcDeleteCancel')?.addEventListener('click', closeDeleteModal);
   lcDeleteBackdrop?.addEventListener('click', closeDeleteModal);
-  document.getElementById('lcDeleteConfirm')?.addEventListener('click', () => {
-    if (selectedWorkId && mockGuides[selectedWorkId]) {
-      mockGuides[selectedWorkId] = mockGuides[selectedWorkId].filter(g => g.id !== deleteTargetId);
-    }
+  document.getElementById('lcDeleteConfirm')?.addEventListener('click', async () => {
+    const targetId = deleteTargetId;
     closeDeleteModal();
     closeDetailModal();
+
+    // 서버(RDS)에서 실제 삭제 — DB 저장본은 'db_<guide_id>' 형태
+    const m = /^db_(\d+)$/.exec(String(targetId || ''));
+    if (m && window.GUIDE_CONFIG?.deleteUrl && selectedWorkId) {
+      try {
+        const url = window.GUIDE_CONFIG.deleteUrl.replace('/0/', '/' + selectedWorkId + '/');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.GUIDE_CONFIG.csrfToken },
+          body: JSON.stringify({ guideId: m[1] }),
+        });
+        const data = await res.json();
+        if (!data.ok) { showToast('※ ' + (data.error || '가이드 삭제에 실패했습니다.')); return; }
+      } catch (e) {
+        console.error('[guide delete]', e);
+        showToast('※ 가이드 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
+    if (selectedWorkId && mockGuides[selectedWorkId]) {
+      mockGuides[selectedWorkId] = mockGuides[selectedWorkId].filter(g => g.id !== targetId);
+    }
     renderList(selectedWorkId);
     showToast('※ 현지화 가이드가 삭제되었습니다.');
   });

@@ -49,10 +49,11 @@ CHARGE_PLANS = {
 }
 
 FEATURE_CREDIT_COSTS = {
-    'translation': None,
-    'localization_guide': 800,
-    'cover_image': 800,
-    'relationship_diagram': 800,
+    'translation': None,            # 번역은 글자수 기반 가변
+    'localization_guide': 300,
+    'cover_image': 300,
+    'relationship_diagram': 300,
+    'character_extract': 300,
 }
 
 FEATURE_CREDIT_NAMES = {
@@ -60,6 +61,7 @@ FEATURE_CREDIT_NAMES = {
     'localization_guide': '현지화 가이드',
     'cover_image': '표지 이미지',
     'relationship_diagram': '캐릭터 관계도',
+    'character_extract': '캐릭터 설정',
 }
 
 

@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     statRelations.textContent = `-`;  // 관계 수는 관계도 생성 후 확정
     statsBox.style.display    = 'flex';
     statsBox.style.flexDirection = 'column';
-    generateBtn.textContent   = '관계도 생성하기 · 800C';
+    generateBtn.textContent   = '관계도 생성하기 · 300C';
     isLoaded = true;
     // 초기 선택: 전원 선택 (최대 10)
     selectedCharIds = new Set(chars.slice(0, MAX_CHARS).map(c => c.id));
@@ -384,7 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const createdAt = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-      const newDiag = { id: 'gen_' + Date.now(), version: newVersion, createdAt, content: html };
+      // 모델 서버가 저장한 실제 map_id를 받아 id로 사용 → 새로고침 전에도 서버 삭제 가능
+      const pr = (data.result && (data.result.persistedRelationMap || data.result.persisted)) || {};
+      const mapId = pr.map_id || pr.id;
+      const newDiag = { id: mapId ? ('db_' + mapId) : ('gen_' + Date.now()), version: newVersion, createdAt, content: html };
       list.unshift(newDiag);
       renderList(workId);
       openDetailModal(newDiag);
@@ -618,12 +621,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   deleteCancel?.addEventListener('click', closeDeleteModal);
   deleteBackdrop?.addEventListener('click', closeDeleteModal);
-  deleteConfirm?.addEventListener('click', () => {
-    if (selectedWorkId && mockDiagrams[selectedWorkId]) {
-      mockDiagrams[selectedWorkId] = mockDiagrams[selectedWorkId].filter(d => d.id !== deleteTargetId);
-    }
+  deleteConfirm?.addEventListener('click', async () => {
+    const targetId = deleteTargetId;
     closeDeleteModal();
     closeDetailModal();
+
+    // 서버(RDS)에서 실제 삭제 — DB 저장본은 'db_<map_id>' 형태
+    const m = /^db_(\d+)$/.exec(String(targetId || ''));
+    if (m && window.REL_CONFIG?.deleteUrl && selectedWorkId) {
+      try {
+        const url = window.REL_CONFIG.deleteUrl.replace('/0/', '/' + selectedWorkId + '/');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
+          body: JSON.stringify({ mapId: m[1] }),
+        });
+        const data = await res.json();
+        if (!data.ok) { showToast('※ ' + (data.error || '관계도 삭제에 실패했습니다.')); return; }
+      } catch (e) {
+        console.error('[relationship delete]', e);
+        showToast('※ 관계도 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
+    if (selectedWorkId && mockDiagrams[selectedWorkId]) {
+      mockDiagrams[selectedWorkId] = mockDiagrams[selectedWorkId].filter(d => d.id !== targetId);
+    }
     renderList(selectedWorkId);
     showToast('※ 캐릭터 관계도가 삭제되었습니다.');
   });

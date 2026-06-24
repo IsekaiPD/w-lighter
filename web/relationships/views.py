@@ -75,3 +75,25 @@ def relationship_map(request):
         }, status=e.status_code)
 
     return JsonResponse({'ok': True, 'result': data})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def relationship_delete(request, work_pk):
+    """관계도 삭제. RDS relation_maps에서 실제로 제거."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    map_id = body.get('mapId')
+    if not map_id:
+        return JsonResponse({'ok': False, 'error': 'mapId가 없습니다.'}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "DELETE FROM relation_maps WHERE map_id = %s AND work_id = %s",
+            [map_id, work.work_id],
+        )
+    return JsonResponse({'ok': True})

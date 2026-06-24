@@ -609,39 +609,38 @@
   transform: translate(-50%, -50%);
   z-index: 201;
   background: var(--color-surface);
-  border-radius: 24px;
-  padding: 28px 44px 34px;
+  border-radius: 20px;
+  padding: 24px 40px 28px;
   box-shadow: 0 20px 60px rgba(45, 36, 64, 0.22), var(--shadow-glow-soft);
-  width: 510px;
+  width: 400px;
   max-width: calc(100vw - 32px);
 }
 .cover-delete-modal.open {
   display: block;
 }
 .cover-delete-title {
-  font-size: 24px;
-  line-height: 29px;
+  font-size: 20px;
+  line-height: 1.35;
   font-weight: 700;
-  color: #000;
-  margin-bottom: 16px;
+  color: var(--color-text, #2d2440);
+  margin-bottom: 8px;
 }
 .cover-delete-desc {
-  font-size: 18px;
-  line-height: 25px;
-  color: #6E638C;
-  margin-bottom: 28px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-muted, #6E638C);
+  margin-bottom: 24px;
 }
 .cover-delete-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 .cover-delete-btn {
   flex: 1;
-  height: 44px;
+  height: 40px;
   border-radius: var(--radius-pill);
-  font-size: 16px;
-  line-height: 19px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
   border: none;

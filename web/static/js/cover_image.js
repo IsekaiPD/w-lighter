@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const selItem = document.querySelector('.cover-dropdown-item[data-id="' + selectedWorkId + '"]');
     if (selItem && selItem.dataset.synopsis === 'false') {
-      showToast('이 작품은 시놉시스가 없어 표지를 생성할 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
+      showToast('이 작품은 시놉시스가 없어 표지를 생성할 수 없어요. 시놉시스를 먼저 입력해 주세요.');
       return;
     }
     if (!window.COVER_CONFIG || !window.COVER_CONFIG.generateUrl) { showToast('※ 설정 오류로 표지를 생성할 수 없습니다.'); return; }
@@ -343,7 +343,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const pad = (n) => String(n).padStart(2, '0');
       const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      mockCovers[selectedWorkId] = [{ id: 'cv_' + Date.now(), url: imgUrl, createdAt: dateStr }, ...(mockCovers[selectedWorkId] || [])];
+      // 모델 서버가 저장한 실제 cover_id를 받아 id로 사용 → 새로고침 전에도 서버 삭제 가능
+      const pc = r.persistedCover || {};
+      const coverId = pc.cover_id || pc.id;
+      mockCovers[selectedWorkId] = [{ id: coverId ? ('db_' + coverId) : ('cv_' + Date.now()), url: imgUrl, createdAt: dateStr }, ...(mockCovers[selectedWorkId] || [])];
     } catch (err) {
       console.error('[cover] error', err);
       showToast('※ 네트워크 오류가 발생했습니다.');
@@ -383,6 +386,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 로컬 상태(mockCovers)에도 대표 표시 반영 → 새로고침 전까지 유지
       (mockCovers[selectedWorkId] || []).forEach(c => { c.isMain = (c.id === id); });
+
+      // 작품 선택 드롭다운/트리거 썸네일을 새 대표 이미지로 즉시 갱신 (라이브 반영)
+      const opt = document.querySelector('.cover-dropdown-item[data-id="' + selectedWorkId + '"]');
+      const thumb = opt?.querySelector('.cover-di-thumb');
+      if (thumb) {
+        thumb.innerHTML = '<img class="cover-di-img" src="' + imgUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;">';
+      }
+      const triggerIcon = document.querySelector('.cover-select-icon');
+      if (triggerIcon) {
+        triggerIcon.innerHTML = '<img src="' + imgUrl + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">';
+      }
 
       const csrf   = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
       const fd     = new FormData();
@@ -450,15 +464,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 서버(RDS)에서 실제 삭제 — DB 저장본은 숫자 cover_id
-    const isDbCover = /^\d+$/.test(String(targetId));
-    if (isDbCover && window.COVER_CONFIG?.deleteUrl && selectedWorkId) {
+    // 서버(RDS)에서 실제 삭제 — DB 저장본은 'db_<cover_id>' 형태
+    const dbm = /^db_(\d+)$/.exec(String(targetId || ''));
+    if (dbm && window.COVER_CONFIG?.deleteUrl && selectedWorkId) {
       try {
         const url = window.COVER_CONFIG.deleteUrl.replace('/0/', '/' + selectedWorkId + '/');
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.COVER_CONFIG.csrfToken },
-          body: JSON.stringify({ coverId: targetId }),
+          body: JSON.stringify({ coverId: dbm[1] }),
         });
         const data = await res.json();
         if (!data.ok) { showToast('※ ' + (data.error || '표지 삭제에 실패했습니다.')); return; }

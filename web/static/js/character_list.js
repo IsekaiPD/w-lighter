@@ -52,6 +52,33 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(function () { t.remove(); }, 2400);
   }
 
+  // ===== 크레딧 차감 =====
+  const creditChip = document.querySelector('.credit-chip');
+  function updateCreditBalance(balance) {
+    document.querySelectorAll('.credit-chip').forEach(function (el) {
+      el.textContent = Number(balance).toLocaleString() + ' C';
+    });
+  }
+  async function spendCredit(feature) {
+    const url = creditChip && creditChip.dataset.creditUseUrl;
+    const csrf = creditChip && creditChip.dataset.csrf;
+    if (!url || !csrf) throw new Error('크레딧 차감 설정을 찾을 수 없습니다.');
+    const form = new FormData();
+    form.append('feature', feature);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      if (typeof data.balance === 'number') updateCreditBalance(data.balance);
+      throw new Error(data.message || '크레딧 차감에 실패했습니다.');
+    }
+    updateCreditBalance(data.balance);
+    return data;
+  }
+
   // ===== 작품 드롭다운 =====
   trigger.addEventListener('click', function (e) {
     e.stopPropagation();
@@ -112,31 +139,50 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // ===== 추출 (모델 서버 호출 → 응답 구조 확인용 RAW 표시) =====
-  function showDebug(html) {
+  function ensureDebugBox() {
     let box = document.getElementById('charDebugBox');
     if (!box) {
       box = document.createElement('div');
       box.id = 'charDebugBox';
-      box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
-        'border-radius:12px;background:var(--color-surface,#fff);';
       (charTableWrap.parentNode || document.body).insertBefore(box, charTableWrap);
     }
+    return box;
+  }
+  function showDebug(html) {
+    const box = ensureDebugBox();
+    box.style.cssText = 'margin-top:16px;padding:16px;border:1px solid var(--color-border,#cfc3fb);' +
+      'border-radius:12px;background:var(--color-surface,#fff);';
     box.innerHTML = html;
+  }
+  // 현지화 가이드와 동일한 보라 박스 + 스피너 로딩
+  function showCharLoading() {
+    const box = ensureDebugBox();
+    box.style.cssText = 'margin-top:16px;';
+    box.innerHTML = '<div class="char-loading"><div class="char-spinner"></div><span>생성 중</span></div>';
   }
 
   extractBtn.addEventListener('click', async function () {
     if (!selectedWorkId) { showToast('작품을 먼저 선택해주세요.'); return; }
     const selItem = document.querySelector('.work-option[data-work-id="' + selectedWorkId + '"]');
     if (selItem && selItem.dataset.synopsis === 'false') {
-      showToast('이 작품은 시놉시스가 없어 캐릭터 설정을 추출할 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
+      showToast('이 작품은 시놉시스가 없어 캐릭터 설정을 추출할 수 없어요. 시놉시스를 먼저 입력해 주세요.');
       return;
     }
     if (!window.CHAR_CONFIG || !window.CHAR_CONFIG.extractUrl) { showToast('설정 오류: extractUrl 없음'); return; }
 
+    // 크레딧 차감 (부족하면 추출 불가)
+    try {
+      await spendCredit('character_extract');
+    } catch (error) {
+      if (window.AppUI && /부족/.test(error.message)) AppUI.creditModal();
+      else showToast(error.message);
+      return;
+    }
+
     charEmpty.style.display = 'none';
     charTableWrap.style.display = 'none';
     extractBtn.disabled = true;
-    showDebug('<p style="color:var(--color-text-muted);">캐릭터 추출 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+    showCharLoading();
 
     try {
       const res = await fetch(window.CHAR_CONFIG.extractUrl, {
@@ -288,6 +334,46 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.target.closest('.delete-btn')) openDeleteModal(row);
   });
 
+  // ===== 역할 커스텀 드롭다운 =====
+  const ROLE_OPTS = ['주연', '조연', '단역'];
+  function buildRoleSelect(current) {
+    const wrap = document.createElement('div');
+    wrap.className = 'role-select';
+    wrap.dataset.value = current;
+    wrap.innerHTML =
+      '<button type="button" class="role-select-trigger">' +
+        '<span class="role-select-label">' + current + '</span>' +
+        '<svg class="role-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+      '</button>' +
+      '<div class="role-select-panel">' +
+        ROLE_OPTS.map(function (r) {
+          return '<button type="button" class="role-select-opt' + (r === current ? ' selected' : '') + '" data-value="' + r + '">' + r + '</button>';
+        }).join('') +
+      '</div>';
+    const trigger = wrap.querySelector('.role-select-trigger');
+    const panel = wrap.querySelector('.role-select-panel');
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      document.querySelectorAll('.role-select.open').forEach(function (o) { if (o !== wrap) o.classList.remove('open'); });
+      wrap.classList.toggle('open');
+    });
+    panel.addEventListener('click', function (e) {
+      const opt = e.target.closest('.role-select-opt');
+      if (!opt) return;
+      e.stopPropagation();
+      const val = opt.dataset.value;
+      wrap.dataset.value = val;
+      wrap.querySelector('.role-select-label').textContent = val;
+      panel.querySelectorAll('.role-select-opt').forEach(function (o) { o.classList.toggle('selected', o === opt); });
+      wrap.classList.remove('open');
+    });
+    return wrap;
+  }
+  // 바깥 클릭 시 열린 역할 드롭다운 닫기
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.role-select.open').forEach(function (o) { o.classList.remove('open'); });
+  });
+
   // ===== 편집 진입 =====
   function enterEdit(row) {
     if (row.classList.contains('editing')) return;
@@ -315,21 +401,12 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.appendChild(input);
     });
 
-    // 역할 셀 → 주연/조연/단역 드롭다운
+    // 역할 셀 → 커스텀 드롭다운 (주연/조연/단역)
     const roleCell = cells[1];
     roleCell.dataset.original = roleCell.innerHTML;
-    const currentRole = roleCell.textContent.trim();
-    const select = document.createElement('select');
-    select.className = 'cell-select';
-    ['주연', '조연', '단역'].forEach(function (r) {
-      const opt = document.createElement('option');
-      opt.value = r;
-      opt.textContent = r;
-      if (r === currentRole) opt.selected = true;
-      select.appendChild(opt);
-    });
+    const currentRole = roleCell.textContent.trim() || '단역';
     roleCell.innerHTML = '';
-    roleCell.appendChild(select);
+    roleCell.appendChild(buildRoleSelect(currentRole));
 
     const actionCell = cells[7];
     actionCell.dataset.original = actionCell.innerHTML;
@@ -363,7 +440,8 @@ document.addEventListener('DOMContentLoaded', function () {
     delete row.dataset.isNew;  // 저장 완료 → 정식 캐릭터
     // 역할 저장 → 색상 뱃지로 복원
     const roleCell = cells[1];
-    const roleVal = roleCell.querySelector('.cell-select').value;
+    const roleSel = roleCell.querySelector('.role-select');
+    const roleVal = (roleSel && roleSel.dataset.value) || '단역';
     const roleClass = roleVal === '주연' ? 'role-lead'
                     : roleVal === '조연' ? 'role-support' : 'role-minor';
     roleCell.innerHTML = '<span class="role-badge ' + roleClass + '">' + roleVal + '</span>';
@@ -435,6 +513,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ===== 캐릭터 추가 =====
   addBtn.addEventListener('click', function () {
+    if (!selectedWorkId) {
+      showToast('작품을 먼저 선택해 주세요.');
+      return;
+    }
     if (tableBody.querySelectorAll('tr').length >= MAX_CHARACTERS) {
       showToast('캐릭터는 최대 ' + MAX_CHARACTERS + '명까지 등록 가능합니다.');
       return;
