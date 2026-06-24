@@ -13,54 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const MAX_DIAGRAMS = 3;
   const MAX_CHARS    = 10;
 
-  // 예시 HTML 파일 URL (Django static)
-  const EXAMPLE_HTML_URL = '/static/examples/rel_example_001.html';
-
-  // 작품별 관계도 목록 (최신순)
-  const mockDiagrams = {
-    '1': [
-      { id: 'r1', version: 2, createdAt: '2026.06.10 12:12', htmlUrl: EXAMPLE_HTML_URL },
-      { id: 'r2', version: 1, createdAt: '2026.06.09 16:30', htmlUrl: EXAMPLE_HTML_URL },
-    ],
-    '2': [],
-    '3': [{ id: 'r3', version: 1, createdAt: '2026.06.18 09:00', htmlUrl: EXAMPLE_HTML_URL }],
-    '4': [],
-  };
-
-  // 작품별 캐릭터 목록 (정렬: 주연→조연→단역, 이름 순)
+  // 정렬용: 주연→조연→단역
   const ROLE_ORDER = { '주연': 0, '조연': 1, '단역': 2 };
-  const mockCharacters = {
-    '1': [
-      { id: 'c01', name: '강현우', role: '주연' },
-      { id: 'c02', name: '한연주', role: '주연' },
-      { id: 'c03', name: '강민호', role: '조연' },
-      { id: 'c04', name: '송영진', role: '조연' },
-      { id: 'c05', name: '김 박사', role: '단역' },
-      { id: 'c06', name: '김태형', role: '단역' },
-      { id: 'c07', name: '민재',   role: '단역' },
-      { id: 'c08', name: '성진',   role: '단역' },
-      { id: 'c09', name: '이종학', role: '단역' },
-      { id: 'c10', name: '주형',   role: '단역' },
-    ].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, 'ko')),
-    '2': [
-      { id: 'd01', name: '라엘', role: '주연' },
-      { id: 'd02', name: '아스란', role: '주연' },
-      { id: 'd03', name: '카이온', role: '조연' },
-    ].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, 'ko')),
-    '3': [
-      { id: 'e01', name: '로제', role: '주연' },
-      { id: 'e02', name: '막시밀리안', role: '조연' },
-      { id: 'e03', name: '베로니카', role: '단역' },
-    ].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, 'ko')),
-    '4': [
-      { id: 'f01', name: '이준호', role: '주연' },
-      { id: 'f02', name: '최수진', role: '주연' },
-      { id: 'f03', name: '박민준', role: '조연' },
-    ].sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.name.localeCompare(b.name, 'ko')),
-  };
 
-  // 작품별 관계 수 (mock)
-  const mockRelationCounts = { '1': 17, '2': 3, '3': 4, '4': 5 };
+  // 작품별 관계도 목록 (작품 선택 시 RDS 데이터로 채워짐)
+  const mockDiagrams = {};
+
+  // 작품별 캐릭터 목록 (설정집 저장 데이터로 채워짐)
+  const mockCharacters = {};
 
   // 캐릭터 설정집에서 추출한 실제 캐릭터 (workId → [{id, name, role}])
   const loadedChars = {};
