@@ -668,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `<div style="background:var(--color-surface,#fff);border:1px solid var(--color-primary-border,#cfc3fb);border-radius:12px;padding:14px;max-width:100%;">` +
         `<p style="font-weight:700;margin:0 0 6px;color:var(--color-text);">수정 제안</p>` +
         `<p style="margin:0 0 10px;color:var(--color-text-muted);font-size:13px;line-height:1.5;">${escapeHtml(summary)}</p>` +
-        `<button type="button" class="tr-suggestion-apply" style="border:none;cursor:pointer;background:var(--color-primary);color:#fff;font-weight:600;font-size:13px;padding:8px 16px;border-radius:8px;">번역 제안 적용</button>` +
+        `<button type="button" class="tr-suggestion-apply">번역 제안 적용</button>` +
       `</div>`;
     card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyProposed(proposedText));
     chatArea.appendChild(card);

@@ -144,16 +144,17 @@
 .edit-work-btn {
   flex-shrink: 0;
   height: 44px;
-  padding: 0 20px;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-pill);
-  font-size: 15px;
+  padding: 0 24px;
+  background: #ffffff;
+  border: 1px solid #6E5BB8;
+  border-radius: 999px;
+  font-size: 16px;
+  line-height: 19px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #6E5BB8;
   transition: background .15s;
 }
-.edit-work-btn:hover { background: var(--color-primary-badge); }
+.edit-work-btn:hover { background: #F3EEFF; }
 
 /* Stat Cards */
 .work-stats-section {
@@ -241,18 +242,27 @@
 .ep-sort-trigger {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   height: 48px;
-  padding: 0 16px 0 12px;
+  padding: 0 18px;
   width: 100%;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #2D2440;
   white-space: nowrap;
   background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  border: 1px solid #D9D6E4;
   border-radius: 24px;
-  transition: border-color .15s;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ep-sort-trigger svg {
+  flex-shrink: 0;
+  color: #8E8E93;
+}
+.ep-sort-trigger:hover,
+.ep-sort-dropdown.open .ep-sort-trigger {
+  border-color: #CFC3FB;
+  box-shadow: 0 6px 16px rgba(110, 91, 184, 0.08);
 }
 .ep-sort-dropdown.open .ep-sort-trigger {
   border-radius: 24px 24px 0 0;
@@ -262,32 +272,34 @@
 .ep-sort-panel {
   display: none;
   position: absolute;
-  top: 46px;
+  top: calc(100% - 1px);
   left: 0;
   width: 100%; /* trigger와 동일 너비 */
   background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  border: 1px solid #CFC3FB;
   border-top: none;
   border-radius: 0 0 24px 24px;
-  padding: 2px 0 14px 0;
+  padding: 6px 0 12px 0;
+  box-shadow: 0 10px 24px rgba(110, 91, 184, 0.12);
   z-index: 60;
 }
 .ep-sort-dropdown.open .ep-sort-panel { display: block; }
 
 .ep-sort-opt {
-  display: block;
+  display: flex;
+  align-items: center;
   width: 100%;
   /* 트리거 텍스트 시작 위치(caret 22px + gap 4px + left-pad 12px = 38px)에 맞춤 */
-  padding: 7px 16px 7px 38px;
+  padding: 7px 20px 7px 46px;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(110, 99, 140, 0.5);
+  color: #6E638C;
   text-align: left;
-  transition: color .15s;
+  transition: background .15s, color .15s;
   white-space: nowrap;
 }
-.ep-sort-opt:hover { color: var(--color-text-muted); }
-.ep-sort-opt.active { color: var(--color-primary); }
+.ep-sort-opt:hover { background: #F3EEFF; color: #2D2440; }
+.ep-sort-opt.active { color: #6E5BB8; }
 
 /* New Episode Button */
 .new-ep-btn {
@@ -296,18 +308,21 @@
   gap: 6px;
   height: 48px;
   padding: 0 24px;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-pill);
+  background: #6E5BB8;
+  border: 1px solid #6E5BB8;
+  border-radius: 999px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #ffffff;
   white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition: background .15s;
 }
-.new-ep-btn:hover { background: var(--color-primary-badge); }
+.new-ep-btn:hover {
+  background: #5F4AA6;
+  border-color: #5F4AA6;
+}
 
 /* ---------- Episode List ---------- */
 .episode-list {
@@ -360,45 +375,52 @@
   flex-shrink: 0;
 }
 
-/* 번역 보기 button (accent/pink) */
+/* 번역 보기 button */
 .translate-view-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   height: 38px;
   padding: 0 16px;
-  background: #f9e9fa;
-  border: 1px solid #f8d7f5;
-  border-radius: var(--radius-pill);
+  background: #ffffff;
+  border: 1px solid #E0E0E0;
+  border-radius: 999px;
   font-size: 14px;
-  font-weight: 700;
-  color: var(--color-primary);
+  font-weight: 600;
+  color: #2D2440;
   white-space: nowrap;
   transition: background .15s;
 }
-.translate-view-btn:hover { background: #f3d8f2; }
+.translate-view-btn:hover { background: #F2F2F7; }
+.translate-view-btn svg { flex-shrink: 0; color: #8E8E93; }
+.translate-view-btn svg rect { stroke: currentColor; }
+.translate-view-btn svg rect + rect { fill: #F2F2F7; }
 
-/* 번역하기 button (primary soft) */
+/* 번역하기 button */
 .translate-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   height: 38px;
   padding: 0 16px;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-pill);
+  background: #ffffff;
+  border: 1px solid #6E5BB8;
+  border-radius: 999px;
   font-size: 14px;
-  font-weight: 700;
-  color: var(--color-primary);
+  font-weight: 600;
+  color: #6E5BB8;
   white-space: nowrap;
   text-decoration: none;
   transition: background .15s;
   cursor: pointer;
 }
-.translate-btn:hover { background: var(--color-primary-badge); }
+.translate-btn:hover { background: #F3EEFF; }
+.translate-btn svg { flex-shrink: 0; color: #6E5BB8; }
+.translate-btn svg path { stroke: currentColor; }
 
 /* Episode kebab menu */
 .ep-menu-wrap {
