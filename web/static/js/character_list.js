@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
     0: { label: '이름',    max: 30,   required: true },
     2: { label: '나이',    max: 10 },
     3: { label: '성별',    max: 5 },
-    4: { label: '외형',    max: 300 },
-    5: { label: '세부설정', max: 1000 },
-    6: { label: '관계요약', max: 500 },
+    4: { label: '외형',    max: 300,  area: true },
+    5: { label: '세부설정', max: 1000, area: true },
+    6: { label: '관계요약', max: 500,  area: true },
   };
 
   // 아이콘 (추가 행에서 재사용)
@@ -385,11 +385,14 @@ document.addEventListener('DOMContentLoaded', function () {
       let val = cell.textContent.trim();
       if (val === '-') val = '';
       cell.dataset.original = cell.textContent;
-      const input = document.createElement('input');
-      input.className = 'cell-input';
+      const input = document.createElement(cfg.area ? 'textarea' : 'input');
+      input.className = cfg.area ? 'cell-input cell-textarea' : 'cell-input';
       input.value = val;
       input.dataset.max = cfg.max;
       input.dataset.label = cfg.label;
+      if (cfg.area) {
+        input.rows = 3;
+      }
       input.addEventListener('input', function () {
         const max = parseInt(this.dataset.max, 10);
         if (this.value.length > max) {

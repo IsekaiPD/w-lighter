@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/library.css' %}">
-<link rel="stylesheet" href="{% static 'css/work_detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/work_detail.css' %}?v=sortleft-20260624-2">
 {% endblock %}
 
 {% block content %}
@@ -65,17 +65,17 @@
       <div class="work-stats-section">
         <div class="work-stats-row">
           <div class="stat-card">
-            <p class="stat-label">작품 회차</p>
-            <p class="stat-value">{{ episode_count }}</p>
-          </div>
-          <div class="stat-card">
             <p class="stat-label">번역 완료</p>
             <p class="stat-value">{{ translated_count }}</p>
           </div>
+          <div class="stat-card">
+            <p class="stat-label">미번역</p>
+            <p class="stat-value">{{ untranslated_count }}</p>
+          </div>
         </div>
         <div class="stat-card stat-card-accent">
-          <p class="stat-label">미번역</p>
-          <p class="stat-value">{{ untranslated_count }}</p>
+          <p class="stat-label">작품 회차</p>
+          <p class="stat-value">{{ episode_count }}</p>
         </div>
       </div>
 
@@ -86,11 +86,12 @@
   <div class="detail-panel episode-panel">
 
     <div class="episode-panel-header">
+      <div class="episode-panel-left">
       <h2 class="episode-panel-title">회차 목록</h2>
       <div class="episode-controls">
 
         <!-- 언어별 드롭다운 -->
-        <div class="ep-sort-dropdown" id="langDropdown" style="width:120px;">
+        <div class="ep-sort-dropdown" id="langDropdown" style="width:98px;">
           <button class="ep-sort-trigger" id="langTrigger">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
             <span id="langLabel">언어별</span>
@@ -105,7 +106,7 @@
         </div>
 
         <!-- 오름차순 드롭다운 -->
-        <div class="ep-sort-dropdown" id="orderDropdown" style="width:136px;">
+        <div class="ep-sort-dropdown" id="orderDropdown" style="width:112px;">
           <button class="ep-sort-trigger" id="orderTrigger">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
             <span id="orderLabel">오름차순</span>
@@ -116,12 +117,13 @@
           </div>
         </div>
 
-        <a href="{% url 'works:episode_register' work_pk=work.work_id %}" class="new-ep-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          새 회차 등록
-        </a>
-
       </div>
+      </div>
+
+      <a href="{% url 'works:episode_register' work_pk=work.work_id %}" class="new-ep-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        새 회차 등록
+      </a>
     </div>
 
     <!-- 회차 목록 -->
@@ -199,7 +201,7 @@
       <div class="field-group">
         <label class="field-label">필명 <span class="required">*</span></label>
         <div class="input-wrap">
-          <input type="text" class="field-input" id="detailEditAuthor" placeholder="킹왕짱웹소설작가" maxlength="10">
+          <input type="text" class="field-input" id="detailEditAuthor" placeholder="필명을 입력하세요" maxlength="10">
           <span class="input-counter"><span id="detailEditAuthorLen">0</span>/10</span>
         </div>
         <p class="field-hint field-error" id="detailEditAuthorError" style="display:none;">
@@ -249,7 +251,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/work_detail.js' %}?v=load-saved-20260622-2"></script>
+<script src="{% static 'js/work_detail.js' %}?v=editvalid-20260624-3"></script>
 <script>
 (function() {
   const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';

@@ -12,10 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function syncTitle() {
     if (titleInput.value.length > 30) titleInput.value = titleInput.value.slice(0, 30);
     titleCounter.textContent = `${titleInput.value.length}/30`;
+    if (titleInput.value.trim()) titleInput.style.borderColor = '';
   }
   function syncContent() {
     if (contentInput.value.length > 8000) contentInput.value = contentInput.value.slice(0, 8000);
     contentCounter.textContent = `${contentInput.value.length.toLocaleString()}/8,000`;
+    if (contentInput.value.trim()) contentInput.style.borderColor = '';
   }
 
   titleInput?.addEventListener('input', syncTitle);

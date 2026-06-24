@@ -390,7 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
 
       if (!data.ok) {
-        if (transPane) transPane.innerHTML = `<p style="color:#ff2d55;">${escapeHtml(data.error || '번역에 실패했습니다.')}</p>`;
+        if (transPane) transPane.innerHTML = `<p style="color:#ff2d55;">${escapeHtml(data.error || '번역에 실패했습니다.')}</p><p style="color:var(--color-text-muted);font-size:13px;margin-top:6px;">저장된 결과가 있으면 잠시 후 자동으로 표시됩니다…</p>`;
+        pollSavedAfterFail(getActiveLang());
         return;
       }
 
@@ -399,13 +400,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const translatedText = result.finalTranslation
         || extractText(result, ['translatedText', 'translation', 'translated', 'text', 'targetText']);
       if (!translatedText || !String(translatedText).trim()) {
-        if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">번역 결과를 받지 못했어요. 잠시 후 다시 시도해 주세요.</p>';
+        if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">번역 결과를 받지 못했어요.</p><p style="color:var(--color-text-muted);font-size:13px;margin-top:6px;">저장된 결과가 있으면 잠시 후 자동으로 표시됩니다…</p>';
+        pollSavedAfterFail(getActiveLang());
         return;
       }
       // 번역 결과를 버전 목록에 추가하고 화면에 표시
       addTranslationVersion(getActiveLang(), result);
     } catch (e) {
-      if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">네트워크 오류가 발생했습니다.</p>';
+      if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">네트워크 오류가 발생했습니다.</p><p style="color:var(--color-text-muted);font-size:13px;margin-top:6px;">저장된 결과가 있으면 잠시 후 자동으로 표시됩니다…</p>';
+      pollSavedAfterFail(getActiveLang());
     } finally {
       if (translateBtn) { translateBtn.disabled = false; translateBtn.style.opacity = ''; }
     }
@@ -418,6 +421,40 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/\n/g, '<br>');
+  }
+
+  // 번역 응답이 실패/지연으로 화면에 못 떴을 때, 모델 서버가 DB에 저장했을 수 있으니
+  // 저장본을 몇 차례 자동 재조회 → 새 번역본이 보이면 그때 표시한다.
+  let pollTimer = null;
+  function pollSavedAfterFail(lang) {
+    if (!window.TR_CONFIG || !window.TR_CONFIG.listUrl) return;
+    if (pollTimer) clearInterval(pollTimer);
+    const haveIds = () => (trVersionsByLang[lang] || [])
+      .filter(v => v.translationId).map(v => String(v.translationId));
+    let tries = 0;
+    pollTimer = setInterval(async () => {
+      tries++;
+      try {
+        const res = await fetch(window.TR_CONFIG.listUrl);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.items)) {
+          const had = haveIds();
+          const fresh = data.items.find(it => (it.lang || 'EN') === lang
+            && it.translatedText && String(it.translatedText).trim()
+            && !had.includes(String(it.id)));
+          if (fresh) {
+            clearInterval(pollTimer); pollTimer = null;
+            const list = trVersionsByLang[lang] || (trVersionsByLang[lang] = []);
+            const v = { n: list.length + 1, date: fresh.createdAt || '', result: buildResultFromSaved(fresh), translationId: fresh.id };
+            list.push(v);
+            while (list.length > 3) list.shift();
+            if (getActiveLang() === lang) selectVersion(v);
+            return;
+          }
+        }
+      } catch (e) { /* 무시하고 다음 시도 */ }
+      if (tries >= 18) { clearInterval(pollTimer); pollTimer = null; }  // 5초 × 18 ≈ 90초
+    }, 5000);
   }
 
   // 긴 본문을 빈 줄 기준으로 문단(<p>)으로 나눠 렌더링

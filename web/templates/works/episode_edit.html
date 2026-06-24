@@ -4,7 +4,7 @@
 {% block title %}회차 수정 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/episode_register.css' %}">
+<link rel="stylesheet" href="{% static 'css/episode_register.css' %}?v=toastsize-20260624-1">
 {% endblock %}
 
 {% block content %}
@@ -41,7 +41,7 @@
       <!-- 회차 제목 + 회차 번호 -->
       <div class="ep-reg-direct-top-row">
         <div class="ep-reg-direct-title-group">
-          <label class="ep-reg-label">회차 제목</label>
+          <label class="ep-reg-label">회차 제목 <span class="required">*</span></label>
           <div class="ep-reg-input-counter-wrap">
             <input class="ep-reg-input ep-reg-title-input-d" type="text" maxlength="30" id="directTitle"
               value="{{ episode.title }}">
@@ -60,7 +60,7 @@
 
       <!-- 원문 textarea -->
       <div class="ep-reg-content-section">
-        <h3 class="ep-reg-col-title">원문</h3>
+        <h3 class="ep-reg-col-title">원문 <span class="required">*</span></h3>
         <div class="ep-reg-textarea-wrap">
           <textarea class="ep-reg-input ep-reg-content-input" maxlength="8000" id="directContent">{{ episode.original_text }}</textarea>
           <div class="ep-reg-counter-bar">
@@ -83,5 +83,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/episode_edit.js' %}?v=titlemax-20260624-1"></script>
+<script src="{% static 'js/episode_edit.js' %}?v=req-20260624-2"></script>
 {% endblock %}

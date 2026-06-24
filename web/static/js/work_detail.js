@@ -121,6 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
     syn.value = synopsis;
     document.getElementById('detailEditSynopsisLen').textContent = synopsis.length.toLocaleString();
 
+    // 적색 오류 테두리 초기화
+    ['detailEditTitle', 'detailEditAuthor', 'detailEditGenreTrigger'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.borderColor = '';
+    });
+
     detailEditBackdrop.classList.add('open');
     detailEditModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -142,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 모달 내 카운터
   document.getElementById('detailEditTitle')?.addEventListener('input', function () {
     document.getElementById('detailEditTitleLen').textContent = this.value.length;
+    if (this.value.trim()) this.style.borderColor = '';
   });
   const authorRegex = /^[가-힣a-zA-Z0-9]*$/;
   document.getElementById('detailEditAuthor')?.addEventListener('input', function () {
@@ -173,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       detailGenreDropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       detailGenreSelect.classList.remove('open');
+      if (detailGenreTrigger) detailGenreTrigger.style.borderColor = '';
     });
   });
   document.addEventListener('click', (e) => {
@@ -189,7 +196,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const synopsis = document.getElementById('detailEditSynopsis').value.trim();
     const workId   = document.getElementById('detailEditBtn').dataset.workId;
 
-    if (!title || !author || !genre) return;
+    // 필수값 누락 시 적색 테두리로 표시 (작품 등록과 동일)
+    const dTitle = document.getElementById('detailEditTitle');
+    const dAuthor = document.getElementById('detailEditAuthor');
+    const dGenreTrigger = document.getElementById('detailEditGenreTrigger');
+    [dTitle, dAuthor, dGenreTrigger].forEach(el => { if (el) el.style.borderColor = ''; });
+    let valid = true;
+    if (!title)  { dTitle.style.borderColor  = '#ff2d55'; valid = false; }
+    if (!author) { dAuthor.style.borderColor = '#ff2d55'; valid = false; }
+    if (!genre)  { if (dGenreTrigger) dGenreTrigger.style.borderColor = '#ff2d55'; valid = false; }
+    if (!valid) return;
 
     detailEditSubmit.disabled = true;
     detailEditSubmit.textContent = '수정 중...';
