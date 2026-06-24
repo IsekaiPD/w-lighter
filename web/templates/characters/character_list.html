@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %}캐릭터 설정집 | w.LiGHTER{% endblock %}
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/character_list.css' %}?v=colw-20260623-2">
+<link rel="stylesheet" href="{% static 'css/character_list.css' %}?v=toast-20260624-2">
 {% endblock %}
 {% block content %}
   <!-- 페이지 헤더 -->
@@ -170,5 +170,5 @@
     savedUrl:   "{% url 'characters:saved' work_pk=0 %}",  // 0 → 실제 workId 치환
   };
 </script>
-<script src="{% static 'js/character_list.js' %}?v=colw-20260623-1"></script>
+<script src="{% static 'js/character_list.js' %}?v=toast1-20260624-3"></script>
 {% endblock %}

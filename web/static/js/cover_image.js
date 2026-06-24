@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
-      alert('작품을 먼저 선택해 주세요.');
+      showToast('※ 작품을 먼저 선택해 주세요.');
       return;
     }
     const selItem = document.querySelector('.cover-dropdown-item[data-id="' + selectedWorkId + '"]');
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('이 작품은 시놉시스가 없어 표지를 생성할 수 없어요. 작품 줄거리를 먼저 입력해 주세요.');
       return;
     }
-    if (!window.COVER_CONFIG || !window.COVER_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); return; }
+    if (!window.COVER_CONFIG || !window.COVER_CONFIG.generateUrl) { showToast('※ 설정 오류로 표지를 생성할 수 없습니다.'); return; }
 
     const covers = mockCovers[selectedWorkId] || [];
     if (covers.length >= MAX_COVERS) {
@@ -428,23 +428,44 @@ document.addEventListener('DOMContentLoaded', () => {
   deleteCancel?.addEventListener('click', closeDeleteModal);
   deleteBackdrop?.addEventListener('click', closeDeleteModal);
 
-  deleteConfirm?.addEventListener('click', () => {
+  deleteConfirm?.addEventListener('click', async () => {
     // 대표 이미지인지 확인
     const targetBtn = imageGrid?.querySelector(`[data-action="setMain"][data-id="${deleteTargetId}"]`);
     const isMain    = targetBtn?.classList.contains('active');
+    const targetId  = deleteTargetId;
 
     closeDeleteModal();
 
     if (isMain) {
       showToast('※ 대표 표지 이미지는 삭제할 수 없습니다.');
-    } else {
-      // mock 삭제
-      if (selectedWorkId && mockCovers[selectedWorkId]) {
-        mockCovers[selectedWorkId] = mockCovers[selectedWorkId].filter(c => c.id !== deleteTargetId);
-      }
-      renderGrid(selectedWorkId);
-      showToast('※ 선택하신 표지 이미지가 삭제되었습니다.');
+      return;
     }
+
+    // 서버(RDS)에서 실제 삭제 — DB 저장본은 숫자 cover_id
+    const isDbCover = /^\d+$/.test(String(targetId));
+    if (isDbCover && window.COVER_CONFIG?.deleteUrl && selectedWorkId) {
+      try {
+        const url = window.COVER_CONFIG.deleteUrl.replace('/0/', '/' + selectedWorkId + '/');
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.COVER_CONFIG.csrfToken },
+          body: JSON.stringify({ coverId: targetId }),
+        });
+        const data = await res.json();
+        if (!data.ok) { showToast('※ ' + (data.error || '표지 삭제에 실패했습니다.')); return; }
+      } catch (e) {
+        console.error('[cover delete]', e);
+        showToast('※ 표지 삭제 중 오류가 발생했습니다.');
+        return;
+      }
+    }
+
+    // 로컬 목록에서도 제거 (문자열로 비교 → 숫자/문자 id 불일치 방지)
+    if (selectedWorkId && mockCovers[selectedWorkId]) {
+      mockCovers[selectedWorkId] = mockCovers[selectedWorkId].filter(c => String(c.id) !== String(targetId));
+    }
+    renderGrid(selectedWorkId);
+    showToast('※ 선택하신 표지 이미지가 삭제되었습니다.');
   });
 
   // ---------- 확대 모달 ----------

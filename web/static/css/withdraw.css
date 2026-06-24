@@ -310,7 +310,7 @@
 
 .withdraw-fail-toast {
   position: fixed;
-  top: 100px;
+  top: 32px;
   left: 50%;
   z-index: 110;
   display: inline-flex;

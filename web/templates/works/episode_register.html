@@ -4,7 +4,7 @@
 {% block title %}회차 등록 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/episode_register.css' %}">
+<link rel="stylesheet" href="{% static 'css/episode_register.css' %}?v=toastsize-20260624-1">
 {% endblock %}
 
 {% block content %}
@@ -76,14 +76,14 @@
       <!-- 회차 정보 입력 -->
       <div class="ep-reg-fields">
         <div class="ep-reg-field-row">
-          <label class="ep-reg-label">회차 번호</label>
+          <label class="ep-reg-label">회차 번호 <span class="required">*</span></label>
           <div class="ep-reg-number-wrap">
             <input class="ep-reg-input ep-reg-number-input" type="number" min="1" placeholder="숫자 입력" id="epNumber">
             <span class="ep-reg-number-suffix">화</span>
           </div>
         </div>
         <div class="ep-reg-field-row">
-          <label class="ep-reg-label">회차 제목</label>
+          <label class="ep-reg-label">회차 제목 <span class="required">*</span></label>
           <input class="ep-reg-input ep-reg-title-input" type="text" placeholder="공백 포함 최대 30자" maxlength="30" id="epTitle">
         </div>
       </div>
@@ -94,14 +94,14 @@
 
       <div class="ep-reg-direct-top-row">
         <div class="ep-reg-direct-title-group">
-          <label class="ep-reg-label">회차 제목</label>
+          <label class="ep-reg-label">회차 제목 <span class="required">*</span></label>
           <div class="ep-reg-input-counter-wrap">
             <input class="ep-reg-input ep-reg-title-input-d" type="text" maxlength="30" id="directTitle">
             <span class="ep-reg-inner-counter" id="directTitleCounter">0/30</span>
           </div>
         </div>
         <div class="ep-reg-direct-number-group">
-          <label class="ep-reg-label">회차 번호</label>
+          <label class="ep-reg-label">회차 번호 <span class="required">*</span></label>
           <div class="ep-reg-number-wrap">
             <input class="ep-reg-input ep-reg-number-input" type="number" min="1" id="directNumber" placeholder="숫자 입력">
             <span class="ep-reg-number-suffix">화</span>
@@ -110,7 +110,7 @@
       </div>
 
       <div class="ep-reg-content-section">
-        <h3 class="ep-reg-col-title">원문</h3>
+        <h3 class="ep-reg-col-title">원문 <span class="required">*</span></h3>
         <div class="ep-reg-textarea-wrap">
           <textarea class="ep-reg-input ep-reg-content-input" maxlength="8000" id="directContent"></textarea>
           <div class="ep-reg-counter-bar">
@@ -134,5 +134,5 @@
 {% block extra_js %}
 {{ existing_numbers|json_script:"existingNumbers" }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="{% static 'js/episode_register.js' %}?v=titlemax-20260624-1"></script>
+<script src="{% static 'js/episode_register.js' %}?v=duptoast-20260624-2"></script>
 {% endblock %}

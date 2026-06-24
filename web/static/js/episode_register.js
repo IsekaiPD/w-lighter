@@ -293,23 +293,37 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const title   = directTitle?.value.trim() ?? '';
       const content = directContent?.value.trim() ?? '';
-      if (!title)   { directTitle?.focus(); return; }
-      if (!content) { directContent?.focus(); return; }
+      if (!title)   { showToast('회차 제목을 입력해주세요.'); directTitle?.focus(); return; }
+      if (!content) { showToast('원문을 입력해주세요.'); directContent?.focus(); return; }
+      const directNumEl = document.getElementById('directNumber');
+      const epNum = parseInt(directNumEl?.value ?? '');
+      // 제출 전 즉시 중복 회차 차단
+      if (epNum && existingNumbers.includes(epNum)) {
+        showToast(epNum + '화는 이미 등록된 회차입니다.');
+        directNumEl?.focus();
+        return;
+      }
       submitBtn.disabled = true;
       submitBtn.textContent = '등록 중...';
       const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
       const fd = new FormData();
       fd.append('title', title);
       fd.append('content', content);
-      fd.append('episode_number', document.getElementById('directNumber')?.value ?? '0');
+      fd.append('episode_number', directNumEl?.value ?? '0');
       fd.append('csrfmiddlewaretoken', csrf);
       try {
         const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });
         const data = await res.json();
         if (data.ok) window.location.href = '/works/' + workPk + '/';
-        else { submitBtn.disabled = false; submitBtn.textContent = '회차 등록'; }
+        else {
+          // 서버가 돌려준 에러(중복 회차 등)를 토스트로 표시
+          showToast(data.error || (data.errors && Object.values(data.errors)[0]) || '회차 등록에 실패했습니다.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '회차 등록';
+        }
       } catch (e) {
         console.error(e);
+        showToast('회차 등록 중 오류가 발생했습니다.');
         submitBtn.disabled = false;
         submitBtn.textContent = '회차 등록';
       }

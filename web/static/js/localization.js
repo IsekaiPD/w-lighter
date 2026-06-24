@@ -228,12 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- 생성 버튼 ----------
   generateBtn?.addEventListener('click', async () => {
     if (!selectedWorkId) {
-      alert('작품을 먼저 선택해 주세요.');
+      showToast('※ 작품을 먼저 선택해 주세요.');
       return;
     }
 
     if (!hasSynopsis && !selectedCountry) {
-      alert('국가를 선택해 주세요.');
+      showToast('※ 국가를 선택해 주세요.');
       return;
     }
 
@@ -291,9 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function runGuideGenerate(workId) {
-    if (!window.GUIDE_CONFIG || !window.GUIDE_CONFIG.generateUrl) { alert('설정 오류: generateUrl 없음'); generateBtn.disabled = false; return; }
-    document.getElementById('lcLoadingRow')?.remove();
-    showGuideDebug('<p style="color:var(--color-text-muted);">현지화 가이드 생성 중입니다... 모델 서버 응답을 기다리는 중.</p>');
+    if (!window.GUIDE_CONFIG || !window.GUIDE_CONFIG.generateUrl) { showToast('※ 설정 오류로 가이드를 생성할 수 없습니다.'); generateBtn.disabled = false; return; }
+    // 생성 중에는 상단 로딩 박스(lc-row-loading)를 그대로 유지
     try {
       const res = await fetch(window.GUIDE_CONFIG.generateUrl, {
         method: 'POST',
@@ -303,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       console.log('[guide] HTTP', res.status, data);
       if (!data.ok) {
+        document.getElementById('lcLoadingRow')?.remove();
         showGuideDebug(
           '<p style="font-weight:700;margin-bottom:6px;">현지화 가이드를 생성하지 못했어요</p>' +
           '<p style="color:#ff2d55;margin:0 0 10px;line-height:1.6;">' + escGuide(data.error || ('오류 ' + res.status)) + '</p>' +
@@ -332,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderList(workId);
     } catch (err) {
       console.error('[guide] error', err);
+      document.getElementById('lcLoadingRow')?.remove();
       showGuideDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {
       generateBtn.disabled = false;
@@ -444,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 데스크톱 폭(1120px)으로 렌더하기 위한 화면 밖 iframe
     const frame = document.createElement('iframe');
-    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1120px;height:1600px;border:0;';
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1240px;height:1600px;border:0;';
     frame.srcdoc = detailHtmlReport;
     document.body.appendChild(frame);
 
@@ -473,14 +474,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (doc.fonts && doc.fonts.ready) { try { await doc.fonts.ready; } catch (e) {} }
         await new Promise(r => setTimeout(r, 150));
 
-        const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight);
-        // iframe 문서를 통째로 캡처 → 자체 <style>이 그대로 적용됨
+        // 콘텐츠 전체 폭/높이로 캡처 → 우측 텍스트 잘림 방지
+        const fullWidth  = Math.max(doc.body.scrollWidth, doc.documentElement.scrollWidth, 1);
+        const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 1);
         const canvas = await window.html2canvas(doc.body, {
           scale: 2,
           useCORS: true,
           backgroundColor: '#ffffff',
-          windowWidth: 1120,
-          width: 1120,
+          windowWidth: fullWidth,
+          width: fullWidth,
           height: fullHeight,
           scrollX: 0,
           scrollY: 0,

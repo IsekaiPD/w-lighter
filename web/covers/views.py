@@ -78,3 +78,39 @@ def cover_generate(request):
         }, status=e.status_code)
 
     return JsonResponse({'ok': True, 'result': data})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def cover_delete(request, work_pk):
+    """표지 삭제. RDS covers에서 실제로 제거. 대표 표지였다면 작품 대표 URL도 해제."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    cover_id = body.get('coverId')
+    if not cover_id:
+        return JsonResponse({'ok': False, 'error': 'coverId가 없습니다.'}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT cover_url FROM covers WHERE cover_id = %s AND work_id = %s",
+            [cover_id, work.work_id],
+        )
+        row = cur.fetchone()
+        if not row:
+            return JsonResponse({'ok': False, 'error': '표지를 찾을 수 없습니다.'}, status=404)
+        url = row[0]
+        cur.execute(
+            "DELETE FROM covers WHERE cover_id = %s AND work_id = %s",
+            [cover_id, work.work_id],
+        )
+
+    # 삭제한 표지가 작품 대표 표지였다면 대표 지정 해제
+    if url and (work.cover_image_url or '').strip() == (url or '').strip():
+        work.cover_image_url = None
+        work.save(update_fields=['cover_image_url'])
+
+    return JsonResponse({'ok': True})

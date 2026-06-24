@@ -382,7 +382,11 @@ def episode_translations(request, work_pk, episode_pk):
         cur.execute(
             "SELECT translation_id, target_country, translated_text, summary, "
             "inspection_report, created_at "
-            "FROM translation_results WHERE episode_id = %s ORDER BY translation_id ASC",
+            "FROM translation_results "
+            "WHERE episode_id = %s "
+            # 번역 실패/타임아웃으로 내용이 빈 row는 버전으로 취급하지 않음
+            "AND translated_text IS NOT NULL AND TRIM(translated_text) <> '' "
+            "ORDER BY translation_id ASC",
             [episode.episode_id],
         )
         rows = cur.fetchall()

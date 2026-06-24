@@ -387,6 +387,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const result = data.result || {};
+      // 번역문이 비어 있으면(실패/빈 응답) 버전을 만들지 않음
+      const translatedText = result.finalTranslation
+        || extractText(result, ['translatedText', 'translation', 'translated', 'text', 'targetText']);
+      if (!translatedText || !String(translatedText).trim()) {
+        if (transPane) transPane.innerHTML = '<p style="color:#ff2d55;">번역 결과를 받지 못했어요. 잠시 후 다시 시도해 주세요.</p>';
+        return;
+      }
       // 번역 결과를 버전 목록에 추가하고 화면에 표시
       addTranslationVersion(getActiveLang(), result);
     } catch (e) {
@@ -644,6 +651,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!data.ok || !Array.isArray(data.items) || !data.items.length) return;
 
       data.items.forEach((item) => {
+        // 내용이 빈 번역본(실패/타임아웃 잔여 row)은 버전으로 만들지 않음
+        if (!item.translatedText || !String(item.translatedText).trim()) return;
         const lang = item.lang || 'EN';
         const list = trVersionsByLang[lang] || (trVersionsByLang[lang] = []);
         list.push({ n: list.length + 1, date: item.createdAt || '', result: buildResultFromSaved(item), translationId: item.id });
