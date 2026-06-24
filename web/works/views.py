@@ -6,6 +6,7 @@ from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
+from django.utils.timesince import timesince
 from django.views.decorators.http import require_POST
 
 from common import model_server
@@ -43,19 +44,6 @@ def library(request):
                 if lang:
                     langs_by_work.setdefault(work_id, set()).add(lang)
 
-    # 작품별 마지막 번역 시각
-    last_by_work = {}
-    if work_ids:
-        with connection.cursor() as cur:
-            cur.execute(
-                "SELECT e.work_id, MAX(t.created_at) "
-                "FROM episodes e JOIN translation_results t ON t.episode_id = e.episode_id "
-                "WHERE e.work_id IN (%s) GROUP BY e.work_id" % placeholders,
-                work_ids,
-            )
-            for work_id, last_at in cur.fetchall():
-                last_by_work[work_id] = last_at
-
     def _aware(dt):
         if dt and timezone.is_naive(dt):
             return timezone.make_aware(dt, timezone.get_current_timezone())
@@ -65,8 +53,10 @@ def library(request):
     for w in works:
         w.trans_ep_count = len(eps_by_work.get(w.work_id, set()))
         w.trans_langs = [l for l in lang_order if l in langs_by_work.get(w.work_id, set())]
-        # 최근 업데이트: 마지막 번역 시각, 없으면 작품 수정 시각
-        w.last_update = _aware(last_by_work.get(w.work_id)) or w.updated_at
+        # 최근 업데이트: 가장 최근 회차 등록 시각, 없으면 작품 생성 시각
+        w.last_update = _aware(w.latest_ep) or w.created_at
+        # 단위 1개만 표시(예: "10일 전")
+        w.last_update_str = timesince(w.last_update).split(',')[0].strip() if w.last_update else ''
 
     # 최근 작업: 내 모든 작품 중 가장 최근에 번역한 회차
     recent = None
@@ -219,8 +209,8 @@ def episode_edit(request, work_pk, episode_pk):
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
 
     if request.method == 'POST':
-        title         = request.POST.get('title', '').strip()
-        original_text = request.POST.get('content', '').strip()
+        title         = request.POST.get('title', '').strip()[:30]
+        original_text = request.POST.get('content', '').strip()[:8000]
         errors = {}
         if not title:         errors['title']   = '회차 제목을 입력해주세요'
         if not original_text: errors['content'] = '원문을 입력해주세요'
@@ -250,8 +240,8 @@ def episode_register(request, work_pk):
     work = get_object_or_404(Work, pk=work_pk, user=request.user)
 
     if request.method == 'POST':
-        title          = request.POST.get('title', '').strip()
-        original_text  = request.POST.get('content', '').strip()
+        title          = request.POST.get('title', '').strip()[:30]
+        original_text  = request.POST.get('content', '').strip()[:8000]
         episode_number = request.POST.get('episode_number', '0').strip()
         errors = {}
         if not title:         errors['title']   = '회차 제목을 입력해주세요'

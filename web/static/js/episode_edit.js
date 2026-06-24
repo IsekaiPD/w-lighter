@@ -8,13 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const contentCounter = document.getElementById('directContentCounter');
 
   // 초기 카운터 동기화
+  // 한글 IME 조합 입력은 maxlength를 잠깐 넘길 수 있어(31자) JS로 다시 잘라준다.
   function syncTitle() {
-    const len = titleInput.value.length;
-    titleCounter.textContent = `${len}/30`;
+    if (titleInput.value.length > 30) titleInput.value = titleInput.value.slice(0, 30);
+    titleCounter.textContent = `${titleInput.value.length}/30`;
   }
   function syncContent() {
-    const len = contentInput.value.length;
-    contentCounter.textContent = `${len.toLocaleString()}/8,000`;
+    if (contentInput.value.length > 8000) contentInput.value = contentInput.value.slice(0, 8000);
+    contentCounter.textContent = `${contentInput.value.length.toLocaleString()}/8,000`;
   }
 
   titleInput?.addEventListener('input', syncTitle);

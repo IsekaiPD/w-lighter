@@ -222,9 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function openEditModal(card) {
     currentEditWorkId = card.dataset.workId ?? null;
     const title  = card.querySelector('.work-title')?.textContent.trim() ?? '';
-    const meta   = card.querySelector('.work-meta')?.textContent ?? '';
-    const author = meta.match(/필명:\s*([^|]+)/)?.[1]?.trim() ?? '';
-    const genre  = meta.match(/장르:\s*(.+)/)?.[1]?.trim() ?? '';
+    const author = card.dataset.author ?? '';
+    const genre  = card.dataset.genre ?? '';
 
     document.getElementById('editWorkTitle').value  = title;
     document.getElementById('editTitleLen').textContent = title.length;
@@ -235,6 +234,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#editGenreDropdown .custom-select-option').forEach(o => {
       o.classList.toggle('selected', o.dataset.value === genre);
     });
+
+    const synopsis = card.dataset.synopsis ?? '';
+    const editSyn = document.getElementById('editWorkSynopsis');
+    if (editSyn) editSyn.value = synopsis;
+    const editSynLen = document.getElementById('editSynopsisLen');
+    if (editSynLen) editSynLen.textContent = Number(synopsis.length).toLocaleString();
 
     editBackdrop.classList.add('open');
     editModal.classList.add('open');
