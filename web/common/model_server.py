@@ -77,7 +77,7 @@ def call(path, payload, *, method='POST', timeout=None):
     path: '/api/v1/...' 형태. 실패 시 ModelServerError 발생.
     """
     url = f"{_base_url()}{path}"
-    read_timeout = timeout or getattr(settings, 'MODEL_SERVER_TIMEOUT', 120)
+    read_timeout = timeout or getattr(settings, 'MODEL_SERVER_TIMEOUT', 3000)
     # (연결 5초, 응답 read_timeout초) — 연결 실패와 응답 지연을 구분하기 위해 분리
     try:
         resp = requests.request(
