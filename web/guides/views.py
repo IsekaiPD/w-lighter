@@ -55,7 +55,8 @@ def guide_generate(request):
     work = get_object_or_404(Work, pk=body.get('workId'), user=request.user)
 
     payload = {
-        'workId': str(work.work_id),
+        'workId': work.work_id,           # int (명세)
+        'title': work.title,
         'genre': model_server.map_genre(work.genre),
         'synopsis': model_server.work_source_text(work),
         'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),

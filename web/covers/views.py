@@ -61,12 +61,30 @@ def cover_generate(request):
             'error': '이 작품은 시놉시스가 없어 표지를 생성할 수 없습니다. 작품 줄거리를 먼저 입력해주세요.',
         }, status=400)
 
+    # 작품에 저장된 캐릭터 설정집(있으면) 함께 전달
+    characters = []
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT char_name, `role`, gender, age, appearance, relationships, detail_setting "
+            "FROM characters WHERE work_id = %s ORDER BY character_id ASC",
+            [work.work_id],
+        )
+        for r in cur.fetchall():
+            characters.append({
+                'char_name': r[0], 'role': r[1], 'gender': r[2], 'age': r[3],
+                'appearance': r[4], 'relationships': r[5], 'detail_setting': r[6],
+            })
+
     payload = {
-        'workId': str(work.work_id),
-        'title': work.title,
+        'workId': work.work_id,                      # int (명세)
+        'workTitle': work.title,                     # 명세 필드명: workTitle
         'genre': model_server.map_genre(work.genre),
         'synopsis': synopsis,
+        'characters': characters,                    # 캐릭터 설정집
         'targetCountry': model_server.map_country(body.get('targetCountry', 'KR')),
+        'userPrompt': (body.get('userPrompt') or '')[:500],  # 추가 요청 문구
+        'mainCoverYn': bool(body.get('mainCoverYn', False)),
+        'saveCover': True,
         'dryRun': bool(body.get('dryRun', False)),
     }
     try:

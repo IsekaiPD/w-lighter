@@ -73,5 +73,38 @@
     });
   }
 
-  window.AppUI = { toast: toast, confirm: confirm };
+  // ---------- 크레딧 부족 모달 (번역 페이지와 동일한 마크업/클래스 재사용) ----------
+  function ensureCreditModal() {
+    if (document.getElementById('appCreditBackdrop')) return;
+    const bd = document.createElement('div');
+    bd.id = 'appCreditBackdrop';
+    bd.className = 'tr-credit-modal-backdrop';
+    bd.innerHTML =
+      '<div class="tr-credit-modal" id="appCreditModal" role="dialog" aria-modal="true">' +
+        '<div class="tr-credit-icon tr-credit-icon-limit" aria-hidden="true"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5"/><path d="M12 17.5h.01"/></svg></div>' +
+        '<h2 class="tr-credit-modal-title">크레딧이 부족합니다.</h2>' +
+        '<p class="tr-credit-modal-desc">선택하신 기능을 실행하기 위한 크레딧이 부족합니다.</p>' +
+        '<a class="tr-credit-btn tr-credit-btn-charge" id="appCreditCharge">충전 페이지로 이동</a>' +
+      '</div>';
+    document.body.appendChild(bd);
+    bd.addEventListener('click', function (e) { if (e.target === bd) closeCreditModal(); });
+  }
+  function closeCreditModal() {
+    const bd = document.getElementById('appCreditBackdrop');
+    const md = document.getElementById('appCreditModal');
+    if (bd) bd.classList.remove('open');
+    if (md) md.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function creditModal() {
+    ensureCreditModal();
+    const charge = document.getElementById('appCreditCharge');
+    const chip = document.querySelector('.credit-chip');
+    charge.setAttribute('href', (chip && chip.getAttribute('href')) || '/credits/charge');
+    document.getElementById('appCreditBackdrop').classList.add('open');
+    document.getElementById('appCreditModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  window.AppUI = { toast: toast, confirm: confirm, creditModal: creditModal };
 })();

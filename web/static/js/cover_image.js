@@ -138,6 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const thumbEl  = item.querySelector('.cover-di-img');
       if (thumbEl?.src && !thumbEl.src.endsWith('/')) {
         iconWrap.innerHTML = `<img src="${thumbEl.src}" alt="${title}">`;
+      } else {
+        // 표지 없는 작품 → 기본 아이콘으로 복원(이전 작품 표지 잔상 제거)
+        iconWrap.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 3v18M8 7h4M8 11h3"/></svg>';
       }
 
       // 닫기
@@ -291,7 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await spendCredit('cover_image');
     } catch (error) {
-      showToast(`※ ${error.message}`);
+      if (window.AppUI && /부족/.test(error.message)) AppUI.creditModal();
+      else showToast(`※ ${error.message}`);
       return;
     }
 
@@ -316,7 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'X-CSRFToken': window.COVER_CONFIG.csrfToken,
         },
-        body: JSON.stringify({ workId: selectedWorkId, targetCountry: selectedCountry, dryRun: false }),
+        body: JSON.stringify({
+          workId: selectedWorkId,
+          targetCountry: selectedCountry,
+          userPrompt: (document.getElementById('coverPrompt')?.value || '').trim(),
+          dryRun: false,
+        }),
       });
       const data = await res.json();
       console.log('[cover] HTTP', res.status, data);

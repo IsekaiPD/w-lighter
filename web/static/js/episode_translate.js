@@ -432,7 +432,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderReport(result) {
     const r = result.translationRationale || {};
+    const tr = result.translationReport || {};
     const parts = [];
+
+    // 명세 정규화: summary / inspectionReport(전체 decisions) / readerEndnotes
+    const summary = result.summary || tr.summary || r.overview || '';
+    const inspection = Array.isArray(result.inspectionReport) ? result.inspectionReport
+                     : (Array.isArray(tr.inspectionReport) ? tr.inspectionReport : []);
+    const cultural = inspection.filter(d => d && d.reviewerType === 'cultural');
+    const endnotes = Array.isArray(result.readerEndnotes) ? result.readerEndnotes
+                   : (Array.isArray(tr.readerEndnotes) ? tr.readerEndnotes : []);
 
     // 전달 상태 배지
     const status = result.deliveryStatus || result?.metadata?.delivery_status;
@@ -448,10 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     }
 
-    // 개요 / 문체 의도
-    if (r.overview) {
-      parts.push(reportSection(r.title || '왜 이렇게 번역했는지',
-        `<p style="line-height:1.7;color:var(--color-text);margin:0;">${escapeHtml(r.overview)}</p>`));
+    // 번역 총평(summary)
+    if (summary) {
+      parts.push(reportSection('번역 총평',
+        `<p style="line-height:1.7;color:var(--color-text);margin:0;">${escapeHtml(summary).replace(/\n/g, '<br>')}</p>`));
     }
     if (r.styleIntent) {
       parts.push(reportSection('문체 의도',
@@ -490,17 +499,35 @@ document.addEventListener('DOMContentLoaded', () => {
       parts.push(reportSection('세부 번역 노트', rows));
     }
 
-    // QA 이슈
-    if (Array.isArray(result.qaIssues) && result.qaIssues.length) {
-      const rows = result.qaIssues.map(q =>
-        `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(typeof q === 'string' ? q : (q.message || JSON.stringify(q)))}</li>`).join('');
-      parts.push(reportSection('QA 이슈', `<ul style="margin:0;padding-left:18px;color:var(--color-text);">${rows}</ul>`));
+    // 문화 리스크 (inspectionReport 중 reviewerType==='cultural'만)
+    if (cultural.length) {
+      const rows = cultural.map(d => {
+        const span = (d.sourceSpan || d.targetSpan)
+          ? `<div style="font-size:13px;color:var(--color-text-muted);margin-bottom:4px;">` +
+            (d.sourceSpan ? `<span>${escapeHtml(d.sourceSpan)}</span>` : '') +
+            (d.targetSpan ? ` → <span>${escapeHtml(d.targetSpan)}</span>` : '') + `</div>`
+          : '';
+        const act = d.action
+          ? `<span style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--color-primary-soft);color:var(--color-primary);margin-bottom:6px;">${d.action === 'deferred' ? '보류(각주 대체)' : '반영'}</span>`
+          : '';
+        return `<div style="padding:12px 14px;border:1px solid var(--color-border);border-radius:10px;margin-bottom:10px;">` +
+          act + span +
+          (d.problem ? `<p style="margin:0 0 4px;line-height:1.6;color:var(--color-text);font-size:14px;">${escapeHtml(d.problem)}</p>` : '') +
+          (d.reason ? `<p style="margin:0;line-height:1.6;color:var(--color-text-muted);font-size:13px;">${escapeHtml(d.reason)}</p>` : '') +
+          `</div>`;
+      }).join('');
+      parts.push(reportSection('문화 리스크', rows));
     }
 
-    // 독자용 각주
-    if (Array.isArray(result.readerEndnotes) && result.readerEndnotes.length) {
-      const rows = result.readerEndnotes.map(n =>
-        `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(typeof n === 'string' ? n : (n.text || JSON.stringify(n)))}</li>`).join('');
+    // 독자용 각주 (readerEndnotes: {keyword, koreanNote, targetNote})
+    if (endnotes.length) {
+      const rows = endnotes.map(n => {
+        if (typeof n === 'string') return `<li style="margin-bottom:6px;line-height:1.6;">${escapeHtml(n)}</li>`;
+        const kw = n.keyword ? `<strong>${escapeHtml(n.keyword)}</strong> — ` : '';
+        const ko = n.koreanNote ? escapeHtml(n.koreanNote) : '';
+        const tgt = n.targetNote ? `<div style="color:var(--color-text-muted);margin-top:2px;">${escapeHtml(n.targetNote)}</div>` : '';
+        return `<li style="margin-bottom:8px;line-height:1.6;">${kw}${ko}${tgt}</li>`;
+      }).join('');
       parts.push(reportSection('독자용 각주', `<ul style="margin:0;padding-left:18px;color:var(--color-text);">${rows}</ul>`));
     }
 
@@ -632,14 +659,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== 페이지 로드 시 저장된 번역 불러오기(RDS) ===== */
   // DB 한 행 → 화면 렌더용 result 객체로 변환
   function buildResultFromSaved(item) {
-    const rep = item.inspectionReport || {};
     return {
       finalTranslation: item.translatedText || '',
       deliveryStatus: 'deliverable',
-      translationRationale: item.summary ? { title: '요약', overview: item.summary } : null,
-      qaIssues: rep.qaIssues || [],
-      readerEndnotes: rep.readerEndnotes || [],
-      authorReviewCards: rep.authorReviewCards || [],
+      summary: item.summary || '',
+      // 명세(2026-06-24): inspectionReport = 전체 decisions 배열, 웹이 cultural 필터
+      inspectionReport: Array.isArray(item.inspectionReport) ? item.inspectionReport : [],
+      readerEndnotes: Array.isArray(item.readerEndnotes) ? item.readerEndnotes : [],
+      glossaryCandidates: Array.isArray(item.glossaryCandidates) ? item.glossaryCandidates : [],
     };
   }
 
