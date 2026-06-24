@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     tableBody.innerHTML = characters.map(function (c) {
       const role = mapRole(c.role);
-      return '<tr>' +
+      return '<tr data-profile-label="' + escapeAttr(c.profile_label || '') + '">' +
         cell(c.char_name) +
         '<td><span class="role-badge ' + role.cls + '">' + role.label + '</span></td>' +
         cell(c.age) +
@@ -309,6 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
         appearance: txt(4),
         detail_setting: txt(5),
         relationships: txt(6),
+        profile_label: row.dataset.profileLabel || '',   // ← 추가
       });
     });
     return out;

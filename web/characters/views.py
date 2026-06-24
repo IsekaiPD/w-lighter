@@ -37,8 +37,8 @@ def _save_characters(work, chars):
                 for c in chars:
                     cur.execute(
                         "INSERT INTO characters "
-                        "(work_id, char_name, gender, age, `role`, appearance, relationships, detail_setting) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                        "(work_id, char_name, gender, age, `role`, appearance, relationships, detail_setting, profile_label) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                         [
                             work.work_id,
                             (c.get('char_name') or '')[:30],
@@ -48,6 +48,7 @@ def _save_characters(work, chars):
                             (c.get('appearance') or '')[:300],
                             (c.get('relationships') or '')[:500],
                             (c.get('detail_setting') or '')[:1000],
+                            (c.get('profile_label') or '')[:80],   # ← 추가
                         ],
                     )
     except Exception as e:
@@ -66,7 +67,7 @@ def character_saved(request, work_pk):
     work = get_object_or_404(Work, pk=work_pk, user=request.user)
     with connection.cursor() as cur:
         cur.execute(
-            "SELECT char_name, age, gender, role, appearance, detail_setting, relationships "
+            "SELECT char_name, age, gender, role, appearance, detail_setting, relationships, profile_label "
             "FROM characters WHERE work_id = %s ORDER BY character_id ASC",
             [work.work_id],
         )
@@ -76,6 +77,7 @@ def character_saved(request, work_pk):
         'gender': _GENDER_DISPLAY.get(r[2], r[2]),  # M/F/Unknown → 한국어
         'role': r[3],
         'appearance': r[4], 'detail_setting': r[5], 'relationships': r[6],
+        'profile_label': r[7],   # ← 추가
     } for r in rows]
     return JsonResponse({'ok': True, 'characters': characters})
 
