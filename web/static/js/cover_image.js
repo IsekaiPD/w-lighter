@@ -224,7 +224,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1순위: image_base64 → data URI, 2순위: S3 공개 URL
   const S3_REGION = 'ap-northeast-2';
   function coverImageUrl(r) {
-    if (r.image_base64) return 'data:image/png;base64,' + r.image_base64;
     if (r.s3Bucket && r.s3Key) {
       return 'https://' + r.s3Bucket + '.s3.' + S3_REGION + '.amazonaws.com/' + r.s3Key;
     }
@@ -235,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return 'https://' + rest.slice(0, slash) + '.s3.' + S3_REGION + '.amazonaws.com/' + rest.slice(slash + 1);
       }
     }
+    if (r.image_base64) return 'data:image/png;base64,' + r.image_base64;
     return '';
   }
 
@@ -367,6 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const card   = btn.closest('.cover-img-card');
       const imgEl  = card?.querySelector('img');
       const imgUrl = imgEl?.src || '';
+      if (imgUrl.startsWith('data:image/')) {
+        showToast('대표 이미지 저장 URL이 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
 
       // 로컬 상태(mockCovers)에도 대표 표시 반영 → 새로고침 전까지 유지
       (mockCovers[selectedWorkId] || []).forEach(c => { c.isMain = (c.id === id); });
