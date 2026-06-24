@@ -72,9 +72,12 @@ def library(request):
             )
             row = cur.fetchone()
             if row:
+                ep = Episode.objects.filter(pk=row[3]).first()
                 recent = {
                     'work_id': row[0], 'work_title': row[1],
-                    'episode_number': row[2], 'episode_id': row[3],
+                    # 번역하기 페이지와 동일한 기준으로 회차 번호 표시
+                    'episode_number': _episode_number(ep) if ep else row[2],
+                    'episode_id': row[3],
                 }
 
     return render(request, 'works/library.html', {
@@ -179,6 +182,9 @@ def work_detail(request, pk):
 
 
 def _episode_number(episode):
+    # 등록 시 입력한 회차 번호를 우선 사용. 없으면(0) 생성 순서로 대체.
+    if getattr(episode, 'episode_number', 0):
+        return episode.episode_number
     return Episode.objects.filter(
         work=episode.work, episode_id__lte=episode.episode_id).count()
 

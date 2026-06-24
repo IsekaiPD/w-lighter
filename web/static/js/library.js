@@ -241,6 +241,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const editSynLen = document.getElementById('editSynopsisLen');
     if (editSynLen) editSynLen.textContent = Number(synopsis.length).toLocaleString();
 
+    // 적색 오류 테두리 초기화
+    [editTitleInput, editAuthorInput, editGenreTrigger].forEach(el => { if (el) el.style.borderColor = ''; });
+
     editBackdrop.classList.add('open');
     editModal.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -276,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   editTitleInput?.addEventListener('input', () => {
     document.getElementById('editTitleLen').textContent = editTitleInput.value.length;
+    if (editTitleInput.value.trim()) editTitleInput.style.borderColor = '';
   });
   editAuthorInput?.addEventListener('input', () => {
     document.getElementById('editAuthorLen').textContent = editAuthorInput.value.length;
@@ -309,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
       editGenreDropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
       editGenreSelect.classList.remove('open');
+      editGenreTrigger.style.borderColor = '';
     });
   });
   document.addEventListener('click', (e) => {
@@ -326,7 +331,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const genre    = document.getElementById('editWorkGenre').value;
     const synopsis = document.getElementById('editWorkSynopsis')?.value.trim() ?? '';
 
-    if (!title || !author || !genre) return;
+    // 필수값 누락 시 적색 테두리로 표시 (작품 등록과 동일)
+    [editTitleInput, editAuthorInput, editGenreTrigger].forEach(el => { if (el) el.style.borderColor = ''; });
+    let valid = true;
+    if (!title)  { editTitleInput.style.borderColor  = '#ff2d55'; valid = false; }
+    if (!author) { editAuthorInput.style.borderColor = '#ff2d55'; valid = false; }
+    if (!genre)  { if (editGenreTrigger) editGenreTrigger.style.borderColor = '#ff2d55'; valid = false; }
+    if (!valid) return;
 
     submitEditBtn.disabled = true;
     submitEditBtn.textContent = '수정 중...';

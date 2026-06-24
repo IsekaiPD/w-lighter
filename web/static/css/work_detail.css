@@ -223,6 +223,11 @@
   justify-content: space-between;
   margin-bottom: 24px;
 }
+.episode-panel-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 .episode-panel-title {
   font-size: 24px;
   font-weight: 700;
@@ -242,19 +247,20 @@
 .ep-sort-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 48px;
-  padding: 0 18px;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
   width: 100%;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #2D2440;
   white-space: nowrap;
   background: var(--color-surface);
   border: 1px solid #D9D6E4;
-  border-radius: 24px;
+  border-radius: 18px;
   transition: border-color .15s, box-shadow .15s;
 }
+.ep-sort-trigger svg { width: 18px; height: 18px; }
 .ep-sort-trigger svg {
   flex-shrink: 0;
   color: #8E8E93;
@@ -265,7 +271,7 @@
   box-shadow: 0 6px 16px rgba(110, 91, 184, 0.08);
 }
 .ep-sort-dropdown.open .ep-sort-trigger {
-  border-radius: 24px 24px 0 0;
+  border-radius: 18px 18px 0 0;
   border-bottom-color: transparent;
 }
 /* 열린 상태: trigger 아래에 패널이 붙어서 확장 */
@@ -278,8 +284,8 @@
   background: var(--color-surface);
   border: 1px solid #CFC3FB;
   border-top: none;
-  border-radius: 0 0 24px 24px;
-  padding: 6px 0 12px 0;
+  border-radius: 0 0 18px 18px;
+  padding: 5px 0 9px 0;
   box-shadow: 0 10px 24px rgba(110, 91, 184, 0.12);
   z-index: 60;
 }
@@ -289,9 +295,9 @@
   display: flex;
   align-items: center;
   width: 100%;
-  /* 트리거 텍스트 시작 위치(caret 22px + gap 4px + left-pad 12px = 38px)에 맞춤 */
-  padding: 7px 20px 7px 46px;
-  font-size: 16px;
+  /* 트리거 텍스트 시작 위치(caret 18px + gap 6px + left-pad 14px = 38px)에 맞춤 */
+  padding: 6px 16px 6px 38px;
+  font-size: 14px;
   font-weight: 600;
   color: #6E638C;
   text-align: left;

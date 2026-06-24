@@ -368,6 +368,7 @@
 
 /* ===== 인라인 수정 ===== */
 tr.editing { background: #f8f8fa; }
+tr.editing td { vertical-align: top; }
 .cell-input {
   width: 100%;
   min-width: 0;
@@ -380,6 +381,45 @@ tr.editing { background: #f8f8fa; }
   color: var(--color-text);
 }
 .cell-input:focus { outline: none; border-color: var(--color-primary); }
+.cell-textarea {
+  resize: none;
+  line-height: 1.5;
+  /* 약 3줄 높이: (13px * 1.5 * 3) + 상하 패딩 */
+  height: 70px;
+  min-height: 70px;
+  overflow-y: auto;
+}
+
+/* 역할 커스텀 드롭다운 (수정 행) */
+.role-select { position: relative; display: inline-block; width: 76px; }
+.role-select-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 4px;
+  width: 100%; height: 30px; padding: 0 10px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-primary-border);
+  border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--color-text);
+  cursor: pointer; white-space: nowrap;
+}
+.role-select.open .role-select-trigger { border-color: var(--color-primary); }
+.role-select-chevron { flex-shrink: 0; color: #8a8a99; transition: transform .15s; }
+.role-select.open .role-select-chevron { transform: rotate(180deg); }
+.role-select-panel {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  width: 100%; z-index: 40;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-primary-border);
+  border-radius: 8px; padding: 4px;
+  box-shadow: 0 8px 20px rgba(110, 91, 184, 0.12);
+}
+.role-select.open .role-select-panel { display: block; }
+.role-select-opt {
+  display: block; width: 100%; text-align: left;
+  padding: 6px 8px; border: none; background: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600; color: #6E638C; cursor: pointer;
+}
+.role-select-opt:hover { background: #f3eeff; color: var(--color-text); }
+.role-select-opt.selected { color: var(--color-primary); }
 
 /* td는 table-cell로 유지해야 행 구분선이 행 맨 아래에 맞춰 그려짐.
    (display:flex로 두면 그 칸만 높이가 달라져 구분선이 어긋남) */

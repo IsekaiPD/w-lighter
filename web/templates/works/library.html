@@ -159,7 +159,7 @@
       <div class="field-group">
         <label class="field-label">필명 <span class="required">*</span></label>
         <div class="input-wrap">
-          <input type="text" class="field-input" id="editWorkAuthor" placeholder="킹왕짱웹소설작가" maxlength="10">
+          <input type="text" class="field-input" id="editWorkAuthor" placeholder="필명을 입력하세요" maxlength="10">
           <span class="input-counter"><span id="editAuthorLen">0</span>/10</span>
         </div>
         <p class="field-hint field-error" id="editAuthorError" style="display:none;">
@@ -282,7 +282,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/library.js' %}?v=meta-20260624-2"></script>
+<script src="{% static 'js/library.js' %}?v=editvalid-20260624-3"></script>
 <script>
 (function() {
   const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
