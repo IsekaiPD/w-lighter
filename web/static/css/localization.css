@@ -127,6 +127,16 @@
 .lc-di-genre { font-size: 12px; color: var(--color-text-muted); }
 
 /* ---------- 시놉 없음 경고 ---------- */
+.lc-info-hint {
+  display: flex; align-items: flex-start; gap: 7px;
+  padding: 12px 14px;
+  background: #F3EEFF; border-radius: 10px;
+  border: 1px solid #D9CEF5;
+  margin-top: 12px;
+}
+.lc-info-hint svg { flex-shrink: 0; margin-top: 1px; stroke: #6E5BB8; }
+.lc-info-hint p { font-size: 12px; color: #6E5BB8; line-height: 1.6; }
+
 .lc-no-synopsis {
   display: flex; align-items: flex-start; gap: 7px;
   padding: 12px 14px;

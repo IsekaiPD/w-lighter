@@ -168,7 +168,8 @@
     csrfToken:  "{{ csrf_token }}",
     extractUrl: "{% url 'characters:extract' %}",
     savedUrl:   "{% url 'characters:saved' work_pk=0 %}",  // 0 → 실제 workId 치환
+    saveUrl:    "{% url 'characters:save' work_pk=0 %}",   // 추가/수정/삭제 저장
   };
 </script>
-<script src="{% static 'js/character_list.js' %}?v=toast1-20260624-3"></script>
+<script src="{% static 'js/character_list.js' %}?v=persist-20260624-4"></script>
 {% endblock %}

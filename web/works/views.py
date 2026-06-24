@@ -362,7 +362,10 @@ def episode_inspect_chat(request, work_pk, episode_pk):
         'translatedText': current_translation,
     }
     if translation_id:
-        payload['translationId'] = str(translation_id)
+        try:
+            payload['translationId'] = int(translation_id)  # int (명세)
+        except (TypeError, ValueError):
+            payload['translationId'] = translation_id
     try:
         data = model_server.call('/api/v1/translation/inspect-chat', payload)
     except model_server.ModelServerError as e:
@@ -381,7 +384,7 @@ def episode_translations(request, work_pk, episode_pk):
     with connection.cursor() as cur:
         cur.execute(
             "SELECT translation_id, target_country, translated_text, summary, "
-            "inspection_report, created_at "
+            "inspection_report, annotation_can, glossary_can, created_at "
             "FROM translation_results "
             "WHERE episode_id = %s "
             # 번역 실패/타임아웃으로 내용이 빈 row는 버전으로 취급하지 않음
@@ -391,21 +394,25 @@ def episode_translations(request, work_pk, episode_pk):
         )
         rows = cur.fetchall()
 
+    def _json(v):
+        if not v:
+            return None
+        try:
+            return json.loads(v) if isinstance(v, str) else v
+        except (ValueError, TypeError):
+            return None
+
     items = []
     for r in rows:
-        report = None
-        if r[4]:
-            try:
-                report = json.loads(r[4]) if isinstance(r[4], str) else r[4]
-            except (ValueError, TypeError):
-                report = None
         items.append({
             'id': r[0],
             'lang': _COUNTRY_TO_LANG.get((r[1] or '').upper(), 'EN'),
             'translatedText': r[2],
             'summary': r[3],
-            'inspectionReport': report,
-            'createdAt': r[5].strftime('%Y.%m.%d %H:%M') if r[5] else '',
+            'inspectionReport': _json(r[4]),      # 전체 decisions 배열(웹이 cultural 필터)
+            'readerEndnotes': _json(r[5]),        # annotation_can
+            'glossaryCandidates': _json(r[6]),    # glossary_can
+            'createdAt': r[7].strftime('%Y.%m.%d %H:%M') if r[7] else '',
         })
     return JsonResponse({'ok': True, 'items': items})
 

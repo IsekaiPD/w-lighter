@@ -62,9 +62,9 @@ def relationship_map(request):
         }, status=400)
 
     payload = {
-        'workId': str(work.work_id),
-        'genre': model_server.map_genre(work.genre),
-        'synopsis': synopsis,
+        'workId': work.work_id,           # int (명세) — characters 비우면 DB 캐릭터로 생성
+        'workTitle': work.title,
+        'includeHtml': True,
     }
     try:
         data = model_server.call('/api/v1/relationship-map', payload)

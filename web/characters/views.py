@@ -82,6 +82,36 @@ def character_saved(request, work_pk):
 
 @login_required(login_url='pages:landing')
 @require_POST
+def character_save(request, work_pk):
+    """현재 표(추가/수정/삭제 반영된 전체 캐릭터 목록)를 RDS에 저장(작품 기준 교체).
+    빈 목록이면 해당 작품 캐릭터를 모두 삭제한다."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    chars = body.get('characters')
+    if not isinstance(chars, list):
+        return JsonResponse({'ok': False, 'error': 'characters 형식 오류'}, status=400)
+
+    if chars:
+        _save_characters(work, chars)
+    else:
+        # 전부 삭제된 경우
+        try:
+            with transaction.atomic():
+                with connection.cursor() as cur:
+                    cur.execute("DELETE FROM characters WHERE work_id = %s", [work.work_id])
+        except Exception as e:
+            logger.warning('character delete-all failed (work %s): %s', work.work_id, e)
+            return JsonResponse({'ok': False, 'error': '저장에 실패했습니다.'}, status=500)
+
+    return JsonResponse({'ok': True})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
 def character_extract(request):
     """캐릭터 설정 추출. 브라우저 → 이 뷰 → FastAPI /character-extract.
 
@@ -105,7 +135,8 @@ def character_extract(request):
         }, status=400)
 
     payload = {
-        'workId': str(work.work_id),
+        'workId': work.work_id,           # int (명세)
+        'workTitle': work.title,
         'genre': model_server.map_genre(work.genre),
         'synopsis': synopsis,
     }

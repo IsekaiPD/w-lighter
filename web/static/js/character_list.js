@@ -78,6 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
       const thumbImg = opt.querySelector('.char-di-img');
       if (thumbImg?.src && !thumbImg.src.endsWith('/')) {
         thumbEl.innerHTML = '<img src="' + thumbImg.src + '" alt="' + opt.dataset.title + '">';
+      } else {
+        // 표지 없는 작품 → 기본 아이콘으로 복원(이전 작품 표지 잔상 제거)
+        thumbEl.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 3v18M8 7h4M8 11h3"/></svg>';
       }
 
       workSelect.classList.remove('open');
@@ -239,6 +242,42 @@ document.addEventListener('DOMContentLoaded', function () {
     if (countEl) countEl.textContent = '총 ' + total + '명 / 최대 ' + MAX_CHARACTERS + '명';
   }
 
+  // ===== 현재 표 → 서버 저장 (추가/수정/삭제 반영) =====
+  function collectCharacters() {
+    const out = [];
+    tableBody.querySelectorAll('tr').forEach(function (row) {
+      if (row.classList.contains('editing')) return;  // 편집 중 행 제외
+      const cells = row.querySelectorAll('td');
+      const txt = function (i) {
+        const t = (cells[i] ? cells[i].textContent : '').trim();
+        return t === '-' ? '' : t;
+      };
+      const name = txt(0);
+      if (!name) return;  // 이름 없는 행 제외
+      const badge = cells[1] ? cells[1].querySelector('.role-badge') : null;
+      out.push({
+        char_name: name,
+        role: badge ? badge.textContent.trim() : '',
+        age: txt(2),
+        gender: txt(3),
+        appearance: txt(4),
+        detail_setting: txt(5),
+        relationships: txt(6),
+      });
+    });
+    return out;
+  }
+
+  function persistCharacters() {
+    if (!selectedWorkId || !window.CHAR_CONFIG || !window.CHAR_CONFIG.saveUrl) return;
+    const url = window.CHAR_CONFIG.saveUrl.replace('/0/', '/' + selectedWorkId + '/');
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.CHAR_CONFIG.csrfToken },
+      body: JSON.stringify({ workId: selectedWorkId, characters: collectCharacters() }),
+    }).catch(function (e) { console.error('[character save]', e); });
+  }
+
   // ===== 표 클릭 (이벤트 위임) =====
   tableBody.addEventListener('click', function (e) {
     const row = e.target.closest('tr');
@@ -336,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
     delete actionCell.dataset.original;
     row.classList.remove('editing');
     updateSummary();
+    persistCharacters();  // 서버(RDS)에 반영
     showToast('수정 내용이 저장되었습니다.');
   }
 
@@ -387,6 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (rowToDelete) {
       rowToDelete.remove();
       updateSummary();
+      persistCharacters();  // 서버(RDS)에 반영
       showToast('선택하신 캐릭터가 삭제되었습니다.');
     }
     closeDeleteModal();
