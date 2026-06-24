@@ -77,18 +77,42 @@ def call(path, payload, *, method='POST', timeout=None):
     path: '/api/v1/...' 형태. 실패 시 ModelServerError 발생.
     """
     url = f"{_base_url()}{path}"
-    timeout = timeout or getattr(settings, 'MODEL_SERVER_TIMEOUT', 120)
+    read_timeout = timeout or getattr(settings, 'MODEL_SERVER_TIMEOUT', 120)
+    # (연결 5초, 응답 read_timeout초) — 연결 실패와 응답 지연을 구분하기 위해 분리
     try:
         resp = requests.request(
             method, url,
             json=payload,
             headers={'Content-Type': 'application/json'},
-            timeout=timeout,
+            timeout=(5, read_timeout),
+            # 301/302 자동 추적 시 POST→GET으로 깎이고 본문이 유실되므로 끈다.
+            allow_redirects=False,
+        )
+    except requests.exceptions.ConnectTimeout:
+        raise ModelServerError(
+            '모델 서버에 연결하지 못했습니다(요청이 전달되지 않음). '
+            '서버 기동 여부/보안그룹/주소를 확인하세요.',
+            status_code=504,
+        )
+    except requests.exceptions.ReadTimeout:
+        raise ModelServerError(
+            '모델 서버 응답이 지연됩니다(요청은 전달됨). 잠시 후 다시 시도해 주세요.',
+            status_code=504,
         )
     except requests.exceptions.Timeout:
         raise ModelServerError('모델 서버 응답 시간이 초과되었습니다.', status_code=504)
     except requests.exceptions.RequestException as e:
         raise ModelServerError(f'모델 서버에 연결할 수 없습니다: {e}', status_code=502)
+
+    # 리다이렉트(3xx)는 따라가지 않고 그대로 노출 → POST 본문 유실 원인 진단
+    if 300 <= resp.status_code < 400:
+        loc = resp.headers.get('Location', '(Location 헤더 없음)')
+        raise ModelServerError(
+            f'모델 서버가 리다이렉트했습니다 (HTTP {resp.status_code} → {loc}). '
+            'POST 본문이 유실되는 원인입니다. URL 끝 슬래시 / HTTP·HTTPS / 주소를 확인하세요.',
+            status_code=502,
+            payload={'redirectTo': loc},
+        )
 
     # 429: Rate limit
     if resp.status_code == 429:

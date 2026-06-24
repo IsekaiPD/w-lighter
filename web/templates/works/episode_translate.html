@@ -5,8 +5,8 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}">
-<link rel="stylesheet" href="{% static 'css/minigames.css' %}">
+<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=hdralign-20260624-2">
+<link rel="stylesheet" href="{% static 'css/minigames.css' %}?v=vsbalance-20260624-2">
 {% endblock %}
 
 {% block content %}
@@ -81,16 +81,6 @@
             <div class="tr-episode-title-row">
               <span class="tr-field-label">회차 제목</span>
               <input class="tr-title-input" type="text" value="{{ episode.title }}" readonly>
-            </div>
-            <div class="tr-version-dropdown" id="versionDropdown">
-              <button class="tr-version-trigger" id="versionTrigger">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-                <span id="versionLabel">버전 선택</span>
-              </button>
-              <div class="tr-version-panel" id="versionPanel">
-                {# TODO: FastAPI translation_results 연동 후 버전 목록 동적 렌더링 #}
-                <p style="padding:12px 16px;color:var(--color-text-muted);font-size:13px;">번역 결과가 없습니다.</p>
-              </div>
             </div>
           </div>
           <div class="tr-textbox">
@@ -247,6 +237,6 @@
     deleteUrl:    "{% url 'works:episode_translation_delete' work_pk=work.work_id episode_pk=episode.episode_id %}",
   };
 </script>
-<script src="{% static 'js/minigames.js' %}"></script>
-<script src="{% static 'js/episode_translate.js' %}?v=load-saved-20260622-12"></script>
+<script src="{% static 'js/minigames.js' %}?v=imgfallback-20260624-1"></script>
+<script src="{% static 'js/episode_translate.js' %}?v=noedit-20260624-2"></script>
 {% endblock %}

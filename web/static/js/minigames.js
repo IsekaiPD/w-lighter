@@ -291,6 +291,52 @@
     }
   }
 
+  // 월드컵 이미지를 미리 받아 브라우저 캐시에 적재.
+  // 게임은 '번역 중'에만 떠서, 라운드마다 새로 요청하면 번역으로 바쁜 서버가
+  // 이미지 요청을 굶겨 빈 칸이 된다. 시작 시 한 번에 캐시해 두면 이후엔 요청이 없음.
+  function preloadWorldcupImages(items) {
+    (items || []).forEach((item) => {
+      if (!item || !item.image) return;
+      const pre = new Image();
+      pre.src = item.image;
+    });
+  }
+
+  const WORLDCUP_IMG_FALLBACK_SVG =
+    '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M3 3l18 18"/><path d="M21 15V5a2 2 0 0 0-2-2H7"/>' +
+    '<path d="M3 7v12a2 2 0 0 0 2 2h12"/><path d="M3 16l5-5 3 3"/></svg>';
+
+  function showWorldcupImageFallback(imageEl) {
+    const wrap = imageEl.parentNode;
+    if (!wrap) return;
+    imageEl.remove();
+    const fb = createElement('span', 'mg-worldcup-image-fallback');
+    fb.innerHTML =
+      '<span class="mg-worldcup-image-fallback-icon">' + WORLDCUP_IMG_FALLBACK_SVG + '</span>' +
+      '<span class="mg-worldcup-image-fallback-text">삽화를 불러오지 못했어요</span>';
+    wrap.appendChild(fb);
+  }
+
+  // 이미지 로드 실패 시 최대 2회 재시도, 그래도 안 되면 fallback 표시.
+  function attachWorldcupImage(imageEl, src) {
+    let attempts = 0;
+    const MAX_RETRY = 2;
+    imageEl.addEventListener('error', function onError() {
+      if (attempts < MAX_RETRY) {
+        attempts += 1;
+        setTimeout(() => {
+          imageEl.src = src + (src.indexOf('?') === -1 ? '?' : '&') + 'r=' + attempts;
+        }, 400 * attempts);
+      } else {
+        imageEl.removeEventListener('error', onError);
+        showWorldcupImageFallback(imageEl);
+      }
+    });
+    imageEl.src = src;
+  }
+
   function buildWorldcupCard(item) {
     const card = createElement('button', 'mg-worldcup-card');
     card.type = 'button';
@@ -298,9 +344,9 @@
 
     const imageWrap = createElement('span', 'mg-worldcup-image-wrap');
     const image = createElement('img', 'mg-worldcup-image');
-    image.src = item.image;
     image.alt = `${getItemLabel(item)} 캐릭터`;
     image.loading = 'eager';
+    attachWorldcupImage(image, item.image);
     imageWrap.appendChild(image);
 
     const tag = createElement('span', 'mg-worldcup-tag', getItemLabel(item));
@@ -400,8 +446,8 @@
     const winnerCard = createElement('div', 'mg-worldcup-winner-card');
     const imageWrap = createElement('div', 'mg-worldcup-winner-image-wrap');
     const image = createElement('img', 'mg-worldcup-winner-image');
-    image.src = winner.image;
     image.alt = `${getItemLabel(winner)} 우승 캐릭터`;
+    attachWorldcupImage(image, winner.image);
     const badge = createElement('span', 'mg-worldcup-winner-badge', 'WINNER');
     imageWrap.appendChild(image);
     winnerCard.append(imageWrap, badge);
@@ -473,6 +519,8 @@
         currentPairIndex: 0,
         roundSize: tournamentSize,
       };
+      // 토너먼트에 쓰일 이미지를 미리 캐시 → 라운드마다 재요청하지 않음
+      preloadWorldcupImages(worldcupState.roundItems);
       renderWorldcupMatch();
     } catch (error) {
       renderMinigameError(error.message || '잠시 후 다시 시도해 주세요.');

@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  initVersionDropdown('versionDropdown', 'versionTrigger', 'versionPanel', 'versionLabel');
+  // 원문(source) 탭에는 버전 선택이 없음 — 버전은 번역본/리포트에만 존재
   initVersionDropdown('versionDropdown2', 'versionTrigger2', 'versionPanel2', 'versionLabel2');
   initVersionDropdown('versionDropdown3', 'versionTrigger3', 'versionPanel3', 'versionLabel3');
 
@@ -534,8 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
       transPane.innerHTML = translated
         ? renderParagraphs(translated)
         : `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
-      // 번역본 편집 가능 (수정 후 "변경사항 적용"으로 저장)
-      transPane.setAttribute('contenteditable', 'true');
+      // 번역본 직접 수정 불가 — 수정은 검수 챗봇으로만 진행
+      transPane.setAttribute('contenteditable', 'false');
       transPane.style.outline = 'none';
     }
     if (reportScroll) {
@@ -725,14 +725,14 @@ document.addEventListener('DOMContentLoaded', () => {
     transPane.style.color = 'var(--color-text)';
     transPane.style.padding = '24px';
     transPane.innerHTML = renderParagraphs(merged);
-    transPane.setAttribute('contenteditable', 'true');
+    transPane.setAttribute('contenteditable', 'false');
     if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = merged;
     switchToTab('translation');
 
     if (located) {
       appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경사항 적용"을 눌러 저장하세요.');
     } else {
-      appendBotMessage('제안 위치를 자동으로 찾지 못해 번역본을 그대로 뒀어요. 직접 수정 후 "변경사항 적용"으로 저장해 주세요.');
+      appendBotMessage('제안 위치를 자동으로 찾지 못해 번역본을 그대로 뒀어요. 수정할 부분을 조금 더 구체적으로 다시 말씀해 주세요.');
     }
   }
 

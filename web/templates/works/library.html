@@ -4,7 +4,7 @@
 {% block title %}내 서재 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/library.css' %}">
+<link rel="stylesheet" href="{% static 'css/library.css' %}?v=syncount-20260624-1">
 {% endblock %}
 
 {% block content %}
@@ -90,6 +90,9 @@
       <div class="work-card" data-work-id="{{ work.work_id }}"
            data-created="{{ work.work_id }}"
            data-title="{{ work.title }}"
+           data-synopsis="{{ work.synopsis|default:'' }}"
+           data-author="{{ work.pen_name }}"
+           data-genre="{{ work.genre }}"
            data-epdate="{{ work.latest_ep|default:work.created_at|date:'U' }}">
         <a href="/works/{{ work.work_id }}/" class="work-cover{% if not work.cover_image_url %} work-cover-empty{% endif %}" aria-label="작품 상세">
           {% if work.cover_image_url %}<img src="{{ work.cover_image_url }}" alt="{{ work.title }} 표지" style="width:100%;height:100%;object-fit:cover;">{% endif %}
@@ -111,8 +114,8 @@
               </div>
             </div>
           </div>
-          <p class="work-meta">필명: {{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;장르: {{ work.genre }}</p>
-          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;{% if work.trans_ep_count %}번역 {{ work.trans_ep_count }}화{% else %}번역 없음{% endif %}{% if work.last_update %}&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 {{ work.last_update|timesince }} 전{% endif %}</p>
+          <p class="work-meta">필명: {{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ work.genre }}</p>
+          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;{% if work.trans_ep_count %}번역 {{ work.trans_ep_count }}화{% else %}번역 없음{% endif %}{% if work.last_update_str %}&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 {{ work.last_update_str }} 전{% endif %}</p>
           <div class="work-langs">
             {% for lang in work.trans_langs %}
             <span class="lang-tag">{{ lang }}</span>
@@ -279,7 +282,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/library.js' %}?v=sort-20260623-3"></script>
+<script src="{% static 'js/library.js' %}?v=meta-20260624-2"></script>
 <script>
 (function() {
   const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';

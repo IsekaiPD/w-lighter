@@ -37,10 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== 직접 입력 탭 카운터 ===== */
   const directTitle   = document.getElementById('directTitle');
   const directContent = document.getElementById('directContent');
+  // 한글 IME 조합 입력은 maxlength를 잠깐 넘길 수 있어(31자) JS로 다시 잘라준다.
   directTitle?.addEventListener('input', () => {
+    if (directTitle.value.length > 30) directTitle.value = directTitle.value.slice(0, 30);
     document.getElementById('directTitleCounter').textContent = directTitle.value.length + '/30';
   });
   directContent?.addEventListener('input', () => {
+    if (directContent.value.length > 8000) directContent.value = directContent.value.slice(0, 8000);
     document.getElementById('directContentCounter').textContent =
       directContent.value.length.toLocaleString('ko-KR') + '/8,000';
   });
