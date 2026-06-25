@@ -70,7 +70,6 @@
   transition: opacity .15s, transform .15s;
 }
 .tr-credit-btn:hover { opacity: 0.9; }
-.tr-credit-btn:active { transform: translateY(1px); }
 .tr-credit-btn-charge {
   width: 100%;
   margin-top: 24px;

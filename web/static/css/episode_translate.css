@@ -187,7 +187,7 @@
   justify-content: center;
   gap: 8px;
   width: 109px;
-  height: 41px;
+  height: 38px;
   padding: 6px 14px;
   border-radius: 999px;
   background: #ffffff;
@@ -204,7 +204,6 @@
 .tr-translate-btn:hover {
   background: #F3EEFF;
 }
-.tr-translate-btn:active { transform: translateY(1px); }
 
 .tr-translate-btn-icon {
   width: 24px;
@@ -1071,9 +1070,6 @@
   opacity: 0.9;
 }
 
-.tr-credit-btn:active {
-  transform: translateY(1px);
-}
 
 .tr-credit-btn-secondary,
 .tr-credit-btn-charge {

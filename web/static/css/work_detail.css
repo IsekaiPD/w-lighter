@@ -410,9 +410,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
+  width: 109px;
   height: 38px;
-  padding: 0 16px;
+  padding: 0 14px;
   background: #ffffff;
   border: 1px solid #6E5BB8;
   border-radius: 999px;
@@ -425,8 +426,7 @@
   cursor: pointer;
 }
 .translate-btn:hover { background: #F3EEFF; }
-.translate-btn svg { flex-shrink: 0; color: #6E5BB8; }
-.translate-btn svg path { stroke: currentColor; }
+.translate-btn img { width: 24px; height: 24px; display: block; object-fit: contain; flex-shrink: 0; }
 
 /* Episode kebab menu */
 .ep-menu-wrap {

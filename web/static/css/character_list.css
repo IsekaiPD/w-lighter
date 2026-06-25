@@ -32,13 +32,13 @@
   border: 1px solid rgba(207, 195, 251, 0.45);
   border-radius: 22px;
   box-shadow: var(--shadow-card);
-  padding: 28px 24px 24px;
+  padding: 24px 28px 28px;
 }
 .panel-title {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 .panel-desc {
   font-size: 13px;
@@ -246,26 +246,39 @@
 .panel-note svg { flex-shrink: 0; color: var(--color-text-muted); }
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  flex: 1;
+  grid-template-columns: 160px repeat(3, 120px);
+  gap: 20px;
 }
 .summary-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   padding: 20px 12px;
   background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-border);
+  border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glow-soft);
 }
-.summary-label { font-size: 13px; color: var(--color-text-muted); }
-.summary-value { font-size: 28px; font-weight: 800; color: var(--color-primary); }
-.summary-value small { font-size: 13px; font-weight: 600; margin-left: 2px; }
+.summary-label { font-size: 14px; font-weight: 600; color: var(--color-text); }
+.summary-value { font-size: 32px; font-weight: 700; color: var(--color-text-muted); }
+.summary-value small { font-size: 14px; font-weight: 600; margin-left: 2px; }
+.summary-stat-accent {
+  background: #f9e9fa;
+  border-color: #f8d7f5;
+  box-shadow: 0 0 20px rgba(248, 215, 245, 0.45);
+}
+.summary-stat-accent .summary-label,
+.summary-stat-accent .summary-value { color: var(--color-primary); }
 
 /* 캐릭터 표 패널 */
+.table-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 460px);
+}
+
 .table-panel-head {
   display: flex;
   align-items: flex-start;
@@ -275,23 +288,25 @@
 .char-add-btn {
   display: inline-flex; align-items: center; gap: 6px;
   height: 38px; padding: 0 16px;
-  border: 1px solid var(--color-primary-border);
+  border: 1px solid #6E5BB8;
   border-radius: var(--radius-pill);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: #ffffff;
+  color: #6E5BB8;
   font-size: 13px; font-weight: 600;
   cursor: pointer;
 }
-.char-add-btn:hover { background: var(--color-primary); color: #fff; }
+.char-add-btn:hover { background: #F3EEFF; }
 
 /* 빈 상태 */
 .char-empty {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 60px 0;
-  border: 1px dashed var(--color-border);
+  padding: 24px 0;
+  border: 1.5px dashed #B7A9E6;
   border-radius: var(--radius-lg);
 }
 .char-empty-icon {
