@@ -287,10 +287,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getChatHistory() {
+    if (!chatArea) return [];
+    const msgs = [];
+    chatArea.querySelectorAll('.tr-chat-msg').forEach(el => {
+      const isUser = el.classList.contains('tr-chat-user');
+      const textEl = el.querySelector('.tr-chat-user-text, .tr-chat-bot-text');
+      if (!textEl) return;
+      const content = textEl.textContent.trim();
+      if (!content || content === '답변을 작성 중입니다...') return;
+      msgs.push({ role: isUser ? 'user' : 'assistant', content });
+    });
+    return msgs.slice(-8);
+  }
+
   async function sendMessage() {
     if (!chatInput || !chatArea) return;
     const text = chatInput.value.trim();
     if (!text) return;
+
+    const chatHistory = getChatHistory();
+    const translationId = await ensureTranslationId();
 
     // 유저 메시지 추가
     const userMsg = document.createElement('div');
@@ -316,8 +333,9 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           message: text,
           targetCountry: getActiveLang(),
-          translationId: selectedVersion?.translationId,
+          translationId,
           pendingAction: currentPendingAction,
+          chatHistory,
         }),
       });
       const data = await res.json();
@@ -328,8 +346,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let answer = r.answer || extractText(r, ['answer', 'reply', 'message', 'text', 'content']) || '';
         if (typeof answer !== 'string') answer = JSON.stringify(answer);
         pending.querySelector('.tr-chat-bot-text').textContent = answer || '(응답 없음)';
-        // pendingAction 상태 갱신
-        currentPendingAction = r.pendingAction ?? null;
+        // pendingAction 상태 갱신 (TTL 3턴)
+        if (r.pendingAction) {
+          currentPendingAction = { ...r.pendingAction, _ttl: 3 };
+        } else if (currentPendingAction) {
+          if (r.actionExecuted) {
+            currentPendingAction = null;
+          } else {
+            currentPendingAction._ttl = (currentPendingAction._ttl ?? 1) - 1;
+            if (currentPendingAction._ttl <= 0) currentPendingAction = null;
+          }
+        }
         // 수정 제안이 있으면 "수정 제안" 카드 추가
         if (r.proposedTranslation && String(r.proposedTranslation).trim()) {
           appendSuggestionCard(r.changeSummary || '제안된 수정 번역입니다.', r.proposedTranslation);
