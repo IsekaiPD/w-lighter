@@ -889,6 +889,8 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--color-text);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* 유저 메시지 — 흰색 pill, 오른쪽 정렬 */
@@ -905,6 +907,8 @@
   line-height: 1.6;
   color: var(--color-text);
   max-width: 85%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* ---------- 채팅 입력 ---------- */
