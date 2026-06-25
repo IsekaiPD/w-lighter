@@ -259,13 +259,29 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function doGenerate(workId, overwrite = false) {
-    const existing = mockGuides[workId] || [];
+    const list = mockGuides[workId] || (mockGuides[workId] = []);
 
-    // 덮어쓰기: 가장 오래된 항목 제거 (배열 마지막)
-    let base = overwrite ? existing.slice(0, existing.length - 1) : existing;
+    if (overwrite && list.length >= MAX_GUIDES) {
+      // 가장 오래된 항목(배열 마지막)을 즉시 제거
+      const oldest = list.pop();
+
+      // 서버에서도 즉시 삭제 (db_ prefix인 경우)
+      const m = /^db_(\d+)$/.exec(String(oldest?.id || ''));
+      if (m && window.GUIDE_CONFIG?.deleteUrl && workId) {
+        const url = window.GUIDE_CONFIG.deleteUrl.replace('/0/', '/' + workId + '/');
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.GUIDE_CONFIG.csrfToken },
+          body: JSON.stringify({ guideId: m[1] }),
+        }).catch(e => console.warn('[guide delete oldest]', e));
+      }
+
+      // 목록 즉시 갱신 (4개로 줄어든 상태 반영)
+      renderList(workId);
+    }
 
     // 생성 중 행 추가
-    resultCount.textContent = `${base.length + 1} / ${MAX_GUIDES} 개`;
+    resultCount.textContent = `${list.length + 1} / ${MAX_GUIDES} 개`;
     emptyState.style.display = 'none';
     guideList.style.display  = 'flex';
     guideList.insertAdjacentHTML('afterbegin', `
@@ -335,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const list = mockGuides[workId] || (mockGuides[workId] = []);
       list.unshift(guide);
-      while (list.length > MAX_GUIDES) list.pop();
       renderList(workId);
     } catch (err) {
       console.error('[guide] error', err);
@@ -450,9 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 데스크톱 폭(1120px)으로 렌더하기 위한 화면 밖 iframe
+    // 데스크톱 폭(1120px)으로 렌더하기 위한 숨김 iframe
     const frame = document.createElement('iframe');
-    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1240px;height:1600px;border:0;';
+    frame.style.cssText = 'position:fixed;left:0;top:0;width:1240px;height:1600px;border:0;opacity:0;pointer-events:none;';
     frame.srcdoc = detailHtmlReport;
     document.body.appendChild(frame);
 
@@ -479,9 +494,31 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         // 폰트/레이아웃 안정화 대기
         if (doc.fonts && doc.fonts.ready) { try { await doc.fonts.ready; } catch (e) {} }
-        await new Promise(r => setTimeout(r, 150));
 
-        // 콘텐츠 전체 폭/높이로 캡처 → 우측 텍스트 잘림 방지
+        // 토글/아코디언 강제 펼침, 애니메이션 제거, overflow 해제
+        const printStyle = doc.createElement('style');
+        printStyle.textContent = `
+          * { transition: none !important; animation: none !important; }
+          div, section, article, aside, main, li, p, span, a {
+            overflow: visible !important;
+            max-height: none !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+          }
+          details { display: block !important; }
+          details, details[open] { height: auto !important; overflow: visible !important; }
+          summary ~ * { display: block !important; }
+          [class*="toggle"], [class*="accordion"], [class*="collapse"],
+          [class*="expand"], [class*="hidden"] {
+            display: block !important; height: auto !important;
+            max-height: none !important; overflow: visible !important;
+            opacity: 1 !important; visibility: visible !important;
+          }
+        `;
+        doc.head.appendChild(printStyle);
+        doc.querySelectorAll('details').forEach(d => { d.open = true; });
+        await new Promise(r => setTimeout(r, 300));
+
         const fullWidth  = Math.max(doc.body.scrollWidth, doc.documentElement.scrollWidth, 1);
         const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 1);
         const canvas = await window.html2canvas(doc.body, {
@@ -498,20 +535,50 @@ document.addEventListener('DOMContentLoaded', () => {
         const pdf = new jsPDFCtor({ unit: 'pt', format: 'a4', orientation: 'portrait' });
         const pageW = pdf.internal.pageSize.getWidth();
         const pageH = pdf.internal.pageSize.getHeight();
-        const imgW = pageW;
-        const imgH = canvas.height * (imgW / canvas.width);
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        const scale = pageW / canvas.width;          // canvas → PDF pt 비율
+        const pageHpx = Math.floor(pageH / scale);  // PDF 1페이지 높이(px, canvas 기준)
+        const SCAN = 40;                             // 경계 위아래 탐색 범위(px)
+        const ctx = canvas.getContext('2d');
 
-        let heightLeft = imgH;
-        let position = 0;
-        pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-        heightLeft -= pageH;
-        while (heightLeft > 0) {
-          position -= pageH;
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, imgW, imgH);
-          heightLeft -= pageH;
+        // 주어진 y 행이 "거의 흰색"인지 판별
+        function isWhiteRow(y) {
+          if (y < 0 || y >= canvas.height) return true;
+          const data = ctx.getImageData(0, y, canvas.width, 1).data;
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i] < 240 || data[i+1] < 240 || data[i+2] < 240) return false;
+          }
+          return true;
         }
+
+        // 페이지 경계(idealY) 근처에서 흰 줄 찾기 → 없으면 idealY 그대로
+        function findSafeCut(idealY) {
+          for (let d = 0; d <= SCAN; d++) {
+            if (isWhiteRow(idealY - d)) return idealY - d;
+            if (isWhiteRow(idealY + d)) return idealY + d;
+          }
+          return idealY;
+        }
+
+        // 캔버스를 안전한 지점에서 잘라 PDF에 추가
+        let y = 0;
+        let first = true;
+        while (y < canvas.height) {
+          const idealEnd = y + pageHpx;
+          const cutY = findSafeCut(Math.min(idealEnd, canvas.height));
+          const sliceH = Math.max(1, cutY - y);
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width  = canvas.width;
+          pageCanvas.height = sliceH;
+          pageCanvas.getContext('2d').drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+          const imgH = sliceH * scale;
+          if (!first) pdf.addPage();
+          pdf.addImage(pageCanvas.toDataURL('image/jpeg', 0.97), 'JPEG', 0, 0, pageW, imgH);
+          first = false;
+          y = cutY;
+        }
+
         pdf.save(detailFilename + '.pdf');
         finish();
       } catch (e) {

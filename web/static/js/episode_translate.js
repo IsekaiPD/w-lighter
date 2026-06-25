@@ -226,6 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
     chatInput.addEventListener('input', () => {
       const len = chatInput.value.length;
       charCount.textContent = `${len}/1,000`;
+      chatInput.style.height = 'auto';
+      chatInput.style.height = chatInput.scrollHeight + 'px';
     });
 
     chatInput.addEventListener('keydown', (e) => {
@@ -297,6 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatArea.appendChild(userMsg);
 
     chatInput.value = '';
+    chatInput.style.height = 'auto';
     if (charCount) charCount.textContent = '0/1,000';
     chatArea.scrollTop = chatArea.scrollHeight;
 
@@ -783,13 +786,13 @@ document.addEventListener('DOMContentLoaded', () => {
     switchToTab('translation');
 
     if (located) {
-      appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경사항 적용"을 눌러 저장하세요.');
+      appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경 사항 적용"을 눌러 저장하세요.');
     } else {
       appendBotMessage('제안 위치를 자동으로 찾지 못해 번역본을 그대로 뒀어요. 수정할 부분을 조금 더 구체적으로 다시 말씀해 주세요.');
     }
   }
 
-  /* ===== 변경사항 적용(저장) / 번역 삭제 ===== */
+  /* ===== 변경 사항 적용(저장) / 번역 삭제 ===== */
   function currentTransText() {
     const transPane = document.querySelector('.tr-trans-text');
     return (transPane?.innerText || '').replace(/ /g, ' ').trim();

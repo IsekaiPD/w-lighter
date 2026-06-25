@@ -18,10 +18,13 @@ _COUNTRY_TO_LANG = {'US': 'EN', 'EN': 'EN', 'CN': 'CN', 'JP': 'JP', 'TH': 'TH', 
 
 @login_required(login_url='pages:landing')
 def library(request):
-    # latest_ep: 작품의 가장 최근 회차 등록 시각(회차 등록일순 정렬용)
+    # 작품별 최근 시각: 회차 created_at/updated_at 최댓값도 함께 집계
     works = list(
         Work.objects.filter(user=request.user)
-        .annotate(latest_ep=Max('episodes__created_at'))
+        .annotate(
+            latest_ep_created=Max('episodes__created_at'),
+            latest_ep_updated=Max('episodes__updated_at'),
+        )
         .order_by('-created_at')
     )
 
@@ -53,8 +56,14 @@ def library(request):
     for w in works:
         w.trans_ep_count = len(eps_by_work.get(w.work_id, set()))
         w.trans_langs = [l for l in lang_order if l in langs_by_work.get(w.work_id, set())]
-        # 최근 업데이트: 가장 최근 회차 등록 시각, 없으면 작품 생성 시각
-        w.last_update = _aware(w.latest_ep) or w.created_at
+        # 최근 업데이트: 작품 등록·수정, 회차 등록·수정 중 가장 최근 시각
+        candidates = [
+            w.created_at,                          # 작품 등록
+            _aware(w.updated_at),                  # 작품 수정
+            _aware(w.latest_ep_created),           # 회차 등록
+            _aware(w.latest_ep_updated),           # 회차 수정
+        ]
+        w.last_update = max((t for t in candidates if t), default=w.created_at)
         # 단위 1개만 표시(예: "10일 전")
         w.last_update_str = timesince(w.last_update).split(',')[0].strip() if w.last_update else ''
 
