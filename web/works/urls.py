@@ -19,6 +19,7 @@ urlpatterns = [
     path('works/<int:work_pk>/episodes/<int:episode_pk>/chat/', views.episode_chat, name='episode_chat'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/translation-save/', views.episode_translation_save, name='episode_translation_save'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/translation-delete/', views.episode_translation_delete, name='episode_translation_delete'),
+    path('works/<int:work_pk>/episodes/<int:episode_pk>/report-check-save/', views.episode_report_check_save, name='episode_report_check_save'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/edit/', views.episode_edit, name='episode_edit'),
     path('works/<int:work_pk>/episodes/<int:episode_pk>/delete/', views.episode_delete, name='episode_delete'),
 ]

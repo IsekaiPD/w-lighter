@@ -315,14 +315,24 @@ def episode_translate_run(request, work_pk, episode_pk):
     except ValueError:
         return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
 
+    target_country = model_server.map_country(body.get('targetCountry', 'EN'))
     payload = {
-        'episodeId': str(episode.episode_id),  # 문자열로 보내야 함
+        'episodeId': str(episode.episode_id),
         'sourceText': episode.original_text,
-        'targetCountry': model_server.map_country(body.get('targetCountry', 'EN')),
+        'targetCountry': target_country,
         'genre': model_server.map_genre(work.genre),
         'includeInternal': bool(body.get('includeInternal', False)),
         'saveTranslationResult': True,
     }
+
+    # 프론트에서 보낸 applied 고유명사가 있으면 payload에 포함
+    glossary_terms = body.get('glossaryTerms')
+    if isinstance(glossary_terms, list) and glossary_terms:
+        payload['glossaryTerms'] = [
+            g for g in glossary_terms
+            if isinstance(g, dict) and g.get('source')
+        ]
+
     try:
         data = model_server.call('/api/v1/translation/translate', payload)
     except model_server.ModelServerError as e:
@@ -516,5 +526,54 @@ def episode_translation_delete(request, work_pk, episode_pk):
         cur.execute(
             "DELETE FROM translation_results WHERE translation_id = %s AND episode_id = %s",
             [tid, episode.episode_id],
+        )
+    return JsonResponse({'ok': True})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def episode_report_check_save(request, work_pk, episode_pk):
+    """리포트 체크박스(applied) 상태를 DB에 저장."""
+    work    = get_object_or_404(Work, pk=work_pk, user=request.user)
+    episode = get_object_or_404(Episode, pk=episode_pk, work=work)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    tid     = body.get('translationId')
+    kind    = body.get('type')        # 'glossary' | 'endnote'
+    idx     = body.get('idx')
+    applied = body.get('applied')     # True | False
+
+    if tid is None or kind not in ('glossary', 'endnote') or idx is None or applied is None:
+        return JsonResponse({'ok': False, 'error': '파라미터가 부족합니다.'}, status=400)
+
+    col = 'glossary_can' if kind == 'glossary' else 'annotation_can'
+
+    with connection.cursor() as cur:
+        cur.execute(
+            f"SELECT {col} FROM translation_results "
+            "WHERE translation_id = %s AND episode_id = %s",
+            [tid, episode.episode_id],
+        )
+        row = cur.fetchone()
+        if not row:
+            return JsonResponse({'ok': False, 'error': '번역본을 찾을 수 없습니다.'}, status=404)
+
+        try:
+            items = json.loads(row[0] or '[]')
+        except (ValueError, TypeError):
+            items = []
+
+        idx = int(idx)
+        if 0 <= idx < len(items):
+            if isinstance(items[idx], dict):
+                items[idx]['applied'] = 1 if applied else 0
+
+        cur.execute(
+            f"UPDATE translation_results SET {col} = %s "
+            "WHERE translation_id = %s AND episode_id = %s",
+            [json.dumps(items, ensure_ascii=False), tid, episode.episode_id],
         )
     return JsonResponse({'ok': True})

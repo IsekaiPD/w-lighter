@@ -404,7 +404,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (translateBtn) { translateBtn.disabled = true; translateBtn.style.opacity = '0.6'; }
     if (transPane) {
       transPane.style.color = 'var(--color-text-muted)';
-      transPane.innerHTML = '<p>번역 중입니다... 잠시만 기다려 주세요.</p>';
+      transPane.innerHTML = `
+        <div class="tr-loading-state">
+          <div class="tr-loading-spinner"></div>
+          <p class="tr-loading-text">번역 중입니다...</p>
+          <p class="tr-loading-sub">AI가 회차를 번역하고 있어요. 잠시만 기다려 주세요.</p>
+        </div>`;
     }
     switchToTab('translation');
 
@@ -415,7 +420,23 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json',
           'X-CSRFToken': window.TR_CONFIG.csrfToken,
         },
-        body: JSON.stringify({ targetCountry: getActiveLang(), includeInternal: false }),
+        body: JSON.stringify({
+          targetCountry: getActiveLang(),
+          includeInternal: false,
+          glossaryTerms: (() => {
+            const lang = getActiveLang();
+            const versions = trVersionsByLang[lang] || [];
+            const latest = versions[versions.length - 1];
+            const glossary = latest?.result?.glossaryCandidates || [];
+            return glossary
+              .filter(g => g && Number(g.applied) === 1)
+              .map(g => ({
+                source: g.source || g.original_word || '',
+                target: g.suggested_target || g.translated_word || '',
+              }))
+              .filter(g => g.source);
+          })(),
+        }),
       });
       const data = await res.json();
 
@@ -532,8 +553,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return '<div class="tr-report-empty">번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</div>';
     }
 
-    function checkItem(term, desc, on) {
-      return '<div class="tr-check-item' + (on ? ' tr-check-on' : '') + '">' +
+    function checkItem(term, desc, on, type, idx) {
+      const dataAttrs = (type !== undefined)
+        ? ' data-check-type="' + type + '" data-check-idx="' + idx + '"'
+        : '';
+      return '<div class="tr-check-item' + (on ? ' tr-check-on' : '') + '"' + dataAttrs + '>' +
         '<div class="tr-check-box">' + (on ? REPORT_CHECK_SVG : '') + '</div>' +
         '<div class="tr-check-body">' +
           '<div class="tr-check-term">' + escapeHtml(term) + '</div>' +
@@ -543,16 +567,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyMsg = '<div class="tr-check-desc">항목이 없습니다.</div>';
 
     const glossaryList = glossary.length
-      ? glossary.map(g => checkItem(
+      ? glossary.map((g, i) => checkItem(
           g.source || g.original_word || '',
           (g.suggested_target ? '↔ ' + g.suggested_target : (g.translated_word ? '↔ ' + g.translated_word : '')),
-          Number(g.applied) === 1)).join('')
+          Number(g.applied) === 1, 'glossary', i)).join('')
       : emptyMsg;
 
     const endnoteList = endnotes.length
-      ? endnotes.map(n => (typeof n === 'string'
-          ? checkItem(n, '', false)
-          : checkItem(n.keyword || '', n.koreanNote || '', Number(n.applied) === 1))).join('')
+      ? endnotes.map((n, i) => (typeof n === 'string'
+          ? checkItem(n, '', false, 'endnote', i)
+          : checkItem(n.keyword || '', n.koreanNote || '', Number(n.applied) === 1, 'endnote', i))).join('')
       : emptyMsg;
 
     const culturalList = cultural.length
@@ -582,13 +606,71 @@ document.addEventListener('DOMContentLoaded', () => {
     );
   }
 
-  // 리포트 체크박스 토글 (선택 사항 적용용)
+  // ── 미주 섹션 렌더링 ──────────────────────────────────────────
+  function renderEndnotesSection(endnotes) {
+    if (!Array.isArray(endnotes)) return '';
+    const applied = endnotes.filter(n => typeof n !== 'string' && Number(n.applied) === 1);
+    if (!applied.length) return '';
+    const lines = applied.map((n, i) => {
+      const note = n.targetNote || n.koreanNote || '';
+      return `[${i + 1}] ${escapeHtml(n.keyword || '')}${note ? ': ' + escapeHtml(note) : ''}`;
+    }).join('\n');
+    return '<div class="tr-endnotes-section">'
+      + '<hr class="tr-endnotes-divider">'
+      + '<p class="tr-endnotes-title">📌 미주</p>'
+      + '<pre class="tr-endnotes-body">' + lines + '</pre>'
+      + '</div>';
+  }
+
+  function refreshEndnotesInPane() {
+    const transPane = document.querySelector('.tr-trans-text');
+    if (!transPane) return;
+    const endnotes = selectedVersion?.result?.readerEndnotes || [];
+    const existing = transPane.querySelector('.tr-endnotes-section');
+    if (existing) existing.remove();
+    const html = renderEndnotesSection(endnotes);
+    if (html) transPane.insertAdjacentHTML('beforeend', html);
+  }
+
+  // 리포트 체크박스 토글 (선택 사항 적용용) + DB 저장
   document.querySelector('.tr-report-scroll')?.addEventListener('click', function (e) {
     const item = e.target.closest('.tr-check-item');
     if (!item) return;
     item.classList.toggle('tr-check-on');
     const box = item.querySelector('.tr-check-box');
-    if (box) box.innerHTML = item.classList.contains('tr-check-on') ? REPORT_CHECK_SVG : '';
+    const isOn = item.classList.contains('tr-check-on');
+    if (box) box.innerHTML = isOn ? REPORT_CHECK_SVG : '';
+
+    const type = item.dataset.checkType;
+    const idx  = Number(item.dataset.checkIdx);
+    const tid  = selectedVersion?.translationId;
+    const url  = window.TR_CONFIG?.reportCheckUrl;
+    if (!type || isNaN(idx) || !tid || !url) return;
+
+    // selectedVersion 데이터에도 반영 (미주 섹션 즉시 갱신용)
+    if (type === 'endnote') {
+      const endnotes = selectedVersion?.result?.readerEndnotes;
+      if (Array.isArray(endnotes) && endnotes[idx] && typeof endnotes[idx] !== 'string') {
+        endnotes[idx].applied = isOn ? 1 : 0;
+      }
+      refreshEndnotesInPane();
+    } else if (type === 'glossary') {
+      const glossary = selectedVersion?.result?.glossaryCandidates;
+      if (Array.isArray(glossary) && glossary[idx]) {
+        glossary[idx].applied = isOn ? 1 : 0;
+      }
+      if (isOn) trToast('다음 번역 시 해당 용어가 반영됩니다.');
+    }
+
+    // DB에 applied 상태 저장
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': window.TR_CONFIG?.csrfToken || '',
+      },
+      body: JSON.stringify({ translationId: tid, type, idx, applied: isOn }),
+    }).catch(() => {});
   });
 
   /* ===== 번역 버전 관리 ===== */
@@ -606,8 +688,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTranslationResult(result) {
     const transPane    = document.querySelector('.tr-trans-text');
     const reportScroll = document.querySelector('.tr-report-scroll');
-    const translated = result.finalTranslation
+    const rawTranslated = result.finalTranslation
       || extractText(result, ['translatedText', 'translation', 'translated', 'text', 'targetText']);
+    // 모델이 번역문 끝에 인라인으로 삽입한 미주 블록 제거 (하단 섹션으로 따로 렌더링)
+    const translated = rawTranslated
+      ? rawTranslated.replace(/\s*📌\s*미주[\s\S]*/u, '').trimEnd()
+      : rawTranslated;
 
     if (transPane) {
       transPane.style.color = 'var(--color-text)';
@@ -615,6 +701,11 @@ document.addEventListener('DOMContentLoaded', () => {
       transPane.innerHTML = translated
         ? renderParagraphs(translated)
         : `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+      // 체크된 미주가 있으면 바로 표시
+      const endnotesHtml = renderEndnotesSection(
+        Array.isArray(result.readerEndnotes) ? result.readerEndnotes : []
+      );
+      if (endnotesHtml) transPane.insertAdjacentHTML('beforeend', endnotesHtml);
       // 번역본 직접 수정 불가 — 수정은 검수 챗봇으로만 진행
       transPane.setAttribute('contenteditable', 'false');
       transPane.style.outline = 'none';
@@ -628,11 +719,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const transPane    = document.querySelector('.tr-trans-text');
     const reportScroll = document.querySelector('.tr-report-scroll');
     if (transPane) {
-      transPane.style.color = 'var(--color-text-muted)';
-      transPane.innerHTML = '<p>번역 결과가 없습니다. 번역하기 버튼을 눌러 번역을 시작해 보세요.</p>';
+      transPane.style.color = '';
+      transPane.innerHTML = `
+        <div class="tr-empty-state">
+          <div class="tr-empty-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+          </div>
+          <p class="tr-empty-title">아직 번역본이 없어요</p>
+          <p class="tr-empty-desc">번역하기 버튼을 눌러 번역을 시작해 보세요.</p>
+        </div>`;
     }
     if (reportScroll) {
-      reportScroll.innerHTML = '<div style="padding:48px 0;text-align:center;color:var(--color-text-muted);"><p>번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</p></div>';
+      reportScroll.innerHTML = `
+        <div class="tr-empty-state">
+          <div class="tr-empty-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <p class="tr-empty-title">아직 번역 리포트가 없어요</p>
+          <p class="tr-empty-desc">번역을 완료하면 리포트가 생성됩니다.</p>
+        </div>`;
     }
   }
 
@@ -868,7 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await res.json();
         if (data.ok) {
           if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = text;
-          trToast('번역본이 저장되었습니다.');
+          trToast('선택 사항이 적용되었습니다.');
         } else {
           trToast(data.error || '저장에 실패했습니다.');
         }
