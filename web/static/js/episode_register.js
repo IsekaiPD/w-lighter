@@ -112,12 +112,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!fileListEl) return;
     if (attachedFiles.length === 0) {
       dropzone && (dropzone.style.display = 'flex');
+      dropzone && dropzone.classList.remove('compact');
       fileListEl.style.display = 'none';
       fileListEl.innerHTML = '';
       selectedIdx = -1;
       return;
     }
     dropzone && (dropzone.style.display = 'none');
+    dropzone && dropzone.classList.remove('compact');
     fileListEl.style.display = 'block';
     fileListEl.innerHTML = '<div class="ep-reg-file-table-box"><table class="ep-reg-file-table">'
       + '<thead><tr><th>구분</th><th>파일명</th><th>크기</th><th></th></tr></thead><tbody>'
@@ -148,6 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
         renderFileList();
       });
     });
+
+    // 테이블 박스를 드롭 영역으로 활성화
+    const tableBox = fileListEl.querySelector('.ep-reg-file-table-box');
+    if (tableBox) {
+      tableBox.addEventListener('dragover', e => { e.preventDefault(); tableBox.classList.add('dragover'); });
+      tableBox.addEventListener('dragleave', () => tableBox.classList.remove('dragover'));
+      tableBox.addEventListener('drop', e => {
+        e.preventDefault();
+        tableBox.classList.remove('dragover');
+        handleFiles(Array.from(e.dataTransfer.files));
+      });
+    }
+
     if (selectedIdx === -1 && attachedFiles.length > 0) selectFile(0);
   }
 

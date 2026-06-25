@@ -431,6 +431,10 @@
 }
 .ep-reg-file-table-box::-webkit-scrollbar { width: 6px; }
 .ep-reg-file-table-box::-webkit-scrollbar-thumb { background: #c4b5f4; border-radius: 999px; }
+.ep-reg-file-table-box.dragover {
+  border-color: var(--color-primary);
+  background: #ece3ff;
+}
 
 .ep-reg-file-table {
   width: 100%;
@@ -491,6 +495,23 @@
   min-width: 28px;
 }
 .ep-queue-status { flex-shrink: 0; margin-left: auto; }
+
+/* ---------- 원문 수정 안내 ---------- */
+.ep-edit-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 12px 14px;
+  margin-top: 16px;
+  background: #FFF0EE;
+  border: 1px solid #FFCCC7;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #D64040;
+}
+.ep-edit-notice svg { flex-shrink: 0; margin-top: 1px; stroke: #D64040; color: #D64040; }
+.ep-edit-notice strong { font-weight: 700; }
 
 /* ---------- 하단 버튼 ---------- */
 .ep-reg-footer {

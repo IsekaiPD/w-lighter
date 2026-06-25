@@ -96,7 +96,7 @@ def call(path, payload, *, method='POST', timeout=None):
         )
     except requests.exceptions.ReadTimeout:
         raise ModelServerError(
-            '모델 서버 응답이 지연됩니다(요청은 전달됨). 잠시 후 다시 시도해 주세요.',
+            '모델 서버 응답이 지연됩니다. 잠시 후 새로고침 해 주세요.',
             status_code=504,
         )
     except requests.exceptions.Timeout:
