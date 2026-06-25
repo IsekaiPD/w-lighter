@@ -95,6 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ---------- 번역 보기 진입 차단 (번역 이력 없는 회차) ----------
+  document.querySelectorAll('.translate-view-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const row  = btn.closest('.episode-row');
+      const langs = (row?.dataset.langs || '').split(',').filter(Boolean);
+      if (!langs.length) {
+        e.preventDefault();
+        const showToast = (m) => (window.AppUI ? window.AppUI.toast(m) : alert(m));
+        showToast('저장된 번역이 없습니다.');
+      }
+    });
+  });
+
   // ---------- 작품 정보 수정 모달 ----------
   const detailEditBtn      = document.getElementById('detailEditBtn');
   const detailEditBackdrop = document.getElementById('detailEditBackdrop');

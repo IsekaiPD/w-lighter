@@ -146,10 +146,7 @@
           번역 보기
         </a>
         <a href="{% url 'works:episode_translate' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-btn">
-          <svg width="20" height="18" viewBox="0 0 22 20" fill="none">
-            <path d="M3 5h10M8 3v2M5 8c0 2.5 2 4.5 5 5" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M12 13l2-5 2 5M13.5 16h3" stroke="#6e5bb8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <img src="{% static 'images/translate/translate.svg' %}" width="20" height="18" alt="" aria-hidden="true">
           번역하기
         </a>
         <div class="ep-menu-wrap">

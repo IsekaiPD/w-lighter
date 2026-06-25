@@ -36,7 +36,7 @@
   border: 1px solid rgba(207, 195, 251, 0.45);
   border-radius: 22px;
   box-shadow: var(--shadow-card);
-  padding: 28px 24px 24px;
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -182,9 +182,9 @@
   border: 1px solid rgba(207, 195, 251, 0.45);
   border-radius: 22px;
   box-shadow: var(--shadow-card);
-  padding: 28px 24px 24px;
+  padding: 24px 28px 28px;
   display: flex; flex-direction: column; gap: 0;
-  min-height: 520px;
+  min-height: 560px;
 }
 
 .lc-result-header {
@@ -192,12 +192,12 @@
   margin-bottom: 10px;
 }
 .lc-result-title { font-size: 16px; font-weight: 700; color: var(--color-text); }
-.lc-result-count { font-size: 13px; font-weight: 600; color: var(--color-text-muted); }
+.lc-result-count { font-size: 13px; font-weight: 500; color: var(--color-text-muted); }
 
 .lc-result-notice {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--color-text-muted);
-  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--color-text-muted);
+  margin-bottom: 20px; line-height: 1.4;
 }
 .lc-result-notice svg { flex-shrink: 0; color: var(--color-text-muted); }
 
@@ -216,6 +216,7 @@
   color: var(--color-primary); margin-bottom: 4px;
 }
 .lc-empty-title { font-size: 16px; font-weight: 700; color: var(--color-text); }
+.lc-empty-desc { font-size: 13px; color: var(--color-text-muted); max-width: 300px; line-height: 1.5; text-align: center; }
 
 /* ---------- 가이드 목록 ---------- */
 .lc-guide-list {

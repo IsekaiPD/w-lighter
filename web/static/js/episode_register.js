@@ -70,6 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedIdx   = -1;
   let queueItems    = [];
 
+  /* 회차 번호 입력 제한 (양의 정수만) */
+  function restrictToPositiveInt(el) {
+    if (!el) return;
+    const BLOCKED = ['-', '+', '.', 'e', 'E'];
+    el.addEventListener('keydown', e => { if (BLOCKED.includes(e.key)) e.preventDefault(); });
+    el.addEventListener('input', () => {
+      const v = parseInt(el.value);
+      el.value = (!isNaN(v) && v >= 1) ? v : '';
+    });
+  }
+  restrictToPositiveInt(epNumberEl);
+  restrictToPositiveInt(document.getElementById('directNumber'));
+
   /* 드래그 앤 드롭 */
   dropzone?.addEventListener('click', () => fileInput?.click());
   dropzone?.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
@@ -198,10 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const title = epTitleEl?.value.trim() ?? '';
-    if (!title) { alert('회차 제목을 입력해주세요.'); epTitleEl?.focus(); return; }
+    if (!title) { showToast('회차 제목을 입력해주세요.'); epTitleEl?.focus(); return; }
 
     const epNum = parseInt(epNumberEl?.value ?? '');
-    if (!epNum || epNum < 1) { alert('회차 번호를 입력해주세요.'); epNumberEl?.focus(); return; }
+    if (!epNum || epNum < 1) { showToast('회차 번호를 입력해주세요.'); epNumberEl?.focus(); return; }
 
     // 중복 회차 번호 차단 (이미 등록된 회차 / 대기열에 있는 회차)
     if (existingNumbers.includes(epNum)) {
@@ -278,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isUploadTab = activePane?.id === 'tab-upload';
 
     if (isUploadTab) {
-      if (queueItems.length === 0) { alert('대기열에 회차를 추가해주세요.'); return; }
+      if (queueItems.length === 0) { (window.AppUI?.toast ?? alert)('대기열에 회차를 추가해주세요.'); return; }
       submitBtn.disabled = true;
       submitBtn.textContent = '등록 중...';
       const csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
@@ -312,8 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!content) { showToast('원문을 입력해주세요.'); directContent?.focus(); return; }
       const directNumEl = document.getElementById('directNumber');
       const epNum = parseInt(directNumEl?.value ?? '');
+      if (!epNum || epNum < 1) { showToast('회차 번호를 입력해주세요.'); directNumEl?.focus(); return; }
       // 제출 전 즉시 중복 회차 차단
-      if (epNum && existingNumbers.includes(epNum)) {
+      if (existingNumbers.includes(epNum)) {
         showToast(epNum + '화는 이미 등록된 회차입니다.');
         directNumEl?.focus();
         return;
@@ -324,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const fd = new FormData();
       fd.append('title', title);
       fd.append('content', content);
-      fd.append('episode_number', directNumEl?.value ?? '0');
+      fd.append('episode_number', epNum);
       fd.append('csrfmiddlewaretoken', csrf);
       try {
         const res  = await fetch('/works/' + workPk + '/episodes/new/', { method: 'POST', body: fd });
