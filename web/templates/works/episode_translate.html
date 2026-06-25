@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=gap-20260624-3">
+<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=emptystate-20260625-1">
 <link rel="stylesheet" href="{% static 'css/minigames.css' %}?v=vsbalance-20260624-2">
 {% endblock %}
 
@@ -106,9 +106,16 @@
             </div>
           </div>
           <div class="tr-textbox">
-            <div class="tr-textbox-inner tr-trans-text" style="color:var(--color-text-muted);padding:24px;">
-              {# TODO: FastAPI translation_results 연동 후 번역 텍스트 표시 #}
-              <p>번역 결과가 없습니다. 번역하기 버튼을 눌러 번역을 시작해 보세요.</p>
+            <div class="tr-textbox-inner tr-trans-text">
+              <div class="tr-empty-state">
+                <div class="tr-empty-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                  </svg>
+                </div>
+                <p class="tr-empty-title">아직 번역본이 없어요</p>
+                <p class="tr-empty-desc">번역하기 버튼을 눌러 번역을 시작해 보세요.</p>
+              </div>
             </div>
           </div>
           <div class="tr-trans-footer">
@@ -142,9 +149,14 @@
 
           <!-- 스크롤 영역 -->
           <div class="tr-report-scroll">
-            {# TODO: FastAPI translation_results 연동 후 리포트 내용 동적 렌더링 #}
-            <div style="padding:48px 0;text-align:center;color:var(--color-text-muted);">
-              <p>번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</p>
+            <div class="tr-empty-state">
+              <div class="tr-empty-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <p class="tr-empty-title">아직 번역 리포트가 없어요</p>
+              <p class="tr-empty-desc">번역을 완료하면 리포트가 생성됩니다.</p>
             </div>
           </div>
 
@@ -235,6 +247,7 @@
     chatUrl:      "{% url 'works:episode_chat' work_pk=work.work_id episode_pk=episode.episode_id %}",
     saveUrl:      "{% url 'works:episode_translation_save' work_pk=work.work_id episode_pk=episode.episode_id %}",
     deleteUrl:    "{% url 'works:episode_translation_delete' work_pk=work.work_id episode_pk=episode.episode_id %}",
+    reportCheckUrl: "{% url 'works:episode_report_check_save' work_pk=work.work_id episode_pk=episode.episode_id %}",
   };
 </script>
 <script src="{% static 'js/minigames.js' %}?v=imgfallback-20260624-1"></script>
