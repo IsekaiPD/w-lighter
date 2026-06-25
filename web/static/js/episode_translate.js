@@ -305,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!text) return;
 
     const chatHistory = getChatHistory();
+    const translationId = await ensureTranslationId();
 
     // 유저 메시지 추가
     const userMsg = document.createElement('div');
@@ -329,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           message: text,
           targetCountry: getActiveLang(),
-          translationId: selectedVersion?.translationId,
+          translationId,
           pendingAction: currentPendingAction,
           chatHistory,
         }),
