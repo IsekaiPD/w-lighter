@@ -30,10 +30,26 @@ def relationship_saved(request, work_pk):
         rows = cur.fetchall()
     maps = []
     for i, r in enumerate(rows):
+        content = r[1] or ''
+        # 구버전 HTML 서빙 패치: requestAnimationFrame 없는 경우 오버레이 강제 표시
+        if content and 'requestAnimationFrame' not in content and '</body>' in content:
+            patch = (
+                '<script>(function(){'
+                'setTimeout(function(){'
+                'document.querySelectorAll("#cy>div").forEach(function(d){'
+                'if(d.style&&d.style.pointerEvents==="none")d.style.opacity="1";'
+                '});'
+                'if(!window.__relReadySent){'
+                'window.__relReadySent=true;'
+                'window.parent.postMessage({type:"rel-ready"},"*");}'
+                '},900);'
+                '})();</script>'
+            )
+            content = content.replace('</body>', patch + '</body>')
         maps.append({
             'id': r[0],
-            'version': i + 1,  # 생성순 버전
-            'content': r[1],
+            'version': i + 1,
+            'content': content,
             'createdAt': r[2].strftime('%Y.%m.%d %H:%M') if r[2] else '',
         })
     return JsonResponse({'ok': True, 'maps': maps})

@@ -541,6 +541,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = pdfReadyResolve; pdfReadyResolve = null; r();
     }
     if (e.data.type === 'rel-positions' && e.data.positions && detailTargetId && selectedWorkId) {
+      // 메모리의 mockDiagrams도 즉시 갱신 → 모달 닫았다 열어도 위치 유지
+      const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === detailTargetId);
+      if (diag && diag.content) {
+        diag.content = String(diag.content).replace(
+          /window\.__REL_POSITIONS__\s*=\s*[^;]+;/,
+          'window.__REL_POSITIONS__=' + JSON.stringify(e.data.positions) + ';'
+        );
+      }
       const m = /^db_(\d+)$/.exec(String(detailTargetId));
       if (!m || !window.REL_CONFIG?.positionsUrl) return;
       const url = window.REL_CONFIG.positionsUrl.replace('/0/', '/' + selectedWorkId + '/');
