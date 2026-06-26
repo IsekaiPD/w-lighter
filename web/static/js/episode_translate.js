@@ -1010,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (located) {
       appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경 사항 적용"을 눌러 저장하세요.');
     } else {
-      appendBotMessage('제안 위치를 자동으로 찾지 못해 번역본을 그대로 뒀어요. 수정할 부분을 조금 더 구체적으로 다시 말씀해 주세요.');
+      appendBotMessage('제안 위치를 자동으로 찾지 못해 전체를 교체했어요. 내용을 확인해주세요.');
     }
   }
 

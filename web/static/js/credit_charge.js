@@ -14,10 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showPaymentStatus(message) {
-    if (!paymentBox || !paymentTitle) return;
-    paymentBox.style.display = '';
-    paymentTitle.textContent = message;
-    paymentBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 안내 박스는 띄우지 않음 (결제 모달이 모든 정보를 보여줌)
+    if (paymentBox) paymentBox.style.display = 'none';
   }
 
   async function preparePayment(planCode) {
@@ -44,9 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
       throw new Error('토스페이먼츠 SDK를 불러오지 못했습니다.');
     }
 
-    paymentBox.style.display = '';
-    paymentTitle.textContent = `${payment.orderName} / ${Number(payment.amount).toLocaleString('ko-KR')}원`;
-
     const tossPayments = TossPayments(payment.clientKey);
     const widgets = tossPayments.widgets({
       customerKey: payment.customerKey,
@@ -59,7 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const paymentWindow = await widgets.renderPaymentWindow();
 
-    paymentBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 결제 모달이 모든 정보를 보여주므로, 뒤에 남는 안내 박스는 숨김
+    paymentBox.style.display = 'none';
 
     paymentWindow.on('paymentRequest', async () => {
       await widgets.requestPayment({

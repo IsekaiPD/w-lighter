@@ -313,4 +313,11 @@
   });
 })();
 </script>
+{% if show_beta_bonus %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.AppUI) AppUI.toast('베타 테스트 기간 한정! 4,000C를 추가 지급합니다.');
+});
+</script>
+{% endif %}
 {% endblock %}

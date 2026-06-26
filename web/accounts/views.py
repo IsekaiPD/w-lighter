@@ -189,14 +189,14 @@ def signup_name(request):
                     oauth_provider=pending_signup['oauth_provider'],
                     provider_user_id=pending_signup['provider_user_id'],
                 )
-                # 가입 축하 1000C 무료 지급 내역 기록
+                # 가입 축하 5000C 무료 지급 내역 기록 (베타 테스트 기간 한정 4000C 추가)
                 from credits.models import CreditTransaction
                 CreditTransaction.objects.create(
                     user=user,
                     transaction_type='CHARGE',
                     feature_name='무료 지급',
-                    change_amount=1000,
-                    balance_after=1000,
+                    change_amount=5000,
+                    balance_after=5000,
                 )
         except IntegrityError:
             existing_user = find_existing_user(pending_signup)
@@ -209,6 +209,7 @@ def signup_name(request):
 
         login_user(request, user)
         clear_signup_session(request)
+        request.session['show_beta_bonus'] = True
         return redirect('works:library')
 
     return render(request, 'accounts/signup_name.html')
