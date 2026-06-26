@@ -1,4 +1,5 @@
 import json
+import re
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
@@ -95,5 +96,45 @@ def relationship_delete(request, work_pk):
         cur.execute(
             "DELETE FROM relation_maps WHERE map_id = %s AND work_id = %s",
             [map_id, work.work_id],
+        )
+    return JsonResponse({'ok': True})
+
+
+@login_required(login_url='pages:landing')
+@require_POST
+def relationship_positions(request, work_pk):
+    """노드 드래그 위치 저장. map_content 내 __REL_POSITIONS__ 값을 교체."""
+    work = get_object_or_404(Work, pk=work_pk, user=request.user)
+    try:
+        body = json.loads(request.body or '{}')
+    except ValueError:
+        return JsonResponse({'ok': False, 'error': '잘못된 요청입니다.'}, status=400)
+
+    map_id = body.get('mapId')
+    positions = body.get('positions')
+    if not map_id or not isinstance(positions, dict):
+        return JsonResponse({'ok': False, 'error': 'mapId 또는 positions가 없습니다.'}, status=400)
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "SELECT map_content FROM relation_maps WHERE map_id = %s AND work_id = %s",
+            [map_id, work.work_id],
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return JsonResponse({'ok': False, 'error': '관계도를 찾을 수 없습니다.'}, status=404)
+
+    positions_json = json.dumps(positions, ensure_ascii=False)
+    content = re.sub(
+        r'window\.__REL_POSITIONS__\s*=\s*[^;]+;',
+        f'window.__REL_POSITIONS__={positions_json};',
+        row[0],
+    )
+
+    with connection.cursor() as cur:
+        cur.execute(
+            "UPDATE relation_maps SET map_content = %s WHERE map_id = %s AND work_id = %s",
+            [content, map_id, work.work_id],
         )
     return JsonResponse({'ok': True})
