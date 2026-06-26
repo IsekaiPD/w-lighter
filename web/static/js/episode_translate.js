@@ -546,8 +546,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const cultural = inspection.filter(d => d && d.reviewerType === 'cultural');
     const endnotes = Array.isArray(result.readerEndnotes) ? result.readerEndnotes
                    : (Array.isArray(tr.readerEndnotes) ? tr.readerEndnotes : []);
-    const glossary = Array.isArray(result.glossaryCandidates) ? result.glossaryCandidates
-                   : (Array.isArray(tr.glossaryCandidates) ? tr.glossaryCandidates : []);
+    const glossaryRaw = Array.isArray(result.glossaryCandidates) ? result.glossaryCandidates
+                      : (Array.isArray(tr.glossaryCandidates) ? tr.glossaryCandidates : []);
+    // 이미 확정된 고유명사(이전 화에서 체크)는 리포트 목록에서 제외
+    const confirmedSet = confirmedGlossaryByLang[getActiveLang()] || new Set();
+    const glossary = glossaryRaw.filter(g => {
+      const src = g.source || g.original_word || '';
+      // 이미 확정됐고 이번 화에서도 applied=1이면 제외 (applied=0이면 이번 화에서 체크 해제한 것이므로 표시)
+      return !(confirmedSet.has(src) && Number(g.applied) !== 1);
+    });
 
     if (!summary && !cultural.length && !endnotes.length && !glossary.length) {
       return '<div class="tr-report-empty">번역 리포트가 없습니다. 번역을 완료하면 리포트가 생성됩니다.</div>';
@@ -612,8 +619,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const applied = endnotes.filter(n => typeof n !== 'string' && Number(n.applied) === 1);
     if (!applied.length) return '';
     const lines = applied.map((n, i) => {
-      const note = n.targetNote || n.koreanNote || '';
-      return `[${i + 1}] ${escapeHtml(n.keyword || '')}${note ? ': ' + escapeHtml(note) : ''}`;
+      const keyword = n.targetKeyword || n.keyword || '';
+      const note    = n.targetNote || '';
+      return `[${i + 1}] ${escapeHtml(keyword)}${note ? ': ' + escapeHtml(note) : ''}`;
     }).join('\n');
     return '<div class="tr-endnotes-section">'
       + '<hr class="tr-endnotes-divider">'
@@ -658,6 +666,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const glossary = selectedVersion?.result?.glossaryCandidates;
       if (Array.isArray(glossary) && glossary[idx]) {
         glossary[idx].applied = isOn ? 1 : 0;
+        // 메모리 confirmedSet도 즉시 업데이트
+        const lang = getActiveLang();
+        if (!confirmedGlossaryByLang[lang]) confirmedGlossaryByLang[lang] = new Set();
+        const src = glossary[idx].source || glossary[idx].original_word || '';
+        if (src) {
+          if (isOn) confirmedGlossaryByLang[lang].add(src);
+          else confirmedGlossaryByLang[lang].delete(src);
+        }
       }
       if (isOn) trToast('다음 번역 시 해당 용어가 반영됩니다.');
     }
@@ -676,6 +692,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== 번역 버전 관리 ===== */
   // 언어별로 버전 보관: { EN: [{n, date, result}], CN: [...], ... }
   const trVersionsByLang = {};
+  // 작품 단위 확정 glossary: { EN: Set<string>, CN: Set<string>, ... }
+  const confirmedGlossaryByLang = {};
   let selectedVersion = null;
   let currentPendingAction = null;
 
@@ -832,6 +850,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(window.TR_CONFIG.listUrl);
       const data = await res.json();
       if (!data.ok || !Array.isArray(data.items) || !data.items.length) return;
+
+      // 확정 glossary 저장
+      if (data.confirmedGlossary && typeof data.confirmedGlossary === 'object') {
+        Object.entries(data.confirmedGlossary).forEach(([lang, terms]) => {
+          if (!confirmedGlossaryByLang[lang]) confirmedGlossaryByLang[lang] = new Set();
+          (terms || []).forEach(t => { if (t.source) confirmedGlossaryByLang[lang].add(t.source); });
+        });
+      }
 
       data.items.forEach((item) => {
         // 내용이 빈 번역본(실패/타임아웃 잔여 row)은 버전으로 만들지 않음

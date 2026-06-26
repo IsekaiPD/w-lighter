@@ -115,15 +115,15 @@
 .rel-stats-top {
   display: flex;
   align-items: center;
-  gap: 0;
   padding: 4px 0 8px;
+  justify-content: space-between;
 }
 .rel-stat-col {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  padding-left: 20px;
 }
 .rel-stat-divider {
   width: 1px;
@@ -131,12 +131,20 @@
   background: rgba(110, 91, 184, 0.2);
   flex-shrink: 0;
 }
+.rel-stat-col-full {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
 .rel-stat-label {
   font-size: 12px;
   color: var(--color-text-muted);
 }
 .rel-stat-value {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1;
@@ -145,7 +153,6 @@
 .rel-char-link-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
   background: none;
   border: none;
@@ -154,7 +161,8 @@
   font-weight: 700;
   color: var(--color-text-muted);
   cursor: pointer;
-  width: 100%;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .rel-char-link-btn:hover { color: var(--color-primary); }
 

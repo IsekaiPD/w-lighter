@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultCount  = document.getElementById('relResultCount');
   const statsBox     = document.getElementById('relStatsBox');
   const statPersons  = document.getElementById('relStatPersons');
-  const statRelations= document.getElementById('relStatRelations');
+  const statRelations= null;
   const generateBtn  = document.getElementById('relGenerateBtn');
   const charLinkBtn  = document.getElementById('relCharLinkBtn');
   const creditChip   = document.querySelector('.credit-chip[data-credit-use-url]');
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showLoadedState(workId) {
     const chars = loadedChars[workId] || mockCharacters[workId] || [];
     statPersons.textContent   = `${chars.length}명`;
-    statRelations.textContent = `-`;  // 관계 수는 관계도 생성 후 확정
+
     statsBox.style.display    = 'flex';
     statsBox.style.flexDirection = 'column';
     generateBtn.textContent   = '관계도 생성하기 · 300C';

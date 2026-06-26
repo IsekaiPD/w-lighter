@@ -155,6 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
     card.dataset.workId = work.id;
     card.dataset.created = work.id;     // 등록일 순(신규 = 큰 id)
     card.dataset.title = work.title;
+    card.dataset.author = work.pen_name ?? '';
+    card.dataset.genre = work.genre ?? '';
+    card.dataset.synopsis = work.synopsis ?? '';
     card.dataset.epdate = Math.floor(Date.now() / 1000);  // 회차 등록일순(방금 생성 → 최신)
     card.innerHTML = '<a href="/works/' + work.id + '/" class="work-cover work-cover-empty"></a>'
       + '<div class="work-info">'
