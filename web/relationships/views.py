@@ -84,6 +84,30 @@ def relationship_map(request):
         'includeHtml': True,
         'characters': body.get('characters', []),
     }
+
+    # characterIds(['ch_0','ch_1',...]) 형식으로 온 경우 DB에서 캐릭터 조회 후 변환
+    character_ids = body.get('characterIds', [])
+    if character_ids and not payload['characters']:
+        indices = set()
+        for cid in character_ids:
+            if isinstance(cid, str) and cid.startswith('ch_'):
+                try:
+                    indices.add(int(cid[3:]))
+                except ValueError:
+                    pass
+        if indices:
+            with connection.cursor() as cur:
+                cur.execute(
+                    "SELECT char_name, role, profile_label FROM characters "
+                    "WHERE work_id = %s ORDER BY character_id ASC",
+                    [work.work_id],
+                )
+                all_chars = cur.fetchall()
+            payload['characters'] = [
+                {'char_name': row[0], 'role': row[1] or '', 'profile_label': row[2] or ''}
+                for i, row in enumerate(all_chars)
+                if i in indices
+            ]
     try:
         data = model_server.call('/api/v1/relationship-map', payload)
     except model_server.ModelServerError as e:

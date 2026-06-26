@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedWorkId  = null;
   let isLoaded        = false; // 캐릭터 설정 불러오기 완료 여부
   let selectedCharIds = new Set(); // 모달에서 선택한 캐릭터 ID
-  let isGenerating    = false; // 관계도 생성 중 여부
 
   // ---------- DOM ----------
   const emptyState   = document.getElementById('relEmptyState');
@@ -102,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const diagrams = mockDiagrams[workId] || [];
     resultCount.textContent = `${diagrams.length} / ${MAX_DIAGRAMS} 개`;
 
-    if (diagrams.length === 0 && !isGenerating) {
+    if (diagrams.length === 0) {
       emptyState.style.display = '';
       diagList.style.display   = 'none';
       return;
@@ -111,16 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     emptyState.style.display = 'none';
     diagList.style.display   = 'flex';
     diagList.innerHTML = '';
-
-    // 생성 중이면 로딩 행 유지
-    if (isGenerating) {
-      diagList.insertAdjacentHTML('afterbegin', `
-        <div class="rel-row-loading" id="relLoadingRow">
-          <div class="rel-spinner"></div>
-          <span>생성 중</span>
-        </div>
-      `);
-    }
 
     diagrams.forEach(diag => {
       diagList.insertAdjacentHTML('beforeend', `
@@ -285,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 로딩 행 추가 + 카운트 즉시 N+1로 업데이트 (시각적 일치)
-    isGenerating = true;
     resultCount.textContent = `${existing.length + 1} / ${MAX_DIAGRAMS} 개`;
     emptyState.style.display = 'none';
     diagList.style.display   = 'flex';
@@ -362,12 +350,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(window.REL_CONFIG.generateUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
-        body: JSON.stringify({ workId, characterIds: [...selectedCharIds] }),
+        body: JSON.stringify({
+          workId,
+          characters: (loadedChars[workId] || [])
+            .filter(c => selectedCharIds.has(c.id))
+            .map(c => ({ char_name: c.name, role: c.role })),
+        }),
       });
       const data = await res.json();
       console.log('[relationship-map] HTTP', res.status, data);
       if (!data.ok) {
-        isGenerating = false;
         document.getElementById('relLoadingRow')?.remove();
         showRelDebug(
           '<p style="font-weight:700;margin-bottom:6px;">관계도를 생성하지 못했어요</p>' +
@@ -378,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         return;
       }
-      isGenerating = false;
       document.getElementById('relLoadingRow')?.remove();
       document.getElementById('relDebugBox')?.remove();
       const html = extractRelContent(data.result);
@@ -404,9 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const newDiag = { id: mapId ? ('db_' + mapId) : ('gen_' + Date.now()), version: newVersion, createdAt, content: html };
       list.unshift(newDiag);
       renderList(workId);
+      openDetailModal(newDiag);
     } catch (err) {
       console.error('[relationship-map] error', err);
-      isGenerating = false;
       document.getElementById('relLoadingRow')?.remove();
       showRelDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {
@@ -549,12 +540,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // rel-ready : Cytoscape 렌더 완료 → PDF 캡처 타이밍
   // rel-positions : 노드 드래그 완료 → RDS 위치 저장
   let pdfReadyResolve = null;
+  let pdfFrame = null; // 현재 PDF 캡처 중인 iframe 참조
   window.addEventListener('message', (e) => {
     if (!e.data || typeof e.data !== 'object') return;
-    if (e.data.type === 'rel-ready' && pdfReadyResolve) {
+    // rel-ready: PDF iframe에서 온 신호만 캡처 타이밍으로 사용
+    if (e.data.type === 'rel-ready' && pdfReadyResolve && pdfFrame && e.source === pdfFrame.contentWindow) {
       const r = pdfReadyResolve; pdfReadyResolve = null; r();
     }
-    if (e.data.type === 'rel-positions' && e.data.positions && detailTargetId && selectedWorkId) {
+    // rel-positions: detail frame에서 온 신호만 위치 저장에 사용
+    if (e.data.type === 'rel-positions' && e.data.positions && detailTargetId && selectedWorkId
+        && detailFrame && e.source === detailFrame.contentWindow) {
       // 메모리의 mockDiagrams도 즉시 갱신 → 모달 닫았다 열어도 위치 유지
       const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === detailTargetId);
       if (diag && diag.content) {
@@ -584,11 +579,12 @@ document.addEventListener('DOMContentLoaded', () => {
     frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1240px;height:1600px;border:0;';
     frame.srcdoc = html;
     document.body.appendChild(frame);
+    pdfFrame = frame; // PDF iframe 참조 저장
 
     const oldText = detailPdfBtn.textContent;
     detailPdfBtn.disabled = true;
     detailPdfBtn.textContent = 'PDF 생성 중...';
-    const finish = () => { detailPdfBtn.disabled = false; detailPdfBtn.textContent = oldText; frame.remove(); };
+    const finish = () => { detailPdfBtn.disabled = false; detailPdfBtn.textContent = oldText; pdfFrame = null; frame.remove(); };
 
     frame.onload = async () => {
       const doc = frame.contentDocument;
