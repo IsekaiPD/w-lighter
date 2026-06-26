@@ -1,10 +1,12 @@
 import json
 import re
+from datetime import timezone as dt_timezone
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from common import model_server
@@ -30,27 +32,11 @@ def relationship_saved(request, work_pk):
         rows = cur.fetchall()
     maps = []
     for i, r in enumerate(rows):
-        content = r[1] or ''
-        # 구버전 HTML 서빙 패치: requestAnimationFrame 없는 경우 오버레이 강제 표시
-        if content and 'requestAnimationFrame' not in content and '</body>' in content:
-            patch = (
-                '<script>(function(){'
-                'setTimeout(function(){'
-                'document.querySelectorAll("#cy>div").forEach(function(d){'
-                'if(d.style&&d.style.pointerEvents==="none")d.style.opacity="1";'
-                '});'
-                'if(!window.__relReadySent){'
-                'window.__relReadySent=true;'
-                'window.parent.postMessage({type:"rel-ready"},"*");}'
-                '},900);'
-                '})();</script>'
-            )
-            content = content.replace('</body>', patch + '</body>')
         maps.append({
             'id': r[0],
-            'version': i + 1,
-            'content': content,
-            'createdAt': r[2].strftime('%Y.%m.%d %H:%M') if r[2] else '',
+            'version': i + 1,  # 생성순 버전
+            'content': r[1],
+            'createdAt': timezone.localtime(r[2].replace(tzinfo=dt_timezone.utc) if r[2].tzinfo is None else r[2]).strftime('%Y.%m.%d %H:%M') if r[2] else '',
         })
     return JsonResponse({'ok': True, 'maps': maps})
 
@@ -79,10 +65,13 @@ def relationship_map(request):
         }, status=400)
 
     payload = {
-        'workId': work.work_id,           # int (명세) — characters 비우면 DB 캐릭터로 생성
+        'workId': work.work_id,
         'workTitle': work.title,
         'includeHtml': True,
     }
+    character_ids = body.get('characterIds')
+    if isinstance(character_ids, list) and character_ids:
+        payload['characterIds'] = character_ids
     try:
         data = model_server.call('/api/v1/relationship-map', payload)
     except model_server.ModelServerError as e:

@@ -546,6 +546,16 @@
   margin: 0;
 }
 
+/* 미주 인라인 마커 */
+.tr-endnote-marker {
+  font-size: 10px;
+  color: var(--color-primary);
+  font-weight: 700;
+  vertical-align: super;
+  margin-left: 1px;
+  cursor: default;
+}
+
 /* ---------- 번역본 탭 전용 ---------- */
 
 /* 상단 버전 드롭다운 행 */
