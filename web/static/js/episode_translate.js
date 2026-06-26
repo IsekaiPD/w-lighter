@@ -470,8 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/\n/g, '<br>');
+      .replace(/"/g, '&quot;');
   }
 
   // 번역 응답이 실패/지연으로 화면에 못 떴을 때, 모델 서버가 DB에 저장했을 수 있으니
@@ -508,11 +507,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
-  // 긴 본문을 빈 줄 기준으로 문단(<p>)으로 나눠 렌더링
+  // 줄바꿈 기준으로 문단(<p>)으로 나눠 렌더링 (단일 \n도 문단으로 처리)
+  function splitParagraphs(text) {
+    return String(text).split(/\n/).map(p => p.trim()).filter(p => p.length > 0);
+  }
   function renderParagraphs(text) {
-    return String(text)
-      .split(/\n{2,}/)
-      .map(p => `<p>${escapeHtml(p.trim())}</p>`)
+    return splitParagraphs(text)
+      .map(p => `<p>${escapeHtml(p)}</p>`)
       .join('');
   }
 
@@ -630,18 +631,77 @@ document.addEventListener('DOMContentLoaded', () => {
       + '</div>';
   }
 
+  // 번역 텍스트 + 인라인 마커를 HTML로 렌더링
+  function renderParagraphsWithMarkers(text, endnotes) {
+    const paragraphs = splitParagraphs(text);
+    const applied = Array.isArray(endnotes)
+      ? endnotes.filter(n => typeof n !== 'string' && Number(n.applied) === 1)
+      : [];
+
+    // 문단별 마커 정보: { pIdx: [{num, after}] }
+    // after = 마커를 삽입할 단어 (해당 단어 바로 뒤에 삽입). null이면 문단 끝.
+    const paraMarkers = {};
+    applied.forEach((n, i) => {
+      // targetKeyword 우선, 없으면 targetSentence 앞 40자로 문단 탐색
+      const keyword = (n.targetKeyword || '').trim();
+      const sentence = (n.targetSentence || '').trim();
+      const searchKey = keyword || sentence.slice(0, 40);
+      if (!searchKey) return;
+      const pIdx = paragraphs.findIndex(p => p.includes(searchKey));
+      if (pIdx !== -1) {
+        if (!paraMarkers[pIdx]) paraMarkers[pIdx] = [];
+        paraMarkers[pIdx].push({ num: i + 1, after: keyword || null });
+      }
+    });
+
+    return paragraphs.map((p, pIdx) => {
+      const markers = paraMarkers[pIdx];
+      if (!markers || !markers.length) return `<p>${escapeHtml(p)}</p>`;
+
+      // 마커를 뒤에서부터 삽입해야 앞 마커의 위치가 안 밀림
+      // 먼저 (삽입 위치, 마커번호) 쌍을 구한 뒤 역순으로 삽입
+      let result = p;
+      const inserts = markers.map(({ num, after }) => {
+        if (after) {
+          const pos = result.indexOf(after);
+          if (pos !== -1) return { pos: pos + after.length, num };
+        }
+        return { pos: result.length, num };
+      }).sort((a, b) => b.pos - a.pos); // 역순
+
+      inserts.forEach(({ pos, num }) => {
+        result = result.slice(0, pos) + `@@M${num}@@` + result.slice(pos);
+      });
+
+      // 이스케이프 후 플레이스홀더를 실제 sup 태그로 교체
+      return `<p>${escapeHtml(result).replace(/@@M(\d+)@@/g,
+        (_, n) => `<sup class="tr-endnote-marker">[${n}]</sup>`)}</p>`;
+    }).join('');
+  }
+
   function refreshEndnotesInPane() {
     const transPane = document.querySelector('.tr-trans-text');
     if (!transPane) return;
+
     const endnotes = selectedVersion?.result?.readerEndnotes || [];
-    const existing = transPane.querySelector('.tr-endnotes-section');
-    if (existing) existing.remove();
-    const html = renderEndnotesSection(endnotes);
-    if (html) transPane.insertAdjacentHTML('beforeend', html);
+    const rawText  = (selectedVersion?.result?.finalTranslation || '')
+      .replace(/\s*📌\s*미주[\s\S]*/u, '').trimEnd();
+
+    if (!rawText) {
+      const existing = transPane.querySelector('.tr-endnotes-section');
+      if (existing) existing.remove();
+      const html = renderEndnotesSection(endnotes);
+      if (html) transPane.insertAdjacentHTML('beforeend', html);
+      return;
+    }
+
+    // 번역 텍스트 + 인라인 마커 + 하단 미주 섹션 재렌더링
+    transPane.innerHTML = renderParagraphsWithMarkers(rawText, endnotes)
+      + renderEndnotesSection(endnotes);
   }
 
   // 리포트 체크박스 토글 (선택 사항 적용용) + DB 저장
-  document.querySelector('.tr-report-scroll')?.addEventListener('click', function (e) {
+  document.querySelector('.tr-report-scroll')?.addEventListener('click', async function (e) {
     const item = e.target.closest('.tr-check-item');
     if (!item) return;
     item.classList.toggle('tr-check-on');
@@ -651,9 +711,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const type = item.dataset.checkType;
     const idx  = Number(item.dataset.checkIdx);
-    const tid  = selectedVersion?.translationId;
     const url  = window.TR_CONFIG?.reportCheckUrl;
-    if (!type || isNaN(idx) || !tid || !url) return;
+    if (!type || isNaN(idx) || !url) return;
 
     // selectedVersion 데이터에도 반영 (미주 섹션 즉시 갱신용)
     if (type === 'endnote') {
@@ -677,6 +736,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (isOn) trToast('다음 번역 시 해당 용어가 반영됩니다.');
     }
+
+    // translationId 확보 (새 번역본은 ensureTranslationId로 DB에서 가져옴)
+    const tid = await ensureTranslationId();
+    if (!tid) return;
 
     // DB에 applied 상태 저장
     fetch(url, {
@@ -716,14 +779,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (transPane) {
       transPane.style.color = 'var(--color-text)';
       transPane.style.padding = '24px';
+      const readerEndnotes = Array.isArray(result.readerEndnotes) ? result.readerEndnotes : [];
       transPane.innerHTML = translated
-        ? renderParagraphs(translated)
+        ? renderParagraphsWithMarkers(translated, readerEndnotes)
+          + renderEndnotesSection(readerEndnotes)
         : `<pre style="white-space:pre-wrap;font-family:inherit;">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
-      // 체크된 미주가 있으면 바로 표시
-      const endnotesHtml = renderEndnotesSection(
-        Array.isArray(result.readerEndnotes) ? result.readerEndnotes : []
-      );
-      if (endnotesHtml) transPane.insertAdjacentHTML('beforeend', endnotesHtml);
       // 번역본 직접 수정 불가 — 수정은 검수 챗봇으로만 진행
       transPane.setAttribute('contenteditable', 'false');
       transPane.style.outline = 'none';
