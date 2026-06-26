@@ -607,8 +607,13 @@ def episode_report_check_save(request, work_pk, episode_pk):
                 )
                 tr_row = cur.fetchone()
                 target_country = (tr_row[0] if tr_row else '').upper()
-                original_word  = (item.get('source') or item.get('original_word') or '').strip()
+                original_word   = (item.get('source') or item.get('original_word') or '').strip()
                 translated_word = (item.get('suggested_target') or item.get('translated_word') or '').strip()
+                # CHECK 제약: person / place / organization 만 허용
+                _TYPE_MAP = {'person': 'person', 'place': 'place', 'organization': 'organization'}
+                glossary_type = _TYPE_MAP.get(
+                    (item.get('type') or item.get('glossary_type') or '').lower(), 'person'
+                )
 
                 if original_word and target_country:
                     if applied:
@@ -629,8 +634,8 @@ def episode_report_check_save(request, work_pk, episode_pk):
                             cur.execute(
                                 "INSERT INTO glossary "
                                 "(work_id, target_country, original_word, translated_word, glossary_type) "
-                                "VALUES (%s, %s, %s, %s, 'proper_noun')",
-                                [work.work_id, target_country, original_word, translated_word],
+                                "VALUES (%s, %s, %s, %s, %s)",
+                                [work.work_id, target_country, original_word, translated_word, glossary_type],
                             )
                     else:
                         cur.execute(

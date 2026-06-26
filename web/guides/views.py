@@ -1,9 +1,11 @@
 import json
+from datetime import timezone as dt_timezone
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from common import model_server
@@ -34,7 +36,7 @@ def guide_saved(request, work_pk):
         'country': r[1] or '',
         'countryName': _COUNTRY_NAME.get((r[1] or '').upper(), ''),
         'htmlReport': r[2],
-        'createdAt': r[3].strftime('%Y.%m.%d %H:%M') if r[3] else '',
+        'createdAt': timezone.localtime(r[3].replace(tzinfo=dt_timezone.utc) if r[3].tzinfo is None else r[3]).strftime('%Y.%m.%d %H:%M') if r[3] else '',
     } for r in rows]
     return JsonResponse({'ok': True, 'guides': guides})
 
