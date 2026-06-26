@@ -131,11 +131,27 @@ def relationship_positions(request, work_pk):
         return JsonResponse({'ok': False, 'error': '관계도를 찾을 수 없습니다.'}, status=404)
 
     positions_json = json.dumps(positions, ensure_ascii=False)
+
+    # 위치 데이터 교체
     content = re.sub(
         r'window\.__REL_POSITIONS__\s*=\s*[^;]+;',
         f'window.__REL_POSITIONS__={positions_json};',
         row[0],
     )
+
+    # 구버전 HTML 자동 패치 ①: overlay 트랜지션 제거
+    content = content.replace(
+        'pointer-events:none;opacity:0;transition:opacity .3s;',
+        'pointer-events:none;opacity:0;',
+    )
+
+    # 구버전 HTML 자동 패치 ②: requestAnimationFrame + setTimeout 추가
+    if 'requestAnimationFrame' not in content:
+        content = re.sub(
+            r"updateCards\(\);[\s\S]*?window\.parent\.postMessage\(\{[\s\S]*?'rel-ready'[\s\S]*?\}\s*,\s*'\*'\s*\);",
+            "cy.fit(cy.nodes(), 80);\n    requestAnimationFrame(function() {\n      updateCards();\n      overlay.style.opacity = '1';\n      setTimeout(function() {\n        window.parent.postMessage({ type: 'rel-ready' }, '*');\n      }, 50);\n    });",
+            content,
+        )
 
     with connection.cursor() as cur:
         cur.execute(
