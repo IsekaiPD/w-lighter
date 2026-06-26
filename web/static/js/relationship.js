@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedWorkId  = null;
   let isLoaded        = false; // 캐릭터 설정 불러오기 완료 여부
   let selectedCharIds = new Set(); // 모달에서 선택한 캐릭터 ID
+  let isGenerating    = false; // 관계도 생성 중 여부
 
   // ---------- DOM ----------
   const emptyState   = document.getElementById('relEmptyState');
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const diagrams = mockDiagrams[workId] || [];
     resultCount.textContent = `${diagrams.length} / ${MAX_DIAGRAMS} 개`;
 
-    if (diagrams.length === 0) {
+    if (diagrams.length === 0 && !isGenerating) {
       emptyState.style.display = '';
       diagList.style.display   = 'none';
       return;
@@ -110,6 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
     emptyState.style.display = 'none';
     diagList.style.display   = 'flex';
     diagList.innerHTML = '';
+
+    // 생성 중이면 로딩 행 유지
+    if (isGenerating) {
+      diagList.insertAdjacentHTML('afterbegin', `
+        <div class="rel-row-loading" id="relLoadingRow">
+          <div class="rel-spinner"></div>
+          <span>생성 중</span>
+        </div>
+      `);
+    }
 
     diagrams.forEach(diag => {
       diagList.insertAdjacentHTML('beforeend', `
@@ -274,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 로딩 행 추가 + 카운트 즉시 N+1로 업데이트 (시각적 일치)
+    isGenerating = true;
     resultCount.textContent = `${existing.length + 1} / ${MAX_DIAGRAMS} 개`;
     emptyState.style.display = 'none';
     diagList.style.display   = 'flex';
@@ -350,11 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(window.REL_CONFIG.generateUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
-        body: JSON.stringify({ workId }),
+        body: JSON.stringify({ workId, characterIds: [...selectedCharIds] }),
       });
       const data = await res.json();
       console.log('[relationship-map] HTTP', res.status, data);
       if (!data.ok) {
+        isGenerating = false;
         document.getElementById('relLoadingRow')?.remove();
         showRelDebug(
           '<p style="font-weight:700;margin-bottom:6px;">관계도를 생성하지 못했어요</p>' +
@@ -365,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         return;
       }
+      isGenerating = false;
       document.getElementById('relLoadingRow')?.remove();
       document.getElementById('relDebugBox')?.remove();
       const html = extractRelContent(data.result);
@@ -390,9 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const newDiag = { id: mapId ? ('db_' + mapId) : ('gen_' + Date.now()), version: newVersion, createdAt, content: html };
       list.unshift(newDiag);
       renderList(workId);
-      openDetailModal(newDiag);
     } catch (err) {
       console.error('[relationship-map] error', err);
+      isGenerating = false;
       document.getElementById('relLoadingRow')?.remove();
       showRelDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {

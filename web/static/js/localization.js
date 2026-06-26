@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedWorkId   = null;
   let hasSynopsis      = true;
   let selectedCountry  = null; // { code, name }
+  let isGenerating     = false;
 
   // ---------- DOM ----------
   const emptyState   = document.getElementById('lcEmptyState');
@@ -93,9 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- 우측 패널 렌더 ----------
   function renderList(workId) {
     const guides = mockGuides[workId] || [];
-    resultCount.textContent = `${guides.length} / ${MAX_GUIDES} 개`;
+    resultCount.textContent = `${guides.length + (isGenerating ? 1 : 0)} / ${MAX_GUIDES} 개`;
 
-    if (guides.length === 0) {
+    if (guides.length === 0 && !isGenerating) {
       emptyState.style.display = '';
       guideList.style.display  = 'none';
       return;
@@ -103,6 +104,16 @@ document.addEventListener('DOMContentLoaded', () => {
     emptyState.style.display = 'none';
     guideList.style.display  = 'flex';
     guideList.innerHTML = '';
+
+    // 생성 중이면 로딩 행 유지
+    if (isGenerating) {
+      guideList.insertAdjacentHTML('afterbegin', `
+        <div class="lc-row-loading" id="lcLoadingRow">
+          <div class="lc-spinner"></div>
+          <span>생성 중</span>
+        </div>
+      `);
+    }
 
     guides.forEach(g => {
       guideList.insertAdjacentHTML('beforeend', `
@@ -281,15 +292,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 생성 중 행 추가
+    isGenerating = true;
     resultCount.textContent = `${list.length + 1} / ${MAX_GUIDES} 개`;
     emptyState.style.display = 'none';
     guideList.style.display  = 'flex';
-    guideList.insertAdjacentHTML('afterbegin', `
-      <div class="lc-row-loading" id="lcLoadingRow">
-        <div class="lc-spinner"></div>
-        <span>생성 중</span>
-      </div>
-    `);
+    if (!guideList.querySelector('#lcLoadingRow')) {
+      guideList.insertAdjacentHTML('afterbegin', `
+        <div class="lc-row-loading" id="lcLoadingRow">
+          <div class="lc-spinner"></div>
+          <span>생성 중</span>
+        </div>
+      `);
+    }
     generateBtn.disabled = true;
     runGuideGenerate(workId);
   }
@@ -322,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       console.log('[guide] HTTP', res.status, data);
       if (!data.ok) {
+        isGenerating = false;
         document.getElementById('lcLoadingRow')?.remove();
         showGuideDebug(
           '<p style="font-weight:700;margin-bottom:6px;">현지화 가이드를 생성하지 못했어요</p>' +
@@ -351,9 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       const list = mockGuides[workId] || (mockGuides[workId] = []);
       list.unshift(guide);
+      isGenerating = false;
       renderList(workId);
     } catch (err) {
       console.error('[guide] error', err);
+      isGenerating = false;
       document.getElementById('lcLoadingRow')?.remove();
       showGuideDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {

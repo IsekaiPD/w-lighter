@@ -1,10 +1,12 @@
 import json
 import re
+from datetime import timezone as dt_timezone
 
 from django.contrib.auth.decorators import login_required
 from django.db import connection
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from common import model_server
@@ -34,7 +36,7 @@ def relationship_saved(request, work_pk):
             'id': r[0],
             'version': i + 1,  # 생성순 버전
             'content': r[1],
-            'createdAt': r[2].strftime('%Y.%m.%d %H:%M') if r[2] else '',
+            'createdAt': timezone.localtime(r[2].replace(tzinfo=dt_timezone.utc) if r[2].tzinfo is None else r[2]).strftime('%Y.%m.%d %H:%M') if r[2] else '',
         })
     return JsonResponse({'ok': True, 'maps': maps})
 
@@ -63,10 +65,13 @@ def relationship_map(request):
         }, status=400)
 
     payload = {
-        'workId': work.work_id,           # int (명세) — characters 비우면 DB 캐릭터로 생성
+        'workId': work.work_id,
         'workTitle': work.title,
         'includeHtml': True,
     }
+    character_ids = body.get('characterIds')
+    if isinstance(character_ids, list) and character_ids:
+        payload['characterIds'] = character_ids
     try:
         data = model_server.call('/api/v1/relationship-map', payload)
     except model_server.ModelServerError as e:
