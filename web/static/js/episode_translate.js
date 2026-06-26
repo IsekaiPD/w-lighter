@@ -357,9 +357,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentPendingAction._ttl <= 0) currentPendingAction = null;
           }
         }
-        // 수정 제안이 있으면 "수정 제안" 카드 추가
-        if (r.proposedTranslation && String(r.proposedTranslation).trim()) {
-          appendSuggestionCard(r.changeSummary || '제안된 수정 번역입니다.', r.proposedTranslation);
+        // 수정 제안(edits)이 있으면 "수정 제안" 카드 추가
+        if (Array.isArray(r.edits) && r.edits.length) {
+          appendSuggestionCard(r.changeSummary || '제안된 수정 번역입니다.', r.edits);
         }
       }
     } catch (e) {
@@ -937,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ===== 수정 제안 카드 + 적용 ===== */
-  function appendSuggestionCard(summary, proposedText) {
+  function appendSuggestionCard(summary, edits) {
     if (!chatArea) return;
     const card = document.createElement('div');
     card.className = 'tr-chat-msg tr-chat-bot';
@@ -948,69 +948,45 @@ document.addEventListener('DOMContentLoaded', () => {
         `<p style="margin:0 0 10px;color:var(--color-text-muted);font-size:13px;line-height:1.5;">${escapeHtml(summary)}</p>` +
         `<button type="button" class="tr-suggestion-apply">번역 제안 적용</button>` +
       `</div>`;
-    card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyProposed(proposedText));
+    card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyEdits(edits));
     chatArea.appendChild(card);
     chatArea.scrollTop = chatArea.scrollHeight;
   }
 
-  // 제안(부분 수정)을 현재 번역문 전체에 병합 — 바뀐 구간만 찾아 교체
-  function mergeProposal(current, proposed) {
-    const curLines  = current.split('\n');
-    const propLines = proposed.split('\n');
-    const propNonEmpty = propLines.filter((l) => l.trim());
-    if (!propNonEmpty.length) return { text: current, located: false };
-
-    const words = (s) => s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
-    const sim = (a, b) => {
-      const wa = words(a); if (!wa.length) return 0;
-      const wb = new Set(words(b)); if (!wb.size) return 0;
-      let c = 0; wa.forEach((w) => { if (wb.has(w)) c++; });
-      return c / Math.max(wa.length, wb.size);
-    };
-
-    const firstP = propNonEmpty[0];
-    const lastP  = propNonEmpty[propNonEmpty.length - 1];
-
-    // 시작 위치: 제안 첫 줄과 가장 비슷한 현재 줄
-    let startIdx = -1, bestS = 0.25;
-    curLines.forEach((l, i) => {
-      if (!l.trim()) return;
-      const s = sim(firstP, l);
-      if (s > bestS) { bestS = s; startIdx = i; }
-    });
-    if (startIdx === -1) return { text: current, located: false };
-
-    // 끝 위치: 시작 이후 좁은 범위에서 제안 마지막 줄과 가장 비슷한 줄
-    const windowEnd = Math.min(curLines.length - 1, startIdx + propLines.length + 4);
-    let endIdx = startIdx, bestE = -1;
-    for (let i = startIdx; i <= windowEnd; i++) {
-      if (!curLines[i].trim()) continue;
-      const s = sim(lastP, curLines[i]);
-      if (s > bestE) { bestE = s; endIdx = i; }
-    }
-    if (endIdx < startIdx) endIdx = startIdx;
-
-    const merged = curLines.slice(0, startIdx).concat(propLines).concat(curLines.slice(endIdx + 1)).join('\n');
-    return { text: merged, located: true };
-  }
-
-  function applyProposed(proposedText) {
+  // 제안된 edits(원본 구간 → 교체문)를 현재 번역문에 정확 매칭(indexOf)으로 적용.
+  // 모델이 original을 글자 그대로 인용하므로 fuzzy 추측 없이 그 구간만 교체 → CJK 안전·drift 없음.
+  function applyEdits(edits) {
     const transPane = document.querySelector('.tr-trans-text');
     if (!transPane) return;
-    const current = currentTransText();
-    const { text: merged, located } = mergeProposal(current, proposedText);
+    const list = Array.isArray(edits) ? edits : [];
+    let text = currentTransText();
+    let applied = 0;
+    const missed = [];
+    for (const ed of list) {
+      const original = ed && typeof ed.original === 'string' ? ed.original : '';
+      const replacement = ed && typeof ed.replacement === 'string' ? ed.replacement : '';
+      if (!original) continue;
+      const i = text.indexOf(original);
+      if (i === -1) { missed.push(original); continue; }
+      text = text.slice(0, i) + replacement + text.slice(i + original.length);
+      applied++;
+    }
 
-    transPane.style.color = 'var(--color-text)';
-    transPane.style.padding = '24px';
-    transPane.innerHTML = renderParagraphs(merged);
-    transPane.setAttribute('contenteditable', 'false');
-    if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = merged;
-    switchToTab('translation');
+    if (applied > 0) {
+      transPane.style.color = 'var(--color-text)';
+      transPane.style.padding = '24px';
+      transPane.innerHTML = renderParagraphs(text);
+      transPane.setAttribute('contenteditable', 'false');
+      if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = text;
+      switchToTab('translation');
+    }
 
-    if (located) {
-      appendBotMessage('번역본에 반영했어요(전체 유지, 수정 부분만 교체). "변경 사항 적용"을 눌러 저장하세요.');
+    if (applied === 0) {
+      appendBotMessage('제안 위치를 번역본에서 찾지 못해 그대로 뒀어요. 수정할 부분을 조금 더 구체적으로 다시 말씀해 주세요.');
+    } else if (missed.length) {
+      appendBotMessage(`수정 ${applied}곳을 번역본에 반영했어요(${missed.length}곳은 위치를 찾지 못했습니다). "변경 사항 적용"을 눌러 저장하세요.`);
     } else {
-      appendBotMessage('제안 위치를 자동으로 찾지 못해 전체를 교체했어요. 내용을 확인해주세요.');
+      appendBotMessage('번역본에 반영했어요(지정한 부분만 교체). "변경 사항 적용"을 눌러 저장하세요.');
     }
   }
 
