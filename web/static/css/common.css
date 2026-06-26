@@ -251,6 +251,42 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   background: rgba(246, 241, 235, 0.5);
 }
 
+/* 사이드바 하단 푸터 */
+.sidebar-footer {
+  margin-top: auto;
+  width: 100%;
+  padding: 12px 20px 16px;
+  border-top: 1px solid rgba(207,195,251,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.open .sidebar-footer {
+  opacity: 1;
+  pointer-events: auto;
+}
+.sidebar-footer-links {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 5px;
+}
+.sidebar-footer-link {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+.sidebar-footer-link:hover {
+  text-decoration: underline;
+}
+.sidebar-footer-copy {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  margin: 0;
+}
+
 /* 팝업 (닫힌 상태 호버) — 서브 아이템과 동일한 스타일 */
 .sidebar-popup {
   position: fixed;

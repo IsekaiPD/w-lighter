@@ -116,6 +116,7 @@ def work_create(request):
     return JsonResponse({'ok': True, 'work': {
         'id': work.work_id, 'title': work.title,
         'pen_name': work.pen_name, 'genre': work.genre,
+        'synopsis': work.synopsis or '',
     }})
 
 
@@ -408,6 +409,14 @@ def episode_translations(request, work_pk, episode_pk):
     work    = get_object_or_404(Work, pk=work_pk, user=request.user)
     episode = get_object_or_404(Episode, pk=episode_pk, work=work)
 
+    def _json(v):
+        if not v:
+            return None
+        try:
+            return json.loads(v) if isinstance(v, str) else v
+        except (ValueError, TypeError):
+            return None
+
     with connection.cursor() as cur:
         cur.execute(
             "SELECT translation_id, target_country, translated_text, summary, "
@@ -421,19 +430,28 @@ def episode_translations(request, work_pk, episode_pk):
         )
         rows = cur.fetchall()
 
-    def _json(v):
-        if not v:
-            return None
-        try:
-            return json.loads(v) if isinstance(v, str) else v
-        except (ValueError, TypeError):
-            return None
+        # 작품 단위 확정 glossary 조회 (언어별)
+        cur.execute(
+            "SELECT target_country, original_word, translated_word "
+            "FROM glossary WHERE work_id = %s",
+            [work.work_id],
+        )
+        confirmed_rows = cur.fetchall()
+
+    # target_country → set of original_word
+    confirmed_by_lang = {}
+    for tc, ow, tw in confirmed_rows:
+        lang = _COUNTRY_TO_LANG.get((tc or '').upper(), tc)
+        if lang not in confirmed_by_lang:
+            confirmed_by_lang[lang] = []
+        confirmed_by_lang[lang].append({'source': ow, 'target': tw})
 
     items = []
     for r in rows:
+        lang = _COUNTRY_TO_LANG.get((r[1] or '').upper(), 'EN')
         items.append({
             'id': r[0],
-            'lang': _COUNTRY_TO_LANG.get((r[1] or '').upper(), 'EN'),
+            'lang': lang,
             'translatedText': r[2],
             'summary': r[3],
             'inspectionReport': _json(r[4]),      # 전체 decisions 배열(웹이 cultural 필터)
@@ -441,7 +459,7 @@ def episode_translations(request, work_pk, episode_pk):
             'glossaryCandidates': _json(r[6]),    # glossary_can
             'createdAt': r[7].strftime('%Y.%m.%d %H:%M') if r[7] else '',
         })
-    return JsonResponse({'ok': True, 'items': items})
+    return JsonResponse({'ok': True, 'items': items, 'confirmedGlossary': confirmed_by_lang})
 
 
 @login_required(login_url='pages:landing')
@@ -576,4 +594,49 @@ def episode_report_check_save(request, work_pk, episode_pk):
             "WHERE translation_id = %s AND episode_id = %s",
             [json.dumps(items, ensure_ascii=False), tid, episode.episode_id],
         )
+
+        # glossary 체크 시 작품 단위 glossary 테이블에도 저장/해제
+        if kind == 'glossary':
+            idx_int = int(idx)
+            item = items[idx_int] if 0 <= idx_int < len(items) else None
+            if item:
+                # target_country 조회
+                cur.execute(
+                    "SELECT target_country FROM translation_results WHERE translation_id = %s",
+                    [tid],
+                )
+                tr_row = cur.fetchone()
+                target_country = (tr_row[0] if tr_row else '').upper()
+                original_word  = (item.get('source') or item.get('original_word') or '').strip()
+                translated_word = (item.get('suggested_target') or item.get('translated_word') or '').strip()
+
+                if original_word and target_country:
+                    if applied:
+                        # 이미 있으면 UPDATE, 없으면 INSERT
+                        cur.execute(
+                            "SELECT glossary_id FROM glossary "
+                            "WHERE work_id = %s AND target_country = %s AND original_word = %s",
+                            [work.work_id, target_country, original_word],
+                        )
+                        existing = cur.fetchone()
+                        if existing:
+                            cur.execute(
+                                "UPDATE glossary SET translated_word = %s "
+                                "WHERE glossary_id = %s",
+                                [translated_word, existing[0]],
+                            )
+                        else:
+                            cur.execute(
+                                "INSERT INTO glossary "
+                                "(work_id, target_country, original_word, translated_word, glossary_type) "
+                                "VALUES (%s, %s, %s, %s, 'proper_noun')",
+                                [work.work_id, target_country, original_word, translated_word],
+                            )
+                    else:
+                        cur.execute(
+                            "DELETE FROM glossary "
+                            "WHERE work_id = %s AND target_country = %s AND original_word = %s",
+                            [work.work_id, target_country, original_word],
+                        )
+
     return JsonResponse({'ok': True})

@@ -123,7 +123,18 @@
     </div>
   </div>
 
-    <!-- 삭제 확인 모달 -->
+    <!-- 재추출 확인 모달 -->
+  <div class="char-modal-backdrop" id="reExtractBackdrop"></div>
+  <div class="char-modal" id="reExtractModal" role="dialog" aria-modal="true">
+    <h3 class="char-modal-title">캐릭터 설정을 다시 추출할까요?</h3>
+    <p class="char-modal-desc">다시 추출하면 기존에 추출된 캐릭터 정보가 초기화됩니다.</p>
+    <div class="char-modal-actions">
+      <button class="char-modal-btn cancel" id="reExtractCancel">취소</button>
+      <button class="char-modal-btn confirm" id="reExtractConfirm">다시 추출하기</button>
+    </div>
+  </div>
+
+  <!-- 삭제 확인 모달 -->
   <div class="char-modal-backdrop" id="deleteBackdrop"></div>
   <div class="char-modal" id="deleteModal" role="dialog" aria-modal="true">
     <h3 class="char-modal-title">이 캐릭터를 삭제할까요?</h3>

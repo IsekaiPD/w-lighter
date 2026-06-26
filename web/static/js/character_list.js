@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         // 저장된 캐릭터 없음 → 빈 상태로
         charTableWrap.style.display = 'none';
+        resetCharEmpty();
         charEmpty.style.display = '';
       }
     } catch (e) {
@@ -154,12 +155,42 @@ document.addEventListener('DOMContentLoaded', function () {
       'border-radius:12px;background:var(--color-surface,#fff);';
     box.innerHTML = html;
   }
-  // 현지화 가이드와 동일한 보라 박스 + 스피너 로딩
   function showCharLoading() {
-    const box = ensureDebugBox();
-    box.style.cssText = 'margin-top:16px;';
-    box.innerHTML = '<div class="char-loading"><div class="char-spinner"></div><span>생성 중</span></div>';
+    charEmpty.style.display = '';
+    charEmpty.innerHTML = '<div class="char-loading"><div class="char-spinner"></div><span>생성 중</span></div>';
+    charEmpty.style.border = 'none';
+    charEmpty.style.padding = '0';
   }
+
+  function resetCharEmpty() {
+    charEmpty.style.border = '';
+    charEmpty.style.padding = '';
+    charEmpty.innerHTML =
+      '<div class="char-empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>' +
+      '<p class="char-empty-title">아직 추출된 캐릭터 설정이 없어요</p>' +
+      '<p class="char-empty-desc">작품을 선택하고 \'캐릭터 설정 추출하기\'를 눌러주세요.</p>';
+  }
+
+  // ===== 재추출 확인 모달 =====
+  const reExtractBackdrop = document.getElementById('reExtractBackdrop');
+  const reExtractModal    = document.getElementById('reExtractModal');
+  const reExtractCancel   = document.getElementById('reExtractCancel');
+  const reExtractConfirm  = document.getElementById('reExtractConfirm');
+
+  function openReExtractModal() {
+    reExtractBackdrop.classList.add('open');
+    reExtractModal.classList.add('open');
+  }
+  function closeReExtractModal() {
+    reExtractBackdrop.classList.remove('open');
+    reExtractModal.classList.remove('open');
+  }
+  reExtractCancel?.addEventListener('click', closeReExtractModal);
+  reExtractBackdrop?.addEventListener('click', closeReExtractModal);
+  reExtractConfirm?.addEventListener('click', () => {
+    closeReExtractModal();
+    doExtract();
+  });
 
   extractBtn.addEventListener('click', async function () {
     if (!selectedWorkId) { showToast('작품을 먼저 선택해주세요.'); return; }
@@ -169,6 +200,21 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     if (!window.CHAR_CONFIG || !window.CHAR_CONFIG.extractUrl) { showToast('설정 오류: extractUrl 없음'); return; }
+
+    // 기존 캐릭터가 있으면 재추출 확인 모달
+    const hasChars = tableBody && tableBody.querySelectorAll('tr').length > 0;
+    if (hasChars) { openReExtractModal(); return; }
+
+    doExtract();
+  });
+
+  async function doExtract() {
+
+    // 요약 통계 초기화
+    ['statTotal', 'statLead', 'statSupport', 'statMinor'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '0<small>명</small>';
+    });
 
     // 크레딧 차감 (부족하면 추출 불가)
     try {
@@ -215,8 +261,12 @@ document.addEventListener('DOMContentLoaded', function () {
       showDebug('<p style="color:#ff2d55;">네트워크 오류가 발생했습니다. 콘솔을 확인하세요.</p>');
     } finally {
       extractBtn.disabled = false;
+      // 로딩 중 상태에서 끝났으면 empty 복원 (renderCharacters가 호출 안 됐을 때)
+      if (charEmpty.style.display === '' && charEmpty.querySelector('.char-spinner')) {
+        resetCharEmpty();
+      }
     }
-  });
+  }
 
   function escapeAttr(str) {
     return String(str == null ? '' : str)
@@ -469,6 +519,7 @@ document.addEventListener('DOMContentLoaded', function () {
       updateSummary();
       if (tableBody.querySelectorAll('tr').length === 0) {
         charTableWrap.style.display = 'none';
+        resetCharEmpty();
         charEmpty.style.display = '';
       }
       return;

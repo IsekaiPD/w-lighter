@@ -3,12 +3,12 @@
 <aside class="sidebar" id="sidebar">
 
   <!-- 닫힌 상태 로고 -->
-  <a class="sidebar-logo-short" href="/works/" aria-label="w.LiGHTER 홈">
+  <a class="sidebar-logo-short" href="{% url 'pages:landing' %}" aria-label="w.LiGHTER 홈">
     <img src="{% static 'images/sidebar/logo_short.svg' %}" alt="w.LiGHTER">
   </a>
 
   <!-- 열린 상태 로고 -->
-  <a class="sidebar-logo-full" href="/works/" aria-label="w.LiGHTER 홈">
+  <a class="sidebar-logo-full" href="{% url 'pages:landing' %}" aria-label="w.LiGHTER 홈">
     <img src="{% static 'images/sidebar/logo_sidebar.svg' %}" alt="w.LiGHTER">
   </a>
 
@@ -78,6 +78,16 @@
     </a>
 
   </nav>
+
+  <!-- 하단 약관 -->
+  <div class="sidebar-footer">
+    <div class="sidebar-footer-links">
+      <a href="/terms/" class="sidebar-footer-link">서비스 이용약관</a>
+      <a href="/privacy/" class="sidebar-footer-link">개인정보 처리방침</a>
+    </div>
+    <p class="sidebar-footer-copy">© 2026 w.LiGHTER</p>
+  </div>
+
 </aside>
 
 <!-- 닫힌 사이드바에서 작품 설정 호버 팝업 -->

@@ -448,6 +448,18 @@
 }
 
 /* 생성 중 슬롯 */
+.cover-generating-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: #F3EEFF;
+  border: 1px solid #CFC3FB;
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+  color: var(--color-primary);
+}
 .cover-slot-loading {
   aspect-ratio: 2 / 3;
   border: 1.5px dashed #B7A9E6;

@@ -372,6 +372,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-decoration: none;
+}
+a.ep-title:hover {
+  color: var(--color-primary);
 }
 
 /* Episode language tags */
@@ -381,8 +385,8 @@
   flex-shrink: 0;
 }
 
-/* 번역 보기 button */
-.translate-view-btn {
+/* 번역 보기 button (삭제됨 - 참조용 보존 제거) */
+.translate-view-btn-unused {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -490,4 +494,8 @@
   font-weight: 600;
   color: var(--color-primary);
   white-space: nowrap;
+}
+.lang-tag-empty {
+  opacity: 0;
+  pointer-events: none;
 }

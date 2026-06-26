@@ -132,19 +132,12 @@
       {% for episode in episodes %}
       <div class="episode-row" data-epnum="{{ episode.episode_number }}" data-langs="{{ episode.trans_langs|join:',' }}">
         <div class="ep-badge">{{ episode.episode_number }}화</div>
-        <span class="ep-title">{{ episode.title }}</span>
+        <a href="{% url 'works:episode_detail' work_pk=work.work_id episode_pk=episode.episode_id %}" class="ep-title">{{ episode.title }}</a>
         <div class="ep-langs">
           {% for lang in episode.trans_langs %}
           <span class="lang-tag">{{ lang }}</span>
           {% endfor %}
         </div>
-        <a href="{% url 'works:episode_detail' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-view-btn">
-          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
-            <rect x="0.5" y="0.5" width="12" height="16" rx="1.5" stroke="#6e5bb8" stroke-width="1.2"/>
-            <rect x="7.5" y="3.5" width="12" height="14" rx="1.5" fill="#f9e9fa" stroke="#6e5bb8" stroke-width="1.2"/>
-          </svg>
-          번역 보기
-        </a>
         <a href="{% url 'works:episode_translate' work_pk=work.work_id episode_pk=episode.episode_id %}" class="translate-btn">
           <img src="{% static 'images/translate/translate.svg' %}" width="20" height="18" alt="" aria-hidden="true">
           번역하기

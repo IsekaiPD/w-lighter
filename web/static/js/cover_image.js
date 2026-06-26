@@ -59,6 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
       `);
     }
 
+    // 생성 중이고 현재 그리드가 생성 중인 작품이면 로딩 슬롯 유지
+    if (isGenerating && workId === generatingWorkId) {
+      const emptySlot = imageGrid.querySelector('.cover-slot-empty');
+      if (emptySlot) {
+        emptySlot.outerHTML = '<div class="cover-slot-loading" id="coverLoadingSlot"><div class="cover-spinner"></div><span>생성 중</span></div>';
+      } else if (!imageGrid.querySelector('#coverLoadingSlot')) {
+        imageGrid.insertAdjacentHTML('afterbegin', '<div class="cover-slot-loading" id="coverLoadingSlot"><div class="cover-spinner"></div><span>생성 중</span></div>');
+      }
+    }
+
     // 이미지 카드 (최신순)
     covers.forEach((cover) => {
       const imgContent = cover.url
@@ -108,6 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dropdownItems = dropdown?.querySelectorAll('.cover-dropdown-item');
 
   let selectedWorkId = null;
+  let isGenerating = false;
+  let generatingWorkId = null;
 
   const chevron = document.getElementById('workSelectChevron');
   const SVG_DOWN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>`;
@@ -299,7 +311,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    isGenerating = true;
+    generatingWorkId = selectedWorkId;
     generateBtn.disabled = true;
+    showGeneratingBanner();
     // "생성 중" 로딩: 빈 슬롯 자리를 로딩으로 교체 (없으면 그리드에 추가)
     document.getElementById('coverDebugBox')?.remove();
     const loadingHTML = '<div class="cover-slot-loading" id="coverLoadingSlot"><div class="cover-spinner"></div><span>생성 중</span></div>';
@@ -351,9 +366,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('[cover] error', err);
       showToast('※ 네트워크 오류가 발생했습니다.');
     } finally {
+      isGenerating = false;
       generateBtn.disabled = false;
+      hideGeneratingBanner();
       document.getElementById('coverLoadingSlot')?.remove();
-      renderGrid(selectedWorkId);
+      renderGrid(generatingWorkId);
+      generatingWorkId = null;
     }
   });
 
@@ -446,6 +464,20 @@ document.addEventListener('DOMContentLoaded', () => {
     toast.textContent = msg;
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  function showGeneratingBanner() {
+    let banner = document.getElementById('coverGeneratingBanner');
+    if (banner) return;
+    banner = document.createElement('div');
+    banner.id = 'coverGeneratingBanner';
+    banner.className = 'cover-generating-banner';
+    banner.innerHTML = '<div class="cover-spinner" style="width:16px;height:16px;border-width:2px;"></div><span>이미지 생성 중입니다. 다른 작업을 하셔도 생성이 계속됩니다.</span>';
+    document.querySelector('.cover-right')?.prepend(banner);
+  }
+
+  function hideGeneratingBanner() {
+    document.getElementById('coverGeneratingBanner')?.remove();
   }
 
   deleteCancel?.addEventListener('click', closeDeleteModal);
