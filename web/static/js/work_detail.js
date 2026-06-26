@@ -63,6 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // 번역본이 존재하는 언어만 드롭다운에 노출 (ALL은 항상 유지)
+  function pruneLangOptions() {
+    const available = new Set();
+    document.querySelectorAll('.episode-row').forEach(r => {
+      (r.dataset.langs || '').split(',').filter(Boolean).forEach(l => available.add(l.toUpperCase()));
+    });
+    document.querySelectorAll('#langPanel .ep-sort-opt').forEach(opt => {
+      if (opt.dataset.val === 'ALL') return;          // ALL은 항상 유지
+      opt.style.display = available.has(opt.dataset.val) ? '' : 'none';
+    });
+  }
+
+  pruneLangOptions();
   initEpDropdown('langDropdown',  'langTrigger',  'langPanel',  'langLabel',  applyEpView);
   initEpDropdown('orderDropdown', 'orderTrigger', 'orderPanel', 'orderLabel', applyEpView);
   applyEpView();  // 초기: 회차번호 오름차순 + 전체

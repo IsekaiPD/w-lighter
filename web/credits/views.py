@@ -36,7 +36,8 @@ CHARGE_PLANS = {
         'credit_amount': 35000,
         'price': 29900,
         'description': '꾸준히 연재 중인 작가라면 Plus 충전을 추천해요.',
-        'sub_text': '14% 할인, 1C당 0.85원',
+        'discount_text': '14% 할인',
+        'sub_text': '1C당 0.85원',
     },
     'max': {
         'code': 'max',
@@ -44,7 +45,8 @@ CHARGE_PLANS = {
         'credit_amount': 75000,
         'price': 49900,
         'description': '장기 연재나 완결을 준비 중인 작가에게 좋아요.',
-        'sub_text': '33% 할인, 1C당 0.67원',
+        'discount_text': '33% 할인',
+        'sub_text': '1C당 0.67원',
     },
 }
 
