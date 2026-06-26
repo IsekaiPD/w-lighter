@@ -531,6 +531,27 @@ document.addEventListener('DOMContentLoaded', () => {
   detailClose?.addEventListener('click', closeDetailModal);
   detailBackdrop?.addEventListener('click', closeDetailModal);
 
+  // ---------- iframe → 부모 메시지 수신 ----------
+  // rel-ready : Cytoscape 렌더 완료 → PDF 캡처 타이밍
+  // rel-positions : 노드 드래그 완료 → RDS 위치 저장
+  let pdfReadyResolve = null;
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'rel-ready' && pdfReadyResolve) {
+      const r = pdfReadyResolve; pdfReadyResolve = null; r();
+    }
+    if (e.data.type === 'rel-positions' && e.data.positions && detailTargetId && selectedWorkId) {
+      const m = /^db_(\d+)$/.exec(String(detailTargetId));
+      if (!m || !window.REL_CONFIG?.positionsUrl) return;
+      const url = window.REL_CONFIG.positionsUrl.replace('/0/', '/' + selectedWorkId + '/');
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
+        body: JSON.stringify({ mapId: m[1], positions: e.data.positions }),
+      }).catch(err => console.error('[rel positions]', err));
+    }
+  });
+
   detailPdfBtn?.addEventListener('click', () => {
     const diag = (mockDiagrams[selectedWorkId] || []).find(d => d.id === detailTargetId);
     const html = toRelHtml(diag && diag.content);
@@ -559,7 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       try {
         if (doc.fonts && doc.fonts.ready) { try { await doc.fonts.ready; } catch (e) {} }
-        await new Promise(r => setTimeout(r, 150));
+        // Cytoscape 렌더 완료(rel-ready) 신호 대기 — 최대 8초 타임아웃
+        await new Promise(r => { pdfReadyResolve = r; setTimeout(r, 8000); });
         // 콘텐츠 전체 폭/높이로 캡처 → 우측 잘림 방지
         const fullWidth  = Math.max(doc.body.scrollWidth, doc.documentElement.scrollWidth, 1);
         const fullHeight = Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight, 1);
