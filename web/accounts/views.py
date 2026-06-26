@@ -127,6 +127,16 @@ def oauth_callback(request, provider):
                     f'탈퇴한 계정은 {WITHDRAW_BLOCK_DAYS}일간 재가입할 수 없습니다. (약 {max(days_left, 1)}일 남음)'
                 )
             email_user.delete()  # 7일 경과 → 삭제 후 재가입 허용
+        elif email_user.oauth_provider == oauth_profile['oauth_provider']:
+            # 같은 제공자 + 같은 이메일 = 동일 사용자.
+            # 카카오 앱(REST 키) 변경 등으로 provider_user_id가 달라졌어도
+            # 새 id로 갱신한 뒤 기존 계정으로 로그인시킨다.
+            if email_user.provider_user_id != oauth_profile['provider_user_id']:
+                email_user.provider_user_id = oauth_profile['provider_user_id']
+                email_user.save(update_fields=['provider_user_id', 'updated_at'])
+            login_user(request, email_user)
+            clear_signup_session(request)
+            return redirect('works:library')
         else:
             registered_provider = PROVIDER_DISPLAY.get(email_user.oauth_provider, email_user.oauth_provider)
             return redirect_to_landing_with_error(
