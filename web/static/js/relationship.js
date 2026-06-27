@@ -352,9 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
         body: JSON.stringify({
           workId,
-          characters: (loadedChars[workId] || [])
-            .filter(c => selectedCharIds.has(c.id))
-            .map(c => ({ char_name: c.name, role: c.role })),
+          characterIds: Array.from(selectedCharIds),
         }),
       });
       const data = await res.json();
@@ -519,16 +517,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (diag) openDetailModal(diag);
   });
 
-  // iframe 로드 후 축소 적용 (same-origin이므로 가능)
+  // iframe 로드 후 처리 (zoom CSS는 Cytoscape 좌표와 충돌하여 제거)
   detailFrame?.addEventListener('load', () => {
     try {
       const doc = detailFrame.contentDocument || detailFrame.contentWindow?.document;
       if (!doc || !doc.head) return;
-      // 기존 주입 스타일 제거 후 재추가
+      // 기존 주입 스타일 제거
       doc.getElementById('__rel-zoom')?.remove();
       const style = doc.createElement('style');
       style.id = '__rel-zoom';
-      style.textContent = 'html { zoom: 0.7; } body { overflow-x: hidden !important; }';
+      style.textContent = 'body { overflow-x: hidden !important; }';
       doc.head.appendChild(style);
     } catch (e) { /* cross-origin 등 예외 무시 */ }
   });
