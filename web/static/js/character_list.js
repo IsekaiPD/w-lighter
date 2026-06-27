@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
     wrap.className = 'role-select';
     wrap.dataset.value = current;
     wrap.innerHTML =
-      '<button type="button" class="role-select-trigger">' +
+      '<button type="button" class="role-select-trigger ' + mapRole(current).cls + '">' +
         '<span class="role-select-label">' + current + '</span>' +
         '<svg class="role-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
       '</button>' +
@@ -415,6 +415,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const val = opt.dataset.value;
       wrap.dataset.value = val;
       wrap.querySelector('.role-select-label').textContent = val;
+      trigger.classList.remove('role-lead', 'role-support', 'role-minor');
+      trigger.classList.add(mapRole(val).cls);
       panel.querySelectorAll('.role-select-opt').forEach(function (o) { o.classList.toggle('selected', o === opt); });
       wrap.classList.remove('open');
     });
