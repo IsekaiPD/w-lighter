@@ -319,7 +319,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ===== 요약/카운트 =====
   function updateSummary() {
-    const rows = tableBody.querySelectorAll('tr');
+    // 저장 전 새 행(data-is-new)은 제외 → 저장해야 숫자에 반영
+    const rows = tableBody.querySelectorAll('tr:not([data-is-new])');
     let lead = 0, support = 0, minor = 0;
     rows.forEach(function (row) {
       const badge = row.querySelector('.role-badge');
@@ -394,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
     wrap.innerHTML =
       '<button type="button" class="role-select-trigger">' +
         '<span class="role-select-label">' + current + '</span>' +
-        '<svg class="role-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '<svg class="role-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
       '</button>' +
       '<div class="role-select-panel">' +
         ROLE_OPTS.map(function (r) {
@@ -403,10 +404,24 @@ document.addEventListener('DOMContentLoaded', function () {
       '</div>';
     const trigger = wrap.querySelector('.role-select-trigger');
     const panel = wrap.querySelector('.role-select-panel');
+    panel._roleWrap = wrap;
+    function openRolePanel() {
+      // 패널을 body로 빼서(포털) 표 스크롤 영역에 안 갇히게 → 잘림/스크롤바 없음, 트리거에 딱 붙음
+      const r = trigger.getBoundingClientRect();
+      document.body.appendChild(panel);
+      panel.style.position = 'fixed';
+      panel.style.top = (r.bottom - 1) + 'px';
+      panel.style.left = r.left + 'px';
+      panel.style.width = r.width + 'px';
+      panel.style.minWidth = '0';
+      panel.style.zIndex = '1000';
+      panel.style.display = 'block';
+    }
     trigger.addEventListener('click', function (e) {
       e.stopPropagation();
-      document.querySelectorAll('.role-select.open').forEach(function (o) { if (o !== wrap) o.classList.remove('open'); });
-      wrap.classList.toggle('open');
+      const wasOpen = wrap.classList.contains('open');
+      closeAllRoleSelects();
+      if (!wasOpen) { wrap.classList.add('open'); openRolePanel(); }
     });
     panel.addEventListener('click', function (e) {
       const opt = e.target.closest('.role-select-opt');
@@ -416,14 +431,20 @@ document.addEventListener('DOMContentLoaded', function () {
       wrap.dataset.value = val;
       wrap.querySelector('.role-select-label').textContent = val;
       panel.querySelectorAll('.role-select-opt').forEach(function (o) { o.classList.toggle('selected', o === opt); });
-      wrap.classList.remove('open');
+      closeAllRoleSelects();
     });
     return wrap;
   }
-  // 바깥 클릭 시 열린 역할 드롭다운 닫기
-  document.addEventListener('click', function () {
+  // 바깥 클릭/스크롤 시 닫기 + 포털된 패널 원위치 복귀
+  function closeAllRoleSelects() {
     document.querySelectorAll('.role-select.open').forEach(function (o) { o.classList.remove('open'); });
-  });
+    document.querySelectorAll('body > .role-select-panel').forEach(function (p) {
+      p.removeAttribute('style');
+      if (p._roleWrap) p._roleWrap.appendChild(p);
+    });
+  }
+  document.addEventListener('click', closeAllRoleSelects);
+  window.addEventListener('scroll', closeAllRoleSelects, true);
 
   // ===== 편집 진입 =====
   function enterEdit(row) {
@@ -584,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function () {
       '<td>-</td>' +
       '<td><span class="role-badge role-minor">단역</span></td>' +
       '<td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>' +
-      '<td class="char-actions">' + ACTIONS_HTML + '</td>';
+      '<td class="char-actions">' + ACTION_HTML + '</td>';
     tableBody.appendChild(tr);
     updateSummary();
     enterEdit(tr);
