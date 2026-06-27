@@ -375,8 +375,8 @@ def episode_inspect_chat(request, work_pk, episode_pk):
             if row:
                 current_translation = row[0] or ''
 
-    # 모델 서버 제한: 각 필드 최대 8000자
-    current_translation = current_translation[:8000]
+    # 모델 서버 제한: 원문 8000자 / 번역본 24000자 (번역본은 원문보다 길어 분리 상향)
+    current_translation = current_translation[:24000]
     source_text = (episode.original_text or '')[:8000]
 
     payload = {
