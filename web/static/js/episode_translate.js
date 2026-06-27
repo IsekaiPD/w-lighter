@@ -939,6 +939,16 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== 수정 제안 카드 + 적용 ===== */
   function appendSuggestionCard(summary, edits) {
     if (!chatArea) return;
+    // 원본은 길 수 있어 한 줄(말줄임)로만, 교체문(after)은 전문 표시. 데이터는 r.edits에 이미 있음.
+    const list = Array.isArray(edits) ? edits : [];
+    const diffHtml = list.map(ed => {
+      const o = escapeHtml(ed && typeof ed.original === 'string' ? ed.original : '');
+      const r = escapeHtml(ed && typeof ed.replacement === 'string' ? ed.replacement : '');
+      return `<div style="margin:8px 0;font-size:13px;line-height:1.5;">` +
+               `<div title="${o}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c0392b;text-decoration:line-through;">${o}</div>` +
+               `<div style="color:#1e7e34;word-break:break-word;">↳ ${r}</div>` +
+             `</div>`;
+    }).join('');
     const card = document.createElement('div');
     card.className = 'tr-chat-msg tr-chat-bot';
     card.innerHTML =
@@ -946,6 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `<div style="background:var(--color-surface,#fff);border:1px solid var(--color-primary-border,#cfc3fb);border-radius:12px;padding:14px;max-width:100%;">` +
         `<p style="font-weight:700;margin:0 0 6px;color:var(--color-text);">수정 제안</p>` +
         `<p style="margin:0 0 10px;color:var(--color-text-muted);font-size:13px;line-height:1.5;">${escapeHtml(summary)}</p>` +
+        diffHtml +
         `<button type="button" class="tr-suggestion-apply">번역 제안 적용</button>` +
       `</div>`;
     card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyEdits(edits));
