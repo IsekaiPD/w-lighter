@@ -392,9 +392,9 @@ document.addEventListener('DOMContentLoaded', function () {
     wrap.className = 'role-select';
     wrap.dataset.value = current;
     wrap.innerHTML =
-      '<button type="button" class="role-select-trigger ' + mapRole(current).cls + '">' +
+      '<button type="button" class="role-select-trigger">' +
         '<span class="role-select-label">' + current + '</span>' +
-        '<svg class="role-select-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '<svg class="role-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
       '</button>' +
       '<div class="role-select-panel">' +
         ROLE_OPTS.map(function (r) {
@@ -415,17 +415,17 @@ document.addEventListener('DOMContentLoaded', function () {
       const val = opt.dataset.value;
       wrap.dataset.value = val;
       wrap.querySelector('.role-select-label').textContent = val;
-      trigger.classList.remove('role-lead', 'role-support', 'role-minor');
-      trigger.classList.add(mapRole(val).cls);
       panel.querySelectorAll('.role-select-opt').forEach(function (o) { o.classList.toggle('selected', o === opt); });
       wrap.classList.remove('open');
     });
     return wrap;
   }
-  // 바깥 클릭 시 열린 역할 드롭다운 닫기
-  document.addEventListener('click', function () {
+  // 바깥 클릭/스크롤 시 열린 역할 드롭다운 닫기
+  function closeAllRoleSelects() {
     document.querySelectorAll('.role-select.open').forEach(function (o) { o.classList.remove('open'); });
-  });
+  }
+  document.addEventListener('click', closeAllRoleSelects);
+  window.addEventListener('scroll', closeAllRoleSelects, true);
 
   // ===== 편집 진입 =====
   function enterEdit(row) {
