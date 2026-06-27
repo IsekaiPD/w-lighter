@@ -326,7 +326,8 @@
   color: var(--color-text-muted);
   margin-bottom: 12px;
 }
-.char-table-scroll { overflow-x: auto; }
+/* overflow:visible → 역할 드롭다운이 표 영역에 안 잘리고, 가로는 table-layout:fixed라 안 넘침 */
+.char-table-scroll { overflow: visible; }
 .char-table {
   width: 100%;
   border-collapse: collapse;
