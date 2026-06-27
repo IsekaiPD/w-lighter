@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 번역 텍스트 + 인라인 마커를 HTML로 렌더링
-  function renderParagraphsWithMarkers(text, endnotes) {
+  function renderParagraphsWithMarkers(text, endnotes, highlight) {
     const paragraphs = splitParagraphs(text);
     const applied = Array.isArray(endnotes)
       ? endnotes.filter(n => typeof n !== 'string' && Number(n.applied) === 1)
@@ -654,28 +654,43 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // 검수 챗봇 수정 구간 하이라이트(표시 전용). 각 텍스트는 문단 내 첫 매칭만.
+    const hlCls = (highlight && highlight.cls) || 'tr-hl-applied';
+    const hlTexts = highlight && Array.isArray(highlight.texts)
+      ? highlight.texts.filter(t => typeof t === 'string' && t)
+      : [];
+
     return paragraphs.map((p, pIdx) => {
-      const markers = paraMarkers[pIdx];
-      if (!markers || !markers.length) return `<p>${escapeHtml(p)}</p>`;
-
-      // 마커를 뒤에서부터 삽입해야 앞 마커의 위치가 안 밀림
-      // 먼저 (삽입 위치, 마커번호) 쌍을 구한 뒤 역순으로 삽입
-      let result = p;
-      const inserts = markers.map(({ num, after }) => {
-        if (after) {
-          const pos = result.indexOf(after);
-          if (pos !== -1) return { pos: pos + after.length, num };
-        }
-        return { pos: result.length, num };
-      }).sort((a, b) => b.pos - a.pos); // 역순
-
-      inserts.forEach(({ pos, num }) => {
-        result = result.slice(0, pos) + `@@M${num}@@` + result.slice(pos);
+      const markers = paraMarkers[pIdx] || [];
+      const hlRanges = [];
+      hlTexts.forEach(t => {
+        const pos = p.indexOf(t);
+        if (pos !== -1) hlRanges.push({ start: pos, end: pos + t.length });
       });
+      if (!markers.length && !hlRanges.length) return `<p>${escapeHtml(p)}</p>`;
 
-      // 이스케이프 후 플레이스홀더를 실제 sup 태그로 교체
-      return `<p>${escapeHtml(result).replace(/@@M(\d+)@@/g,
-        (_, n) => `<sup class="tr-endnote-marker">[${n}]</sup>`)}</p>`;
+      // 미주 마커·하이라이트 삽입 위치를 모아 역순 삽입(앞 위치가 안 밀리도록)
+      const inserts = [];
+      markers.forEach(({ num, after }) => {
+        let pos = p.length;
+        if (after) { const k = p.indexOf(after); if (k !== -1) pos = k + after.length; }
+        inserts.push({ pos, str: `@@M${num}@@` });
+      });
+      hlRanges.forEach(({ start, end }) => {
+        inserts.push({ pos: start, str: '@@HLS@@' });
+        inserts.push({ pos: end, str: '@@HLE@@' });
+      });
+      inserts.sort((a, b) => b.pos - a.pos);
+
+      let result = p;
+      inserts.forEach(({ pos, str }) => { result = result.slice(0, pos) + str + result.slice(pos); });
+
+      // 이스케이프 후 플레이스홀더를 실제 태그로 교체
+      const html = escapeHtml(result)
+        .replace(/@@M(\d+)@@/g, (_, n) => `<sup class="tr-endnote-marker">[${n}]</sup>`)
+        .replace(/@@HLS@@/g, `<mark class="${hlCls}">`)
+        .replace(/@@HLE@@/g, '</mark>');
+      return `<p>${html}</p>`;
     }).join('');
   }
 
@@ -962,6 +977,37 @@ document.addEventListener('DOMContentLoaded', () => {
     card.querySelector('.tr-suggestion-apply').addEventListener('click', () => applyEdits(edits));
     chatArea.appendChild(card);
     chatArea.scrollTop = chatArea.scrollHeight;
+
+    // 제안이 뜨면 바뀔 구간(original)을 본문에서 색1로 미리 하이라이트 + 정중앙으로(번역본 탭 전환)
+    const pendingTexts = list.map(ed => ed && typeof ed.original === 'string' ? ed.original : '').filter(Boolean);
+    if (pendingTexts.length) {
+      switchToTab('translation');
+      const base = transBodyText();
+      if (base) renderBodyWithHighlight(base, pendingTexts, 'tr-hl-pending');
+    }
+  }
+
+  // 번역본 전문(미주 블록 제거) — 하이라이트 재렌더의 기준 텍스트. 본문은 비편집(챗봇으로만 수정).
+  function transBodyText() {
+    return (selectedVersion?.result?.finalTranslation || '')
+      .replace(/\s*📌\s*미주[\s\S]*/u, '').trimEnd();
+  }
+
+  // 본문을 미주 마커/섹션과 함께 다시 그리되, 지정 구간을 색(cls)으로 하이라이트하고 첫 구간을 정중앙으로.
+  // 하이라이트는 표시 전용 — 저장(currentTransText=innerText)에는 태그가 빠지므로 DB/계약 영향 없음.
+  function renderBodyWithHighlight(bodyText, highlightTexts, cls) {
+    const transPane = document.querySelector('.tr-trans-text');
+    if (!transPane) return;
+    const endnotes = selectedVersion?.result?.readerEndnotes || [];
+    const texts = Array.isArray(highlightTexts) ? highlightTexts : [highlightTexts];
+    transPane.style.color = 'var(--color-text)';
+    transPane.style.padding = '24px';
+    transPane.innerHTML =
+      renderParagraphsWithMarkers(bodyText, endnotes, { texts, cls })
+      + renderEndnotesSection(endnotes);
+    transPane.setAttribute('contenteditable', 'false');
+    const mark = transPane.querySelector('mark.' + cls);
+    if (mark) mark.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   // 제안된 edits(원본 구간 → 교체문)를 현재 번역문에 정확 매칭(indexOf)으로 적용.
@@ -970,9 +1016,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const transPane = document.querySelector('.tr-trans-text');
     if (!transPane) return;
     const list = Array.isArray(edits) ? edits : [];
-    let text = currentTransText();
+    let text = transBodyText() || currentTransText();
     let applied = 0;
     const missed = [];
+    const appliedReplacements = [];
     for (const ed of list) {
       const original = ed && typeof ed.original === 'string' ? ed.original : '';
       const replacement = ed && typeof ed.replacement === 'string' ? ed.replacement : '';
@@ -980,16 +1027,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const i = text.indexOf(original);
       if (i === -1) { missed.push(original); continue; }
       text = text.slice(0, i) + replacement + text.slice(i + original.length);
+      appliedReplacements.push(replacement);
       applied++;
     }
 
     if (applied > 0) {
-      transPane.style.color = 'var(--color-text)';
-      transPane.style.padding = '24px';
-      transPane.innerHTML = renderParagraphs(text);
-      transPane.setAttribute('contenteditable', 'false');
       if (selectedVersion && selectedVersion.result) selectedVersion.result.finalTranslation = text;
       switchToTab('translation');
+      // 바뀐 구간을 색2로 하이라이트 + 정중앙으로 (미주 마커/섹션 유지)
+      renderBodyWithHighlight(text, appliedReplacements, 'tr-hl-applied');
     }
 
     if (applied === 0) {
