@@ -479,6 +479,17 @@
 .tr-trans-text p { margin-bottom: 1.6em; }
 .tr-trans-text p:last-child { margin-bottom: 0; }
 
+/* 검수 챗봇 수정 구간 하이라이트 (표시 전용 — 저장은 innerText라 태그 자동 제외) */
+.tr-trans-text mark.tr-hl-pending,
+.tr-trans-text mark.tr-hl-applied {
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+  text-decoration: underline;
+}
+.tr-trans-text mark.tr-hl-pending { background: #F4E9EF; }  /* 색1: 바뀔 구간(제안 시) */
+.tr-trans-text mark.tr-hl-applied { background: #ECEAFB; }  /* 색2: 바뀐 구간(적용 후) */
+
 /* 번역본 / 리포트 빈 상태 */
 .tr-empty-state {
   display: flex;
