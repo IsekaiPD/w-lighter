@@ -352,9 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': window.REL_CONFIG.csrfToken },
         body: JSON.stringify({
           workId,
-          characters: (loadedChars[workId] || [])
-            .filter(c => selectedCharIds.has(c.id))
-            .map(c => ({ char_name: c.name, role: c.role })),
+          characterIds: Array.from(selectedCharIds),
         }),
       });
       const data = await res.json();

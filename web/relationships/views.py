@@ -46,6 +46,12 @@ def relationship_saved(request, work_pk):
                 '})();</script>'
             )
             content = content.replace('</body>', patch + '</body>')
+        # opacity:0 노드 패치 → background-opacity:0 으로 복구 (엣지 연결 복구)
+        if "'opacity': 0," in content and 'background-opacity' not in content:
+            content = content.replace(
+                "'opacity': 0,\n          'label': ''",
+                "'background-opacity': 0,\n          'border-width': 0,\n          'label': ''"
+            )
         maps.append({
             'id': r[0],
             'version': i + 1,
@@ -85,7 +91,7 @@ def relationship_map(request):
         'characters': body.get('characters', []),
     }
 
-    # characterIds(['ch_0','ch_1',...]) 형식으로 온 경우 DB에서 캐릭터 조회 후 변환
+    # characterIds(['ch_0','ch_1',...]) → DB에서 전체 캐릭터 정보 조회 후 필터링
     character_ids = body.get('characterIds', [])
     if character_ids and not payload['characters']:
         indices = set()
@@ -98,13 +104,23 @@ def relationship_map(request):
         if indices:
             with connection.cursor() as cur:
                 cur.execute(
-                    "SELECT char_name, role, profile_label FROM characters "
-                    "WHERE work_id = %s ORDER BY character_id ASC",
+                    "SELECT char_name, role, profile_label, age, gender, "
+                    "appearance, relationships, detail_setting "
+                    "FROM characters WHERE work_id = %s ORDER BY character_id ASC",
                     [work.work_id],
                 )
                 all_chars = cur.fetchall()
             payload['characters'] = [
-                {'char_name': row[0], 'role': row[1] or '', 'profile_label': row[2] or ''}
+                {
+                    'char_name': row[0] or '',
+                    'role': row[1] or '',
+                    'profile_label': row[2] or '',
+                    'age': row[3] or '',
+                    'gender': row[4] or '',
+                    'appearance': row[5] or '',
+                    'relationships': row[6] or '',
+                    'detail_setting': row[7] or '',
+                }
                 for i, row in enumerate(all_chars)
                 if i in indices
             ]
