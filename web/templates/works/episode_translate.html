@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=emptystate-center-20260628-3">
+<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=verdate-pad-20260628-7">
 <link rel="stylesheet" href="{% static 'css/minigames.css' %}?v=vsbalance-20260624-2">
 {% endblock %}
 
@@ -96,8 +96,9 @@
             <div class="tr-content-spacer"></div>
             <div class="tr-version-dropdown" id="versionDropdown2">
               <button class="tr-version-trigger" id="versionTrigger2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-                <span id="versionLabel2">버전 선택</span>
+                <svg class="tr-version-caret" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                <span class="tr-ver-name" id="versionLabel2">버전 선택</span>
+                <span class="tr-ver-date" id="versionDate2"></span>
               </button>
               <div class="tr-version-panel" id="versionPanel2">
                 {# TODO: FastAPI translation_results 연동 후 버전 목록 동적 렌더링 #}
@@ -137,8 +138,9 @@
             <div class="tr-content-spacer"></div>
             <div class="tr-version-dropdown" id="versionDropdown3">
               <button class="tr-version-trigger" id="versionTrigger3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-                <span id="versionLabel3">버전 선택</span>
+                <svg class="tr-version-caret" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+                <span class="tr-ver-name" id="versionLabel3">버전 선택</span>
+                <span class="tr-ver-date" id="versionDate3"></span>
               </button>
               <div class="tr-version-panel" id="versionPanel3">
                 {# TODO: FastAPI translation_results 연동 후 버전 목록 동적 렌더링 #}
@@ -251,5 +253,5 @@
   };
 </script>
 <script src="{% static 'js/minigames.js' %}?v=imgfallback-20260624-1"></script>
-<script src="{% static 'js/episode_translate.js' %}?v=reportbox-20260628-1"></script>
+<script src="{% static 'js/episode_translate.js' %}?v=vertrigger-align-20260628-2"></script>
 {% endblock %}

@@ -149,7 +149,7 @@
 
   function startFeatureCarousel() {
     if (featureTimer) return;
-    featureTimer = window.setInterval(() => renderFeature(featureIndex + 1), 6000);
+    featureTimer = window.setInterval(() => renderFeature(featureIndex + 1), 5000);
   }
 
   function stopFeatureCarousel() {
@@ -199,7 +199,7 @@
 
   function startStorySlider() {
     if (storyTimer) return;
-    storyTimer = window.setInterval(rotateStories, 4800);
+    storyTimer = window.setInterval(rotateStories, 4200);
   }
 
   function stopStorySlider() {
