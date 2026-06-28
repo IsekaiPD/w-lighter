@@ -612,6 +612,11 @@ def episode_report_check_save(request, work_pk, episode_pk):
                 target_country = (tr_row[0] if tr_row else '').upper()
                 original_word  = (item.get('source') or item.get('original_word') or '').strip()
                 translated_word = (item.get('suggested_target') or item.get('translated_word') or '').strip()
+                # glossary_type CHECK 제약(person/place/organization) 충족 — 모델이 준 category 사용,
+                # 비었거나 이상값이면 안전 기본값(person). dedup엔 무관(original_word 기준)이라 분류 라벨일 뿐.
+                category = (item.get('category') or item.get('glossary_type') or '').strip().lower()
+                if category not in ('person', 'place', 'organization'):
+                    category = 'person'
 
                 if original_word and target_country:
                     if applied:
@@ -632,8 +637,8 @@ def episode_report_check_save(request, work_pk, episode_pk):
                             cur.execute(
                                 "INSERT INTO glossary "
                                 "(work_id, target_country, original_word, translated_word, glossary_type) "
-                                "VALUES (%s, %s, %s, %s, 'proper_noun')",
-                                [work.work_id, target_country, original_word, translated_word],
+                                "VALUES (%s, %s, %s, %s, %s)",
+                                [work.work_id, target_country, original_word, translated_word, category],
                             )
                     else:
                         cur.execute(
