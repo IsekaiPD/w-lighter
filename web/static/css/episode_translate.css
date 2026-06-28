@@ -490,16 +490,21 @@
 .tr-trans-text mark.tr-hl-pending { background: #F4E9EF; }  /* 색1: 바뀔 구간(제안 시) */
 .tr-trans-text mark.tr-hl-applied { background: #ECEAFB; }  /* 색2: 바뀐 구간(적용 후) */
 
-/* 번역본 / 리포트 빈 상태 */
+/* 번역본 / 리포트 빈 상태 — 컨테이너 높이를 채워 세로 중앙 정렬 (두 탭 위치 통일) */
 .tr-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 60px 0;
+  min-height: 100%;     /* 블록 부모(.tr-textbox-inner) 높이를 채움 */
+  flex: 1 0 auto;       /* flex 부모(.tr-report-scroll) 안에서도 늘어남 */
+  padding: 0;
   text-align: center;
+  line-height: 1.4;     /* .tr-trans-text(1.85) 상속 차단 — 두 탭 동일 */
 }
+/* 빈 상태 문구는 .tr-trans-text p{margin-bottom:1.6em} 영향을 받지 않게 */
+.tr-empty-state p { margin: 0; }
 .tr-empty-icon {
   width: 52px; height: 52px;
   border-radius: 50%;
@@ -709,6 +714,15 @@
 .tr-report-scroll::-webkit-scrollbar { width: 8px; }
 .tr-report-scroll::-webkit-scrollbar-track { background: transparent; }
 .tr-report-scroll::-webkit-scrollbar-thumb { background: #a995df; border-radius: 999px; }
+
+/* 번역 리포트가 비어 있을 때 — 번역본 탭과 동일한 테두리 박스 */
+.tr-report-scroll.is-empty {
+  border: 1px solid var(--color-border, #cfc3fb);
+  border-radius: 10px;
+  background: var(--color-surface, #ffffff);
+  padding: 0;
+  overflow: hidden;
+}
 
 /* 문제/현지화 전략 섹션 */
 .tr-report-strategy {

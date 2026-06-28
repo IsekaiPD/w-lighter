@@ -103,19 +103,31 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCaret();
   });
 
+  // 저장된 번역 버전이 없는 언어는 선택지에서 숨김
+  function updateLangVisibility() {
+    langOpts.forEach(o => {
+      const has = (byLang[o.dataset.lang] || []).length > 0;
+      o.style.display = has ? '' : 'none';
+    });
+  }
+
   // ----- 저장된 번역 불러오기 -----
   async function loadSaved() {
     if (!window.EP_CONFIG || !window.EP_CONFIG.listUrl) return;
     try {
       const res = await fetch(window.EP_CONFIG.listUrl);
       const data = await res.json();
-      if (!data.ok || !Array.isArray(data.items) || !data.items.length) return;
 
-      data.items.forEach(it => {
-        const lang = (it.lang || 'EN').toLowerCase();
-        if (!byLang[lang]) byLang[lang] = [];
-        byLang[lang].push({ n: byLang[lang].length + 1, date: it.createdAt || '', text: it.translatedText || '', id: it.id });
-      });
+      if (data.ok && Array.isArray(data.items)) {
+        data.items.forEach(it => {
+          const lang = (it.lang || 'EN').toLowerCase();
+          if (!byLang[lang]) byLang[lang] = [];
+          byLang[lang].push({ n: byLang[lang].length + 1, date: it.createdAt || '', text: it.translatedText || '', id: it.id });
+        });
+      }
+
+      // 번역 버전이 없는 언어 옵션 숨김 처리
+      updateLangVisibility();
 
       // 번역이 있는 첫 언어의 최신 버전을 자동 표시
       const first = ['en', 'cn', 'jp', 'th'].find(l => byLang[l] && byLang[l].length);
