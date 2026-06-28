@@ -643,3 +643,33 @@ a:hover .work-title,
   font-weight: 700;
   color: var(--color-text-muted);
 }
+
+/* =============================================
+   반응형 — 노트북 대응 (2026-06-28 추가)
+   · 큰 화면: 기존 .page-container max-width 1280px + 가운데 여백 유지
+   · 작은 화면: 폭에 맞춰 단계적으로 축소
+   ※ library.css는 서재 페이지에서만 로드되므로
+     아래 .app-main / .page-container 오버라이드는 이 페이지에만 적용됨
+   ============================================= */
+
+/* 1단계 — 중형 노트북: 강제 가로스크롤 제거 + 여백/간격 축소 */
+@media (max-width: 1180px) {
+  .app-main { min-width: 0; }            /* 전역 min-width:860px가 만들던 가로 스크롤 해제 */
+  .page-container { padding: 36px; }
+  .works-grid { column-gap: 32px; row-gap: 32px; }
+}
+
+/* 2단계 — 소형 노트북: 헤더·액션줄 줄바꿈, 여백 더 축소 */
+@media (max-width: 960px) {
+  .page-container { padding: 24px; }
+  .page-header { flex-wrap: wrap; gap: 16px; }
+  .action-row { flex-wrap: wrap; }
+  .action-btns { width: 100%; justify-content: flex-end; }
+}
+
+/* 3단계 — 태블릿 가로/아주 좁은 노트북: 작품 그리드 1열, 모달 입력 세로 스택 */
+@media (max-width: 820px) {
+  .works-grid { grid-template-columns: 1fr; column-gap: 0; row-gap: 28px; }
+  .modal { padding: 28px; }
+  .modal-fields { grid-template-columns: 1fr; gap: 16px; }
+}

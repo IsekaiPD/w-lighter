@@ -804,6 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
       transPane.style.outline = 'none';
     }
     if (reportScroll) {
+      reportScroll.classList.remove('is-empty');   // 리포트 내용이 있으면 빈 박스 테두리 제거
       reportScroll.innerHTML = renderReport(result);
     }
   }
@@ -825,6 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }
     if (reportScroll) {
+      reportScroll.classList.add('is-empty');       // 번역본과 동일하게 테두리 박스 표시
       reportScroll.innerHTML = `
         <div class="tr-empty-state">
           <div class="tr-empty-icon">
@@ -896,6 +898,8 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         selectedVersion = null;
         emptyTransNotice();
+        resetChat();                 // 번역본이 없으면 검수 챗봇도 환영 메시지만 남기고 비움
+        currentPendingAction = null;
         refreshVersionPanels();
         ['versionLabel2', 'versionLabel3'].forEach((id) => {
           const el = document.getElementById(id);

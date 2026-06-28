@@ -5,7 +5,7 @@
 
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=emptystate-20260625-1">
+<link rel="stylesheet" href="{% static 'css/episode_translate.css' %}?v=emptystate-center-20260628-3">
 <link rel="stylesheet" href="{% static 'css/minigames.css' %}?v=vsbalance-20260624-2">
 {% endblock %}
 
@@ -148,7 +148,7 @@
           </div>
 
           <!-- 스크롤 영역 -->
-          <div class="tr-report-scroll">
+          <div class="tr-report-scroll is-empty">
             <div class="tr-empty-state">
               <div class="tr-empty-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -251,5 +251,5 @@
   };
 </script>
 <script src="{% static 'js/minigames.js' %}?v=imgfallback-20260624-1"></script>
-<script src="{% static 'js/episode_translate.js' %}?v=poll-20260624-3"></script>
+<script src="{% static 'js/episode_translate.js' %}?v=reportbox-20260628-1"></script>
 {% endblock %}
