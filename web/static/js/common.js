@@ -13,11 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const popup         = document.getElementById('workSettingsPopup');
   const settingsGroup = document.getElementById('workSettingsGroup');
 
-  // 열기/닫기
+  // 열기/닫기 (상태를 localStorage에 기억)
   toggleBtn?.addEventListener('click', () => {
     const isOpen = sidebar.classList.toggle('open');
     document.body.classList.toggle('sidebar-open', isOpen);
     if (!isOpen && popup) popup.classList.remove('visible');
+    try { localStorage.setItem('wlighter:sidebarOpen', isOpen ? '1' : '0'); } catch (e) {}
   });
 
   // 활성 메뉴 감지
@@ -60,7 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (sidebar.classList.contains('open')) return;
       const rect = settingsGroup.getBoundingClientRect();
       popup.style.top  = rect.top + 'px';
-      popup.style.left = (rect.right + 8) + 'px';
+      // 그룹은 사이드바 폭 전체 기준이라, 툴팁(항목 기준, 안쪽 8px)과 같은 간격이 되도록 +4
+      popup.style.left = (rect.right + 4) + 'px';
       popup.classList.add('visible');
     }
 
@@ -79,6 +81,31 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsGroup.addEventListener('mouseleave', scheduleHide);
     popup.addEventListener('mouseenter', cancelHide);
     popup.addEventListener('mouseleave', scheduleHide);
+  }
+
+  // 닫힌 사이드바에서 아이콘 호버 시 이름 툴팁
+  if (sidebar) {
+    const tipEl = document.createElement('div');
+    tipEl.className = 'sidebar-tip';
+    document.body.appendChild(tipEl);
+    let tipHideTimer = null;
+
+    document.querySelectorAll('.sidebar-item[data-tip]').forEach((item) => {
+      item.addEventListener('mouseenter', () => {
+        if (sidebar.classList.contains('open')) return;   // 펼쳐진 상태(라벨 보임)면 툴팁 안 띄움
+        const tip = item.getAttribute('data-tip');
+        if (!tip) return;
+        clearTimeout(tipHideTimer);
+        tipEl.textContent = tip;
+        const rect = item.getBoundingClientRect();
+        tipEl.style.top  = (rect.top + rect.height / 2) + 'px';
+        tipEl.style.left = (rect.right + 12) + 'px';
+        tipEl.classList.add('visible');
+      });
+      item.addEventListener('mouseleave', () => {
+        tipHideTimer = setTimeout(() => tipEl.classList.remove('visible'), 60);
+      });
+    });
   }
 
   // ---------- Profile Dropdown ----------
