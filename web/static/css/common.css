@@ -2,7 +2,7 @@
    common.css — 공통 스타일
    ============================================= */
 
-/* 클릭 가능한 요소는 일관되게 손가락 커서 */
+/* 클릭 가능한 요소는 손가락 커서 */
 button,
 [role="button"],
 [onclick],
@@ -167,7 +167,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 /* hover 없음 — 클릭(active)만 하이라이트 */
 .sidebar-item:not(.sidebar-group).active {
-  background: rgba(246, 241, 235, 0.5);
+  background: #f6f1eb;
 }
 
 /* 아이콘 슬롯 — 항상 같은 위치 */
@@ -215,7 +215,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   margin: 0 8px;
 }
 .sidebar-group.active .sidebar-group-row {
-  background: rgba(246, 241, 235, 0.5);
+  background: #f6f1eb;
 }
 
 /* 서브 리스트 (열린 상태에서만) */
@@ -248,7 +248,7 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .sidebar-sub-item.active {
   font-weight: 600;
-  background: rgba(246, 241, 235, 0.5);
+  background: #f6f1eb;
 }
 
 /* 사이드바 하단 푸터 */
@@ -294,9 +294,8 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
   background: var(--color-surface);
   border: 1px solid var(--color-border-soft);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(110,91,184,0.12);
+  box-shadow: var(--shadow-glow-soft);
   padding: 6px 0;
-  min-width: 160px;
   opacity: 0;
   pointer-events: none;
   transition: opacity .15s;
@@ -317,8 +316,29 @@ button { cursor: pointer; font-family: inherit; border: none; background: none; 
 }
 .sidebar-popup-item.active {
   font-weight: 600;
-  background: rgba(246, 241, 235, 0.5);
+  background: #f6f1eb;
 }
+
+/* 닫힌 사이드바에서 아이콘 호버 시 이름 툴팁 (overflow:hidden 우회 위해 body 직속 fixed) */
+.sidebar-tip {
+  position: fixed;
+  z-index: 400;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-soft);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+  padding: 8px 11px;
+  border-radius: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity .12s ease;
+  box-shadow: var(--shadow-glow-soft);
+}
+.sidebar-tip.visible { opacity: 1; }
 
 /* ---------- 프로필 드롭다운 ---------- */
 .profile-dropdown {

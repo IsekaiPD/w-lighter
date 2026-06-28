@@ -1,6 +1,6 @@
 {% load static %}
 
-<aside class="sidebar" id="sidebar">
+<aside class="sidebar open" id="sidebar">
 
   <!-- 닫힌 상태 로고 -->
   <a class="sidebar-logo-short" href="{% url 'pages:landing' %}" aria-label="w.LiGHTER 홈">
@@ -15,7 +15,7 @@
   <nav class="sidebar-nav">
 
     <!-- 햄버거 토글 -->
-    <button class="sidebar-item sidebar-toggle-btn" id="sidebarToggle" aria-label="메뉴 열기/닫기">
+    <button class="sidebar-item sidebar-toggle-btn" id="sidebarToggle" aria-label="메뉴 열기/닫기" data-tip="메뉴">
       <span class="sidebar-icon-slot">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/>
@@ -26,7 +26,7 @@
     </button>
 
     <!-- 내 서재 -->
-    <a class="sidebar-item" href="/works/" data-nav="library">
+    <a class="sidebar-item" href="/works/" data-nav="library" data-tip="내 서재">
       <span class="sidebar-icon-slot">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -66,7 +66,7 @@
     </div>
 
     <!-- 현지화 가이드 -->
-    <a class="sidebar-item" href="{% url 'guides:localization' %}" data-nav="localization">
+    <a class="sidebar-item" href="{% url 'guides:localization' %}" data-nav="localization" data-tip="현지화 가이드">
       <span class="sidebar-icon-slot">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/>
@@ -105,3 +105,17 @@
     캐릭터 관계도
   </a>
 </div>
+
+{# 사이드바 열림/닫힘 상태 복원 — 마크업 직후 동기 실행이라 깜빡임 없음 #}
+<script>
+  (function () {
+    try {
+      var v = localStorage.getItem('wlighter:sidebarOpen');
+      if (v === null) return;            /* 저장값 없으면 템플릿 기본값(열림) 유지 */
+      var sb = document.getElementById('sidebar');
+      var open = v === '1';
+      if (sb) sb.classList.toggle('open', open);
+      document.body.classList.toggle('sidebar-open', open);
+    } catch (e) {}
+  })();
+</script>
