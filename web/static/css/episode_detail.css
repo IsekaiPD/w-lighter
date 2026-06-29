@@ -226,7 +226,10 @@
   display: none;
   position: absolute;
   top: calc(100% - 1px);
+  /* 패널은 항상 트리거 폭에 맞춤 → 좌우 어느 쪽으로도 안 삐져나감.
+     안의 버전 칸이 줄어들며 맞추고, 날짜는 유지(이름만 …로 축약) */
   left: 0;
+  right: auto;
   width: 100%;
   background: var(--color-surface);
   border: 1px solid #CFC3FB;
@@ -239,8 +242,8 @@
 
 .ep-version-dropdown.open .ep-version-panel {
   display: grid;
-  grid-template-columns: auto 1px 1fr;
-  column-gap: 20px;
+  grid-template-columns: auto 1px minmax(0, 1fr);
+  column-gap: 14px;
   align-items: start;
 }
 
@@ -249,7 +252,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 4px 0 4px 38px;
+  padding: 4px 0 4px 16px;
 }
 
 .ep-lang-opt {
@@ -283,7 +286,8 @@
 
 /* 버전 목록 */
 .ep-version-list {
-  padding: 4px 24px 4px 0;
+  padding: 4px 16px 4px 0;
+  min-width: 0;
 }
 
 .ep-version-group {
@@ -298,8 +302,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
+  gap: 14px;
   width: 100%;
+  min-width: 0;
   min-height: 32px;
   padding: 6px 12px;
   border-radius: 10px;
@@ -322,6 +327,9 @@
   font-weight: 600;
   color: inherit;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ep-version-date {
