@@ -7,6 +7,12 @@ __pycache__/
 .Python
 *.log
 .env
+*.tar
+
+# SSH 키 (절대 커밋 금지)
+*.pem
+*.key
+
 django_env/
 venv/
 .venv/

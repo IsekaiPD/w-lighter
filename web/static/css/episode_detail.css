@@ -63,7 +63,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color .15s;
 }
+.breadcrumb-work:hover { color: var(--color-primary); }
 
 .ep-breadcrumb svg {
   flex-shrink: 0;
@@ -173,24 +177,44 @@
 /* 버전 선택 드롭다운 — ep-sort-dropdown과 동일 스타일 */
 .ep-version-dropdown {
   position: relative;
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 300px;
+  min-width: 286px;
 }
 
 .ep-version-trigger {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   width: 100%;
   height: 48px;
-  padding: 0 16px 0 12px;
+  padding: 0 18px 0 14px;
   font-size: 16px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #2D2440;
   background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  border: 1px solid #D9D6E4;
   border-radius: 24px;
-  transition: border-color .15s;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.ep-version-trigger svg {
+  flex-shrink: 0;
+  color: #8E8E93;
+}
+
+.ep-version-trigger span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ep-version-trigger:hover,
+.ep-version-dropdown.open .ep-version-trigger {
+  border-color: #CFC3FB;
+  box-shadow: 0 6px 16px rgba(110, 91, 184, 0.08);
 }
 
 .ep-version-dropdown.open .ep-version-trigger {
@@ -201,21 +225,25 @@
 .ep-version-panel {
   display: none;
   position: absolute;
-  top: 46px;
+  top: calc(100% - 1px);
+  /* 패널은 항상 트리거 폭에 맞춤 → 좌우 어느 쪽으로도 안 삐져나감.
+     안의 버전 칸이 줄어들며 맞추고, 날짜는 유지(이름만 …로 축약) */
   left: 0;
+  right: auto;
   width: 100%;
   background: var(--color-surface);
-  border: 2px solid var(--color-border);
+  border: 1px solid #CFC3FB;
   border-top: none;
   border-radius: 0 0 24px 24px;
   padding: 4px 0 14px 0;
+  box-shadow: 0 10px 24px rgba(110, 91, 184, 0.12);
   z-index: 60;
 }
 
 .ep-version-dropdown.open .ep-version-panel {
   display: grid;
-  grid-template-columns: auto 1px 1fr;
-  column-gap: 20px;
+  grid-template-columns: auto 1px minmax(0, 1fr);
+  column-gap: 14px;
   align-items: start;
 }
 
@@ -224,35 +252,42 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 4px 0 4px 38px;
+  padding: 4px 0 4px 16px;
 }
 
 .ep-lang-opt {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 12px;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(110, 99, 140, 0.5);
+  color: #6E638C;
   text-align: left;
   white-space: nowrap;
-  transition: color .15s;
-  padding: 3px 0;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
 }
 
-.ep-lang-opt:hover,
-.ep-lang-opt.active {
-  color: var(--color-primary);
-}
+.ep-lang-opt:hover { background: #F3EEFF; color: #2D2440; }
+.ep-lang-opt.active { color: #6E5BB8; }
 
 /* 구분선 */
 .ep-version-divider {
   width: 1px;
-  background: rgba(110, 99, 140, 0.25);
+  background: #E6E0F4;
   align-self: stretch;
   margin: 4px 0;
 }
 
 /* 버전 목록 */
 .ep-version-list {
-  padding: 4px 24px 4px 0;
+  padding: 4px 16px 4px 0;
+  min-width: 0;
 }
 
 .ep-version-group {
@@ -266,24 +301,35 @@
 .ep-version-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 10px;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(110, 99, 140, 0.5);
+  color: #6E638C;
   text-align: left;
-  transition: color .15s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .15s, color .15s;
   white-space: nowrap;
 }
 
-.ep-version-item:hover,
-.ep-version-item.active {
-  color: var(--color-primary);
-}
+.ep-version-item:hover { background: #F3EEFF; color: #2D2440; }
+.ep-version-item.active { color: #6E5BB8; }
 
 .ep-version-name {
   font-size: 16px;
   font-weight: 600;
   color: inherit;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ep-version-date {
@@ -291,24 +337,29 @@
   font-weight: 400;
   color: inherit;
   opacity: 0.7;
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* 번역 삭제 버튼 */
 .ep-delete-btn {
   flex-shrink: 0;
-  height: 48px;
-  padding: 0 24px;
-  background: #f9e9fa;
-  border: 2px solid #f8d7f5;
-  border-radius: var(--radius-pill);
+  width: 108px;
+  height: 44px;
+  padding: 12px 24px;
+  background: #ffffff;
+  border: 1px solid #E0E0E0;
+  border-radius: 999px;
   font-size: 16px;
+  line-height: 19px;
   font-weight: 600;
-  color: var(--color-primary);
+  color: #2D2440;
   white-space: nowrap;
   transition: background .15s;
 }
 
-.ep-delete-btn:hover { background: #f3d8f2; }
+.ep-delete-btn:hover { background: #F2F2F7; }
 
 /* ---------- 텍스트 박스 공통 ---------- */
 .ep-textbox {
@@ -414,5 +465,9 @@
 
   .ep-textbox-inner {
     padding: 48px 48px;
+  }
+
+  .ep-version-dropdown {
+    min-width: 0;
   }
 }

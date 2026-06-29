@@ -4,7 +4,7 @@
 {% block title %}내 서재 | w.LiGHTER{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/library.css' %}">
+<link rel="stylesheet" href="{% static 'css/library.css' %}?v=responsive-20260628-1">
 {% endblock %}
 
 {% block content %}
@@ -12,11 +12,11 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="page-title-group">
-      <h1 class="page-title">내 서재</h1>
+      <h1 class="page-title">{{ request.user.nickname }} 작가님의 서재</h1>
       <p class="page-desc">작품을 등록하고 번역해 보세요.</p>
     </div>
     <div class="header-utils">
-      <span class="credit-chip">18,000 C</span>
+      <a href="/credits/charge" class="credit-chip">{{ request.user.credit|floatformat:"g" }} C</a>
       <div class="profile-icon" id="profileBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
       </div>
@@ -27,6 +27,10 @@
   <div class="action-row">
 
     <!-- 최근 작업 카드 -->
+    <!-- TODO: FastAPI translations/reviews 테이블 연결 후 수정 필요
+         - 현재는 Episode.updated_at 기준 최근 에피소드를 임시로 표시
+         - 번역/검수 구분 및 실제 완료 시각은 FastAPI 스키마 연결 후 반영할 것
+         - works/views.py library() 함수의 recent_episode 쿼리도 함께 수정 필요 -->
     <div class="recent-card">
       <div class="recent-icon-wrap">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -35,8 +39,12 @@
         </svg>
       </div>
       <span class="recent-label">최근 작업</span>
-      <span class="recent-text">별빛 아래 잊힌 왕국&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;3화 번역 완료</span>
-      <button class="continue-btn">작업 이어하기</button>
+      {% if recent %}
+      <span class="recent-text">{{ recent.work_title }}&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;{{ recent.episode_number }}화 번역 완료</span>
+      <a href="{% url 'works:episode_translate' recent.work_id recent.episode_id %}" class="continue-btn">작업 이어하기</a>
+      {% else %}
+      <span class="recent-text">최근 작업 내역이 없어요</span>
+      {% endif %}
     </div>
 
     <!-- 버튼 영역 -->
@@ -61,10 +69,6 @@
             <svg class="sort-opt-caret" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
             작품 이름 순
           </button>
-          <button class="sort-opt" data-sort="genre">
-            <svg class="sort-opt-caret" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
-            장르 순
-          </button>
         </div>
       </div>
 
@@ -78,42 +82,54 @@
 
   <!-- Library Panel -->
   <div class="library-panel">
-    <div class="library-count">총 1권</div>
+    <div class="library-count">총 {{ works|length }}권</div>
 
-    <!-- Works Grid (더미 데이터) -->
+    {% if works %}
     <div class="works-grid">
-
-      <!-- 더미 카드 1: 표지 없음 -->
-      <div class="work-card" data-work-id="1">
-        <a href="/works/1/" class="work-cover work-cover-empty" aria-label="작품 상세"></a>
+      {% for work in works %}
+      <div class="work-card" data-work-id="{{ work.work_id }}"
+           data-created="{{ work.work_id }}"
+           data-title="{{ work.title }}"
+           data-synopsis="{{ work.synopsis|default:'' }}"
+           data-author="{{ work.pen_name }}"
+           data-genre="{{ work.genre }}"
+           data-epdate="{{ work.latest_ep|default:work.created_at|date:'U' }}">
+        <a href="/works/{{ work.work_id }}/" class="work-cover{% if not work.cover_image_url %} work-cover-empty{% endif %}" aria-label="작품 상세">
+          {% if work.cover_image_url %}<img src="{{ work.cover_image_url }}" alt="{{ work.title }} 표지" style="width:100%;height:100%;object-fit:cover;">{% endif %}
+        </a>
         <div class="work-info">
           <div class="work-card-header">
-            <a href="/works/1/"><h3 class="work-title">별빛 아래 잊힌 왕국</h3></a>
+            <a href="/works/{{ work.work_id }}/"><h3 class="work-title">{{ work.title }}</h3></a>
             <div class="work-menu-wrap">
-              <button class="work-kebab-btn" data-menu="workMenu1" aria-label="메뉴">
+              <button class="work-kebab-btn" data-menu="workMenu{{ work.work_id }}" aria-label="메뉴">
                 <svg width="4" height="16" viewBox="0 0 4 18" fill="currentColor">
                   <circle cx="2" cy="2" r="2"/>
                   <circle cx="2" cy="9" r="2"/>
                   <circle cx="2" cy="16" r="2"/>
                 </svg>
               </button>
-              <div class="work-menu-dropdown" id="workMenu1">
+              <div class="work-menu-dropdown" id="workMenu{{ work.work_id }}">
                 <button class="work-menu-item">작품 정보 수정</button>
                 <button class="work-menu-item work-menu-delete">작품 삭제</button>
               </div>
             </div>
           </div>
-          <p class="work-meta">필명: 킹왕짱웹소설작가&nbsp;&nbsp;|&nbsp;&nbsp;장르: 판타지</p>
-          <p class="work-episodes"><strong>총 3화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;번역 3화&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 1시간 전</p>
+          <p class="work-meta">필명: {{ work.pen_name }}&nbsp;&nbsp;|&nbsp;&nbsp;{{ work.genre }}</p>
+          <p class="work-episodes"><strong>총 {{ work.episodes.count }}화</strong>&nbsp;&nbsp;|&nbsp;&nbsp;{% if work.trans_ep_count %}번역 {{ work.trans_ep_count }}화{% else %}번역 없음{% endif %}{% if work.last_update_str %}&nbsp;&nbsp;|&nbsp;&nbsp;최근 업데이트 {{ work.last_update_str }} 전{% endif %}</p>
           <div class="work-langs">
-            <span class="lang-tag">EN</span>
-            <span class="lang-tag">JP</span>
-            <span class="lang-tag">TH</span>
+            {% for lang in work.trans_langs %}
+            <span class="lang-tag">{{ lang }}</span>
+            {% endfor %}
           </div>
         </div>
       </div>
-
+      {% endfor %}
     </div>
+    {% else %}
+    <div class="empty-state">
+      <p>아직 등록된 작품이 없어요.</p>
+    </div>
+    {% endif %}
 
   </div>
 
@@ -143,7 +159,7 @@
       <div class="field-group">
         <label class="field-label">필명 <span class="required">*</span></label>
         <div class="input-wrap">
-          <input type="text" class="field-input" id="editWorkAuthor" placeholder="킹왕짱웹소설작가" maxlength="10">
+          <input type="text" class="field-input" id="editWorkAuthor" placeholder="필명을 입력하세요" maxlength="10">
           <span class="input-counter"><span id="editAuthorLen">0</span>/10</span>
         </div>
         <p class="field-hint field-error" id="editAuthorError" style="display:none;">
@@ -161,13 +177,13 @@
           </button>
           <div class="custom-select-dropdown" id="editGenreDropdown">
             <ul class="custom-select-list">
-              <li class="custom-select-option" data-value="romance">로맨스</li>
-              <li class="custom-select-option" data-value="romance_fantasy">로맨스 판타지</li>
-              <li class="custom-select-option" data-value="fantasy">판타지</li>
-              <li class="custom-select-option" data-value="modern_fantasy">현대 판타지</li>
-              <li class="custom-select-option" data-value="murim">무협</li>
-              <li class="custom-select-option" data-value="sf">SF</li>
-              <li class="custom-select-option" data-value="etc">기타</li>
+              <li class="custom-select-option" data-value="로맨스">로맨스</li>
+              <li class="custom-select-option" data-value="로맨스 판타지">로맨스 판타지</li>
+              <li class="custom-select-option" data-value="판타지">판타지</li>
+              <li class="custom-select-option" data-value="현대 판타지">현대 판타지</li>
+              <li class="custom-select-option" data-value="무협">무협</li>
+              <li class="custom-select-option" data-value="SF">SF</li>
+              <li class="custom-select-option" data-value="기타">기타</li>
             </ul>
           </div>
           <input type="hidden" id="editWorkGenre" name="genre">
@@ -216,7 +232,7 @@
       <div class="field-group">
         <label class="field-label">필명 <span class="required">*</span></label>
         <div class="input-wrap">
-          <input type="text" class="field-input" id="workAuthor" placeholder="킹왕짱웹소설작가" maxlength="10">
+          <input type="text" class="field-input" id="workAuthor" placeholder="필명을 입력하세요" maxlength="10" value="{{ nickname }}" data-default="{{ nickname }}">
           <span class="input-counter"><span id="authorLen">0</span>/10</span>
         </div>
         <p class="field-hint field-error" id="authorError" style="display:none;">
@@ -234,13 +250,13 @@
           </button>
           <div class="custom-select-dropdown" id="genreDropdown">
             <ul class="custom-select-list">
-              <li class="custom-select-option" data-value="romance">로맨스</li>
-              <li class="custom-select-option" data-value="romance_fantasy">로맨스 판타지</li>
-              <li class="custom-select-option" data-value="fantasy">판타지</li>
-              <li class="custom-select-option" data-value="modern_fantasy">현대 판타지</li>
-              <li class="custom-select-option" data-value="murim">무협</li>
-              <li class="custom-select-option" data-value="sf">SF</li>
-              <li class="custom-select-option" data-value="etc">기타</li>
+              <li class="custom-select-option" data-value="로맨스">로맨스</li>
+              <li class="custom-select-option" data-value="로맨스 판타지">로맨스 판타지</li>
+              <li class="custom-select-option" data-value="판타지">판타지</li>
+              <li class="custom-select-option" data-value="현대 판타지">현대 판타지</li>
+              <li class="custom-select-option" data-value="무협">무협</li>
+              <li class="custom-select-option" data-value="SF">SF</li>
+              <li class="custom-select-option" data-value="기타">기타</li>
             </ul>
           </div>
           <input type="hidden" id="workGenre" name="genre">
@@ -266,5 +282,42 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/library.js' %}"></script>
+<script src="{% static 'js/library.js' %}?v=editvalid-20260624-3"></script>
+<script>
+(function() {
+  const CSRF = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? '';
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.work-menu-delete');
+    if (!btn) return;
+    const card   = btn.closest('.work-card');
+    const workId = card?.dataset.workId;
+    if (!workId) return;
+    const ok = window.AppUI
+      ? await AppUI.confirm({
+          title: '이 작품을 삭제할까요?',
+          desc: '회차 데이터도 모두 삭제되며 복구할 수 없습니다.',
+          okText: '삭제하기',
+          cancelText: '취소',
+        })
+      : confirm('이 작품을 삭제하시겠습니까?\n회차 데이터도 모두 삭제됩니다.');
+    if (!ok) return;
+    const res  = await fetch(`/works/${workId}/delete/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await res.json();
+    if (data.ok) location.reload();
+    else if (window.AppUI) AppUI.toast('작품 삭제에 실패했습니다.');
+    else alert('삭제에 실패했습니다.');
+  });
+})();
+</script>
+{% if show_beta_bonus %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.AppUI) AppUI.toast('베타 테스트 기간 한정! 4,000C를 추가 지급합니다.');
+});
+</script>
+{% endif %}
 {% endblock %}

@@ -21,9 +21,11 @@
   line-height:21px;
   color:var(--color-text-muted);
 }
+.header-utils{ display:flex; align-items:center; gap:12px; flex-shrink:0; }
 .credit-chip{
   display:inline-flex;
   align-items:center;
+  text-decoration:none;
   height:28px;
   padding:0 14px;
   border-radius:var(--radius-pill);
@@ -145,11 +147,26 @@
 }
 
 /* ---------- Bottom info — 화면 끝까지 꽉 채움 ---------- */
+.credit-test-notice{
+  display:flex;
+  align-items:flex-start;
+  gap:7px;
+  padding:12px 14px;
+  margin-bottom:16px;
+  background:#FFF0EE;
+  border:1px solid #FFCCC7;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.6;
+  color:#D64040;
+}
+.credit-test-notice svg{ flex-shrink:0; margin-top:1px; stroke:#D64040; color:#D64040; }
+
 .info-box{
   margin-top:34px;
   width:100%;
   background:rgba(216,216,216,.2);
-  padding:40px 0 80px;
+  padding:40px 0;
 }
 .info-inner{
   max-width:1280px;
