@@ -107,7 +107,7 @@
   const BALANCE_RESULTS = [
     {
       id: 'cold_angst',
-      title: '냉정유능 피폐물입파',
+      title: '냉정유능 피폐몰입파',
       description: '냉정하고 유능한 캐릭터, 무거운 감정선, 구원 서사에 끌리는 타입이에요. 가볍게 즐기기보다 깊이 몰입해서 감정을 따라가는 이야기를 선호해요.',
       tags: ['냉정유능', '피폐물', '구원서사', '후회남'],
       score: scores => (scores.cold || 0) + (scores.angst || 0) + (scores.intense || 0),
