@@ -144,6 +144,9 @@ def oauth_callback(request, provider):
                 f'이미 {registered_provider}(으)로 가입된 이메일입니다. {registered_provider} 로그인을 이용해 주세요.'
             )
 
+    if request.user.is_authenticated:
+        logout(request)
+
     request.session[PENDING_SIGNUP_SESSION_KEY] = oauth_profile
     request.session.pop(SIGNUP_TERMS_AGREED_SESSION_KEY, None)
     request.session.modified = True
