@@ -310,6 +310,7 @@
 }
 .cover-textarea::placeholder {
   color: var(--color-text-muted);
+  opacity: 0.6;
 }
 .cover-textarea:focus {
   border-color: var(--color-primary);

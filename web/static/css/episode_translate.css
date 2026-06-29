@@ -328,16 +328,19 @@
 .tr-version-dropdown {
   position: relative;
   flex-shrink: 0;
-  width: 286px;
+  width: 240px;
 }
 
 .tr-version-trigger {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 16px;
   width: 100%;
   height: 34px;
-  padding: 0 14px 0 12px;
+  /* 옵션(.tr-version-opt)과 동일한 좌/우 패딩 — 캐럿은 절대배치라 이름/날짜 열이 옵션과 정렬됨 */
+  padding: 0 18px 0 36px;
   font-size: 13px;
   font-weight: 600;
   color: #2D2440;
@@ -348,18 +351,30 @@
   transition: border-color .15s, box-shadow .15s;
 }
 
-.tr-version-trigger svg {
+.tr-version-caret {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   flex-shrink: 0;
   color: #8E8E93;
 }
 
-.tr-version-trigger span {
+.tr-version-trigger .tr-ver-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 트리거의 날짜는 선택값 강조 — 옵션과 같은 위치(우측 정렬)지만 색/굵기는 진하게 */
+.tr-version-trigger .tr-ver-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D2440;
+  opacity: 1;
 }
 
 .tr-version-trigger:hover,
@@ -398,10 +413,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 28px;
+  gap: 16px;
   width: 100%;
   /* 트리거 라벨(캐럿 20px + gap 4px + 좌패딩 12px = 36px)과 좌측 줄맞춤 */
-  padding: 6px 14px 6px 36px;
+  padding: 6px 18px 6px 36px;
   font-size: 13px;
   font-weight: 600;
   color: #6E638C;
@@ -523,15 +538,20 @@
   margin: 0;
 }
 
-/* 번역 로딩 */
+/* 번역 로딩 — 빈 상태(.tr-empty-state)와 동일하게 컨테이너를 채워 세로 중앙 정렬 */
 .tr-loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 60px 0;
+  min-height: 100%;     /* 블록 부모(.tr-textbox-inner) 높이를 채움 */
+  flex: 1 0 auto;       /* flex 부모 안에서도 늘어남 */
+  padding: 0;
+  text-align: center;
+  line-height: 1.4;     /* .tr-trans-text(1.85) 상속 차단 — 빈 상태와 동일 */
 }
+.tr-loading-state p { margin: 0; }
 .tr-loading-spinner {
   width: 36px; height: 36px;
   border: 3px solid var(--color-primary-soft);

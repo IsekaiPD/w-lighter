@@ -874,7 +874,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTranslationResult(v.result);
     ['versionLabel2', 'versionLabel3'].forEach((id) => {
       const el = document.getElementById(id);
-      if (el) el.textContent = v.date ? `ver. ${v.n}  ${v.date}` : `ver. ${v.n}`;
+      if (el) el.textContent = `ver. ${v.n}`;
+    });
+    ['versionDate2', 'versionDate3'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = v.date || '';
     });
     refreshVersionPanels();
     loadChatForVersion(v.translationId);
@@ -904,6 +908,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ['versionLabel2', 'versionLabel3'].forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.textContent = '버전 선택';
+        });
+        ['versionDate2', 'versionDate3'].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = '';
         });
       }
     });

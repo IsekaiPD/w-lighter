@@ -18,7 +18,11 @@
       <a href="{% url 'pages:landing' %}#service">주요 기능</a>
       <a href="{% url 'pages:landing' %}#faq">FAQ</a>
     </nav>
+    {% if user.is_authenticated %}
+    <a class="legal-login-button" href="{% url 'works:library' %}">내 서재로 가기</a>
+    {% else %}
     <a class="legal-login-button" href="{% url 'pages:landing' %}#top">로그인 / 시작하기</a>
+    {% endif %}
   </header>
 
   <main class="legal-main">
